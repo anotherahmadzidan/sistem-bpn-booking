@@ -1,0 +1,806 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Petugas - BPN Luwu Timur</title>
+    <link rel="stylesheet" href="/css/petugas.css">
+    <link rel="stylesheet" href="/css/petugas-dashboard.css">
+    <style>
+        #filter-dropdown {
+            width: auto !important;
+            min-width: 200px;
+        }
+    </style>
+</head>
+
+<body class="dashboard petugas-dashboard">
+
+        <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-mark">
+                <img src="/img/logo-bpn.svg" alt="ATR BPN">
+                <div>
+                    <h2>ATR BPN</h2>
+                    <p>Kab. Luwu Timur</p>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-user">
+            <div>
+                <span>Login sebagai Petugas</span>
+                <strong id="sidebar-nama">-</strong>
+            </div>
+            <div class="sidebar-user-shield" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="m9 12 2 2 4-5"></path>
+                </svg>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label">Main Menu</div>
+            <button class="nav-item active" id="nav-tugas" onclick="showPage('tugas')">
+                <span class="icon menu-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="4" y="4" width="16" height="18" rx="2"></rect>
+                        <path d="M9 2h6"></path>
+                        <path d="M8 10h8"></path>
+                        <path d="M8 14h8"></path>
+                        <path d="M8 18h5"></path>
+                    </svg>
+                </span>
+                Daftar Tugas
+            </button>
+            <button class="nav-item" id="nav-hasil" onclick="showPage('hasil')">
+                <span class="icon menu-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Z"></path>
+                        <path d="m13.5 6.5 4 4"></path>
+                        <path d="M12 20h8"></path>
+                    </svg>
+                </span>
+                Input Hasil
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="btn btn-secondary btn-block petugas-logout" onclick="logout()">
+                <span class="logout-symbol">-&gt;</span>
+                Keluar
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <!-- DAFTAR TUGAS -->
+        <div id="page-tugas">
+            <div class="petugas-welcome-header">
+                <div class="petugas-welcome-copy">
+                    <h1>Selamat datang, <span id="welcome-nama">Petugas</span></h1>
+                    <p>Kelola dan tindak lanjut tugas pemeriksaan tanah Anda.</p>
+                </div>
+                <div class="petugas-header-actions" aria-label="Informasi petugas">
+                    <div class="petugas-date-pill">
+                        <span class="petugas-calendar-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M8 2v4"></path>
+                                <path d="M16 2v4"></path>
+                                <rect x="3" y="5" width="18" height="17" rx="2"></rect>
+                                <path d="M3 10h18"></path>
+                            </svg>
+                        </span>
+                        <strong id="petugas-header-date">-</strong>
+                    </div>
+                    <div class="role-notif-wrap" id="petugas-notif-wrap">
+                        <button class="petugas-notification-button" type="button" aria-label="Notifikasi"
+                            onclick="toggleNotifikasi()">
+                            <span class="petugas-bell-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
+                                    <path d="M10 21h4"></path>
+                                </svg>
+                            </span>
+                            <span class="petugas-notification-badge" id="petugas-notif-count"
+                                style="display:none">0</span>
+                        </button>
+                        <div class="role-notif-dropdown" id="petugas-notif-dropdown" style="display:none">
+                            <div class="role-notif-header">
+                                <span>Notifikasi</span>
+                                <button type="button" onclick="event.stopPropagation(); markAllNotifikasiRead()">Tandai dibaca</button>
+                            </div>
+                            <div id="petugas-notif-list">
+                                <div class="role-notif-empty">Belum ada notifikasi</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="petugas-filter-shell">
+                <div class="petugas-filter-tabs" id="petugas-filter-tabs">
+                    <button class="petugas-filter-tab active" type="button" data-filter="semua"
+                        onclick="filterTugas('semua')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>Semua <b id="count-semua">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="pending"
+                        onclick="filterTugas('pending')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>Menunggu Konfirmasi <b id="count-pending">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="jadwal_fix"
+                        onclick="filterTugas('jadwal_fix')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect x="3" y="5" width="18" height="17" rx="2"></rect><path d="M3 10h18"></path></svg></span>Jadwal Ditetapkan <b id="count-jadwal_fix">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="rescheduled_by_user"
+                        onclick="filterTugas('rescheduled_by_user')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 3h5v5"></path><path d="M21 3 13 11"></path><path d="M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path><path d="M2 21a6 6 0 0 1 12 0"></path></svg></span>Jadwal Diubah Pemohon <b id="count-rescheduled_by_user">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="rescheduled_by_petugas"
+                        onclick="filterTugas('rescheduled_by_petugas')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 3h5v5"></path><path d="M21 3 13 11"></path><path d="M3 12a9 9 0 0 0 15 6"></path><path d="M21 12a9 9 0 0 0-15-6"></path></svg></span>Jadwal Diubah Petugas <b id="count-rescheduled_by_petugas">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="selesai"
+                        onclick="filterTugas('selesai')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg></span>Selesai <b id="count-selesai">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="ditolak"
+                        onclick="filterTugas('ditolak')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></span>Ditolak <b id="count-ditolak">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="dibatalkan"
+                        onclick="filterTugas('dibatalkan')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></span>Dibatalkan <b id="count-dibatalkan">(0)</b></button>
+                </div>
+                <select id="filter-dropdown" onchange="filterTugas(this.value)" aria-hidden="true" tabindex="-1">
+                    <option value="semua">Semua</option>
+                    <option value="pending">Menunggu Konfirmasi</option>
+                    <option value="rescheduled_by_user">Jadwal Diubah Pemohon</option>
+                    <option value="rescheduled_by_petugas">Jadwal Diubah Petugas</option>
+                    <option value="jadwal_fix">Jadwal Ditetapkan</option>
+                    <option value="selesai">Selesai</option>
+                    <option value="ditolak">Ditolak</option>
+                    <option value="dibatalkan">Dibatalkan</option>
+                </select>
+            </div>
+
+            <div id="tugas-list">
+                <div class="loading"><span class="spinner"></span> Memuat tugas...</div>
+            </div>
+        </div>
+
+        <!-- INPUT HASIL -->
+        <div id="page-hasil" style="display:none">
+            <div class="page-header">
+                <h1>Input Hasil Pemeriksaan</h1>
+                <p>Isi hasil pemeriksaan lapangan setelah peninjauan selesai dilakukan</p>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Nomor Berkas</label>
+                        <select id="hasil-berkas-select" onchange="onBerkasChange()">
+                            <option value="">-- Pilih Berkas (Jadwal Ditetapkan) --</option>
+                        </select>
+                    </div>
+                    <div id="hasil-info" style="display:none;margin-bottom:20px">
+                        <div class="info-box" id="hasil-info-content"></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Foto Lokasi</label>
+                            <input type="file" id="foto_lokasi" accept="image/*" class="file-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Foto Risalah</label>
+                            <input type="file" id="foto_risalah" accept="image/*" class="file-input">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Catatan Lapangan</label>
+                        <textarea id="catatan_lapangan" placeholder="Tuliskan catatan hasil pemeriksaan lapangan..."
+                            style="min-height:120px"></textarea>
+                    </div>
+                    <div id="hasil-error" class="alert alert-error" style="display:none"></div>
+                    <div id="hasil-success" class="alert alert-success" style="display:none"></div>
+                    <div style="display:flex;gap:10px;margin-top:8px">
+                        <button class="btn btn-primary" onclick="submitHasil()">
+                            <span class="btn-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M5 3h12l2 2v16H5Z"></path>
+                                    <path d="M8 3v6h8V3"></path>
+                                    <path d="M8 21v-7h8v7"></path>
+                                </svg>
+                            </span>
+                            Simpan Hasil Pemeriksaan
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetHasil()">Reset</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL KONFIRMASI -->
+    <div class="modal-overlay" id="modal-konfirmasi">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Konfirmasi Jadwal</h3>
+                <button class="modal-close" onclick="closeModal('modal-konfirmasi')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:16px;color:#64748b;font-size:13px">
+                    Konfirmasi bahwa Anda bersedia melakukan pemeriksaan sesuai tanggal yang diminta pemohon.
+                </p>
+                <div id="konfirmasi-detail"></div>
+                <div id="konfirmasi-error" class="alert alert-error" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-konfirmasi')">Batal</button>
+                <button class="btn btn-success" onclick="submitKonfirmasi()">
+                    <span class="btn-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="m8 12 3 3 5-6"></path>
+                        </svg>
+                    </span>
+                    Ya, Konfirmasi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GANTI JADWAL -->
+    <div class="modal-overlay" id="modal-tolak">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Tetapkan Jadwal Baru</h3>
+                <button class="modal-close" onclick="closeModal('modal-tolak')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom:16px;color:#64748b;font-size:13px">
+                    Tolak jadwal yang diminta dan tetapkan tanggal baru untuk pemohon.
+                </p>
+                <div class="form-group">
+                    <label>Tanggal Baru <span style="color:red">*</span></label>
+                    <input type="date" id="tolak-tanggal">
+                </div>
+                <div class="form-group">
+                    <label>Alasan <span style="color:red">*</span></label>
+                    <textarea id="tolak-alasan" placeholder="Alasan penggantian jadwal..." required></textarea>
+                </div>
+                <div id="tolak-error" class="alert alert-error" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-tolak')">Batal</button>
+                <button class="btn btn-danger" onclick="submitTolak()">Tetapkan Jadwal Baru</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TOLAK BERKAS -->
+    <div class="modal-overlay" id="modal-tolak-berkas">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Tolak Berkas</h3>
+                <button class="modal-close" onclick="closeModal('modal-tolak-berkas')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-error alert-with-icon" style="margin-bottom:16px">
+                    <span class="alert-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3 2.8 20h18.4L12 3Z"></path>
+                            <path d="M12 8v5"></path>
+                            <path d="M12 17h.01"></path>
+                        </svg>
+                    </span>
+                    <span>Berkas yang ditolak <strong>tidak dapat dipulihkan</strong>. Pemohon harus membuat booking baru.</span>
+                </div>
+                <div id="tolak-berkas-detail"></div>
+                <div class="form-group" style="margin-top:16px">
+                    <label>Alasan Penolakan <span style="color:red">*</span></label>
+                    <textarea id="tolak-berkas-alasan"
+                        placeholder="Contoh: Nomor berkas tidak valid, lokasi tidak sesuai wilayah, dll..."
+                        style="min-height:100px"></textarea>
+                </div>
+                <div id="tolak-berkas-error" class="alert alert-error" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-tolak-berkas')">Batal</button>
+                <button class="btn btn-danger" onclick="submitTolakBerkas()">Tolak Berkas</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const nama = localStorage.getItem('nama');
+        const role = localStorage.getItem('role');
+
+        if (!token || role !== 'petugas') {
+            localStorage.clear();
+            window.location.href = '/login-petugas';
+        }
+
+        document.getElementById('sidebar-nama').textContent = nama;
+        document.getElementById('welcome-nama').textContent = nama || 'Petugas';
+        document.getElementById('petugas-header-date').textContent = new Date().toLocaleDateString('id-ID', {
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+
+        let allTugas = [];
+        let selectedBookingId = null;
+        let currentFilter = 'semua';
+        let notifOpen = false;
+        const today = new Date().toISOString().split('T')[0];
+
+        function showPage(page) {
+            document.getElementById('page-tugas').style.display = page === 'tugas' ? 'block' : 'none';
+            document.getElementById('page-hasil').style.display = page === 'hasil' ? 'block' : 'none';
+            document.getElementById('nav-tugas').classList.toggle('active', page === 'tugas');
+            document.getElementById('nav-hasil').classList.toggle('active', page === 'hasil');
+            if (page === 'tugas') loadTugas();
+            if (page === 'hasil') loadBerkasDropdown();
+        }
+
+        async function apiFetch(url, options = {}) {
+            const res = await fetch(url, {
+                ...options,
+                headers: { 'Authorization': 'Bearer ' + token, ...(options.headers || {}) }
+            });
+            if (res.status === 401) { logout(); return null; }
+            return res;
+        }
+
+        async function loadNotifikasi() {
+            try {
+                const res = await apiFetch('/api/auth/notifications');
+                if (!res) return;
+                const data = await res.json();
+                const badge = document.getElementById('petugas-notif-count');
+                const list = document.getElementById('petugas-notif-list');
+
+                if (data.unread > 0) {
+                    badge.textContent = data.unread > 99 ? '99+' : data.unread;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                if (!data.notifications || data.notifications.length === 0) {
+                    list.innerHTML = '<div class="role-notif-empty">Belum ada notifikasi</div>';
+                    return;
+                }
+
+                list.innerHTML = data.notifications.map(n => `
+                    <div class="role-notif-item ${n.is_read ? '' : 'unread'}">
+                        <div class="role-notif-title">${escapeHTML(n.judul)}</div>
+                        <div class="role-notif-message">${escapeHTML(stripHTML(n.pesan))}</div>
+                        <div class="role-notif-time">${formatWaktu(n.created_at)}</div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Gagal load notifikasi', err);
+            }
+        }
+
+        function toggleNotifikasi() {
+            notifOpen = !notifOpen;
+            document.getElementById('petugas-notif-dropdown').style.display = notifOpen ? 'block' : 'none';
+            if (notifOpen) {
+                loadNotifikasi();
+                markAllNotifikasiRead();
+            }
+        }
+
+        async function markAllNotifikasiRead() {
+            try {
+                await apiFetch('/api/auth/notifications/read', { method: 'PATCH' });
+                setTimeout(loadNotifikasi, 400);
+            } catch (err) {
+                console.error('Gagal mark read notifikasi', err);
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const wrap = document.getElementById('petugas-notif-wrap');
+            if (wrap && !wrap.contains(e.target) && notifOpen) {
+                document.getElementById('petugas-notif-dropdown').style.display = 'none';
+                notifOpen = false;
+            }
+        });
+
+        async function loadTugas() {
+            const list = document.getElementById('tugas-list');
+            list.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat tugas...</div>';
+            try {
+                const res = await apiFetch('/api/petugas/tugas');
+                allTugas = await res.json();
+                updateFilterCounts();
+                renderTugas(getFiltered(currentFilter));
+            } catch {
+                list.innerHTML = '<div class="alert alert-error">Gagal memuat tugas</div>';
+            }
+        }
+
+        function getFiltered(filter) {
+            if (filter === 'semua') return allTugas;
+            return allTugas.filter(b => b.status === filter);
+        }
+
+        function filterTugas(filter) {
+            currentFilter = filter;
+            document.getElementById('filter-dropdown').value = filter;
+            document.querySelectorAll('.petugas-filter-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+            renderTugas(getFiltered(filter));
+        }
+
+        function updateFilterCounts() {
+            const count = (filter) => filter === 'semua'
+                ? allTugas.length
+                : allTugas.filter(b => b.status === filter).length;
+            ['semua', 'pending', 'rescheduled_by_user', 'rescheduled_by_petugas', 'jadwal_fix', 'selesai', 'ditolak', 'dibatalkan'].forEach(filter => {
+                const el = document.getElementById('count-' + filter);
+                if (el) el.textContent = `(${count(filter)})`;
+            });
+        }
+
+        function actionIcon(type) {
+            const icons = {
+                confirm: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>',
+                reschedule: '<svg viewBox="0 0 24 24"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><path d="M3.5 10h17"></path><path d="M8 15h6"></path><path d="m13 12 3 3-3 3"></path></svg>',
+                reject: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>',
+                location: '<svg viewBox="0 0 24 24"><path d="M12 21s7-5.4 7-12a7 7 0 0 0-14 0c0 6.6 7 12 7 12Z"></path><circle cx="12" cy="9" r="2.5"></circle></svg>',
+                contact: '<svg viewBox="0 0 24 24"><path d="M7.5 19.5 4 20.5l1-3.3A8 8 0 1 1 7.5 19.5Z"></path><path d="M9 9.5c.5 2 2.5 4 4.5 4.5l1.2-1.2 2 1.1c.2.1.3.4.2.6-.4 1-1.2 1.6-2.4 1.6-3.7 0-6.7-3-6.7-6.7 0-1.2.6-2 1.6-2.4.2-.1.5 0 .6.2l1.1 2L9 9.5Z"></path></svg>',
+                result: '<svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.4 2.4 0 0 0-3.4-3.4L4 17v3Z"></path><path d="m13.5 7.5 3 3"></path><path d="M12 20h8"></path></svg>'
+            };
+            return `<span class="action-icon" aria-hidden="true">${icons[type] || icons.confirm}</span>`;
+        }
+
+        function renderTugas(data) {
+            const list = document.getElementById('tugas-list');
+            if (data.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon empty-icon-svg" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M6 3h9l3 3v15H6Z"></path>
+                                <path d="M15 3v4h4"></path>
+                                <path d="M9 12h6"></path>
+                                <path d="M9 16h4"></path>
+                            </svg>
+                        </div>
+                        <p>Tidak ada tugas untuk filter ini</p>
+                    </div>`;
+                return;
+            }
+            list.innerHTML = data.map(b => {
+                const perluKonfirmasi = ['pending', 'rescheduled_by_user'].includes(b.status);
+                const bisaInputHasil = b.status === 'jadwal_fix';
+                const mapsUrl = b.koordinat_maps
+                    ? (b.koordinat_maps.includes('http') ? b.koordinat_maps : 'https://www.google.com/maps?q=' + b.koordinat_maps)
+                    : null;
+                const noWa = b.no_telepon ? b.no_telepon.replace(/^0/, '62').replace(/\D/g, '') : null;
+                const waUrl = noWa ? 'https://wa.me/' + noWa : null;
+
+                return `
+                <article class="tugas-card tugas-card-modern status-${b.status}">
+                    <section class="tugas-identity">
+                        <div class="tugas-nomor">#${b.nomor_berkas}</div>
+                        ${badgeStatus(b.status)}
+                        <div class="tugas-date-block">
+                            <span class="date-icon"></span>
+                            <strong>${formatDate(b.tanggal_fix || b.tanggal_diminta)}</strong>
+                            <small>Tgl Pemeriksaan</small>
+                        </div>
+                    </section>
+
+                    <section class="tugas-detail-panel">
+                        <div class="tugas-detail-row">
+                            <span>Pemohon</span><b>:</b><strong>${b.nama_pemohon}</strong>
+                        </div>
+                        <div class="tugas-detail-row">
+                            <span>No. HP</span><b>:</b><strong>${b.no_telepon || '-'}</strong>
+                        </div>
+                        <div class="tugas-detail-row">
+                            <span>Lokasi</span><b>:</b><strong>${b.nama_kecamatan}, ${b.nama_kelurahan}</strong>
+                        </div>
+                        <div class="tugas-detail-row">
+                            <span>Alamat</span><b>:</b><strong>${b.alamat_lokasi || '-'}</strong>
+                        </div>
+                        <div class="tugas-detail-row">
+                            <span>Catatan</span><b>:</b><strong>${b.catatan_lapangan || '-'}</strong>
+                        </div>
+                    </section>
+
+                    <section class="tugas-info-box">
+                        <h4>Info Berkas</h4>
+                        <div><span>Nomor Berkas</span><b>:</b><strong>${b.nomor_berkas}</strong></div>
+                        <div><span>Tanggal Berkas</span><b>:</b><strong>${formatDate(b.tanggal_berkas || b.created_at)}</strong></div>
+                        <div><span>Status Berkas</span><b>:</b><strong>${badgeLabel(b.status)}</strong></div>
+                        <div><span>Jadwal Ditetapkan</span><b>:</b><strong>${b.tanggal_fix ? formatDate(b.tanggal_fix) : '-'}</strong></div>
+                    </section>
+
+                    <section class="tugas-action-panel">
+                        <div class="action-panel-title">Tindak Lanjut Berkas</div>
+                        ${perluKonfirmasi ? `
+                        <button class="action-row action-confirm" onclick="openKonfirmasi(${b.id})">
+                            ${actionIcon('confirm')}<strong>Konfirmasi</strong><small>Tetapkan jadwal pemeriksaan</small>
+                        </button>
+                        <button class="action-row action-reschedule" onclick="openTolak(${b.id})">
+                            ${actionIcon('reschedule')}<strong>Ubah Jadwal</strong><small>Ubah tanggal pemeriksaan</small>
+                        </button>
+                        <button class="action-row action-reject" onclick="openTolakBerkas(${b.id})">
+                            ${actionIcon('reject')}<strong>Tolak Berkas</strong><small>Tolak permohonan berkas</small>
+                        </button>` : ''}
+                        ${bisaInputHasil ? `
+                        ${mapsUrl
+                        ? `<a href="${mapsUrl}" target="_blank" class="action-row action-location">${actionIcon('location')}<strong>Cek Lokasi</strong><small>Buka koordinat pemeriksaan</small></a>`
+                        : `<button class="action-row action-location" disabled>${actionIcon('location')}<strong>Cek Lokasi</strong><small>Koordinat belum tersedia</small></button>`}
+                        ${waUrl
+                        ? `<a href="${waUrl}" target="_blank" class="action-row action-contact">${actionIcon('contact')}<strong>Hubungi Pemohon</strong><small>Kirim pesan WhatsApp</small></a>`
+                        : `<button class="action-row action-contact" disabled>${actionIcon('contact')}<strong>Hubungi Pemohon</strong><small>No. HP belum tersedia</small></button>`}
+                        <button class="action-row action-result" onclick="goToInputHasil(${b.id}, '${b.nomor_berkas}')">
+                            ${actionIcon('result')}<strong>Input Hasil</strong><small>Simpan hasil pemeriksaan</small>
+                        </button>` : ''}
+                        ${!perluKonfirmasi && !bisaInputHasil && b.status !== 'rescheduled_by_petugas' && b.status !== 'selesai' && b.status !== 'dibatalkan' ? `
+                        <p class="action-note">Tidak ada aksi lanjutan untuk status ini.</p>` : ''}
+                        ${b.status === 'rescheduled_by_petugas' ? `<p class="action-note">Menunggu konfirmasi ulang dari pemohon.</p>` : ''}
+                        ${b.status === 'selesai' ? `<p class="action-note success">Pemeriksaan telah selesai.</p>` : ''}
+                        ${b.status === 'dibatalkan' ? `<p class="action-note">Permohonan dibatalkan oleh pemohon.</p>` : ''}
+                    </section>
+                </article>`;
+            }).join('');
+        }
+
+        function openKonfirmasi(id) {
+            selectedBookingId = id;
+            const b = allTugas.find(x => x.id === id);
+            document.getElementById('konfirmasi-detail').innerHTML = `
+                <div class="info-box">
+                    <div class="info-box-row"><span>Berkas</span><strong>${b.nomor_berkas}</strong></div>
+                    <div class="info-box-row"><span>Pemohon</span><strong>${b.nama_pemohon}</strong></div>
+                    <div class="info-box-row"><span>Lokasi</span><strong>${b.nama_kecamatan}, ${b.nama_kelurahan}</strong></div>
+                    <div class="info-box-row"><span>Tanggal</span><strong>${formatDate(b.tanggal_diminta)}</strong></div>
+                </div>`;
+            document.getElementById('konfirmasi-error').style.display = 'none';
+            document.getElementById('modal-konfirmasi').classList.add('show');
+        }
+
+        async function submitKonfirmasi() {
+            const errEl = document.getElementById('konfirmasi-error');
+            errEl.style.display = 'none';
+            try {
+                const res = await apiFetch('/api/petugas/konfirmasi/' + selectedBookingId, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                if (!res.ok) { errEl.textContent = data.message; errEl.style.display = 'block'; return; }
+                closeModal('modal-konfirmasi');
+                loadTugas();
+            } catch {
+                errEl.textContent = 'Terjadi kesalahan, coba lagi';
+                errEl.style.display = 'block';
+            }
+        }
+
+        function openTolak(id) {
+            selectedBookingId = id;
+            document.getElementById('tolak-tanggal').value = '';
+            document.getElementById('tolak-alasan').value = '';
+            document.getElementById('tolak-tanggal').min = today;
+            document.getElementById('tolak-error').style.display = 'none';
+            document.getElementById('modal-tolak').classList.add('show');
+        }
+
+        async function submitTolak() {
+            const tanggal_baru = document.getElementById('tolak-tanggal').value;
+            const alasan = document.getElementById('tolak-alasan').value.trim();
+            const errEl = document.getElementById('tolak-error');
+            errEl.style.display = 'none';
+            if (!tanggal_baru) { errEl.textContent = 'Tanggal baru wajib diisi'; errEl.style.display = 'block'; return; }
+            if (!alasan) { errEl.textContent = 'Alasan penggantian jadwal wajib diisi'; errEl.style.display = 'block'; return; }
+            try {
+                const res = await apiFetch('/api/petugas/tolak/' + selectedBookingId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tanggal_baru, alasan })
+                });
+                const data = await res.json();
+                if (!res.ok) { errEl.textContent = data.message; errEl.style.display = 'block'; return; }
+                closeModal('modal-tolak');
+                loadTugas();
+            } catch {
+                errEl.textContent = 'Terjadi kesalahan, coba lagi';
+                errEl.style.display = 'block';
+            }
+        }
+
+        function openTolakBerkas(id) {
+                selectedBookingId = id;
+                const b = allTugas.find(x => x.id === id);
+                document.getElementById('tolak-berkas-detail').innerHTML = `
+        <div class="info-box">
+            <div class="info-box-row"><span>Berkas</span><strong>${b.nomor_berkas}</strong></div>
+            <div class="info-box-row"><span>Pemohon</span><strong>${b.nama_pemohon}</strong></div>
+            <div class="info-box-row"><span>Lokasi</span><strong>${b.nama_kecamatan}, ${b.nama_kelurahan}</strong></div>
+            <div class="info-box-row"><span>Tgl Diminta</span><strong>${formatDate(b.tanggal_diminta)}</strong></div>
+        </div>`;
+                document.getElementById('tolak-berkas-alasan').value = '';
+                document.getElementById('tolak-berkas-error').style.display = 'none';
+                document.getElementById('modal-tolak-berkas').classList.add('show');
+            }
+
+            async function submitTolakBerkas() {
+                const alasan = document.getElementById('tolak-berkas-alasan').value.trim();
+                const errEl = document.getElementById('tolak-berkas-error');
+                errEl.style.display = 'none';
+
+                if (!alasan) {
+                    errEl.textContent = 'Alasan penolakan wajib diisi';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                try {
+                    const res = await apiFetch('/api/petugas/tolak-berkas/' + selectedBookingId, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ alasan })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        errEl.textContent = data.message;
+                        errEl.style.display = 'block';
+                        return;
+                    }
+                    closeModal('modal-tolak-berkas');
+                    loadTugas();
+                } catch {
+                    errEl.textContent = 'Terjadi kesalahan, coba lagi';
+                    errEl.style.display = 'block';
+                }
+            }
+
+        async function loadBerkasDropdown() {
+            try {
+                const res = await apiFetch('/api/petugas/tugas');
+                const data = await res.json();
+                const fixList = data.filter(b => b.status === 'jadwal_fix');
+                const sel = document.getElementById('hasil-berkas-select');
+                sel.innerHTML = '<option value="">-- Pilih Berkas (Jadwal Ditetapkan) --</option>';
+                fixList.forEach(b => {
+                    sel.innerHTML += '<option value="' + b.id + '" data-nomor="' + b.nomor_berkas + '" data-pemohon="' + b.nama_pemohon + '" data-lokasi="' + b.nama_kecamatan + ', ' + b.nama_kelurahan + '" data-tgl="' + b.tanggal_fix + '">' + b.nomor_berkas + ' - ' + b.nama_pemohon + '</option>';
+                });
+                if (fixList.length === 0) {
+                    sel.innerHTML = '<option value="">Tidak ada berkas dengan Jadwal Ditetapkan</option>';
+                }
+            } catch { console.error('Gagal load berkas'); }
+        }
+
+        function goToInputHasil(bookingId, nomorBerkas) {
+            showPage('hasil');
+            setTimeout(() => {
+                const sel = document.getElementById('hasil-berkas-select');
+                sel.value = bookingId;
+                onBerkasChange();
+            }, 300);
+        }
+
+        function onBerkasChange() {
+            const sel = document.getElementById('hasil-berkas-select');
+            const opt = sel.options[sel.selectedIndex];
+            const infoEl = document.getElementById('hasil-info');
+            const contentEl = document.getElementById('hasil-info-content');
+            if (!sel.value) { infoEl.style.display = 'none'; return; }
+            contentEl.innerHTML =
+                '<div class="info-box-row"><span>No. Berkas</span><strong>' + opt.dataset.nomor + '</strong></div>' +
+                '<div class="info-box-row"><span>Pemohon</span><strong>' + opt.dataset.pemohon + '</strong></div>' +
+                '<div class="info-box-row"><span>Lokasi</span><strong>' + opt.dataset.lokasi + '</strong></div>' +
+                '<div class="info-box-row"><span>Tgl Fix</span><strong>' + formatDate(opt.dataset.tgl) + '</strong></div>';
+            infoEl.style.display = 'block';
+        }
+
+        async function submitHasil() {
+            const bookingId = document.getElementById('hasil-berkas-select').value;
+            const errEl = document.getElementById('hasil-error');
+            const sucEl = document.getElementById('hasil-success');
+            errEl.style.display = 'none';
+            sucEl.style.display = 'none';
+            if (!bookingId) { errEl.textContent = 'Pilih berkas terlebih dahulu'; errEl.style.display = 'block'; return; }
+            const formData = new FormData();
+            const fotoLokasi = document.getElementById('foto_lokasi').files[0];
+            const fotoRisalah = document.getElementById('foto_risalah').files[0];
+            if (fotoLokasi) formData.append('foto_lokasi', fotoLokasi);
+            if (fotoRisalah) formData.append('foto_risalah', fotoRisalah);
+            formData.append('catatan_lapangan', document.getElementById('catatan_lapangan').value);
+            try {
+                const res = await fetch('/api/petugas/hasil/' + bookingId, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) { errEl.textContent = data.message; errEl.style.display = 'block'; return; }
+                sucEl.textContent = 'Hasil pemeriksaan berhasil disimpan!';
+                sucEl.style.display = 'block';
+                resetHasil();
+                setTimeout(() => { sucEl.style.display = 'none'; loadBerkasDropdown(); }, 2000);
+            } catch {
+                errEl.textContent = 'Terjadi kesalahan, coba lagi';
+                errEl.style.display = 'block';
+            }
+        }
+
+        function resetHasil() {
+            document.getElementById('hasil-berkas-select').value = '';
+            document.getElementById('foto_lokasi').value = '';
+            document.getElementById('foto_risalah').value = '';
+            document.getElementById('catatan_lapangan').value = '';
+            document.getElementById('hasil-info').style.display = 'none';
+            document.getElementById('hasil-error').style.display = 'none';
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        function logout() { localStorage.clear(); window.location.href = '/login-petugas'; }
+        function formatDate(d) {
+            if (!d) return '-';
+            return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+        function formatWaktu(d) {
+            if (!d) return '';
+            const diff = Date.now() - new Date(d).getTime();
+            const menit = Math.floor(diff / 60000);
+            const jam = Math.floor(diff / 3600000);
+            const hari = Math.floor(diff / 86400000);
+            if (menit < 1) return 'Baru saja';
+            if (menit < 60) return menit + ' menit lalu';
+            if (jam < 24) return jam + ' jam lalu';
+            if (hari < 7) return hari + ' hari lalu';
+            return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function stripHTML(value) {
+            return String(value || '').replace(/<[^>]*>/g, '');
+        }
+
+        function escapeHTML(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function badgeStatus(status) {
+            const label = {
+                pending: 'Menunggu Konfirmasi',
+                rescheduled_by_user: 'Jadwal Diubah Pemohon',
+                rescheduled_by_petugas: 'Jadwal Diubah Petugas',
+                jadwal_fix: 'Jadwal Ditetapkan',
+                selesai: 'Selesai',
+                ditolak: 'Ditolak',
+                dibatalkan: 'Dibatalkan'
+            };
+            return '<span class="badge badge-' + status + '">' + (label[status] || status) + '</span>';
+        }
+
+        function badgeLabel(status) {
+            const label = {
+                pending: 'Menunggu Konfirmasi',
+                rescheduled_by_user: 'Jadwal Diubah Pemohon',
+                rescheduled_by_petugas: 'Jadwal Diubah Petugas',
+                jadwal_fix: 'Jadwal Ditetapkan',
+                selesai: 'Selesai',
+                ditolak: 'Ditolak',
+                dibatalkan: 'Dibatalkan'
+            };
+            return label[status] || status || '-';
+        }
+
+        loadTugas();
+        loadNotifikasi();
+        setInterval(loadNotifikasi, 30000);
+    </script>
+</body>
+
+</html>
+

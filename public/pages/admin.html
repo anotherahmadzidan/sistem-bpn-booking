@@ -1,0 +1,1425 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - BPN Luwu Timur</title>
+    <link rel="stylesheet" href="/css/petugas.css">
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+
+<body class="dashboard admin-dashboard">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="brand-mark">
+                <img src="/img/logo-bpn.svg" alt="ATR BPN">
+                <div>
+                    <h2>ATR BPN</h2>
+                    <p>Kab. Luwu Timur</p>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-user">
+            <div>
+                <span>Login sebagai Admin</span>
+                <strong id="sidebar-nama">-</strong>
+            </div>
+            <div class="sidebar-user-shield" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <path d="m9 12 2 2 4-5"></path>
+                </svg>
+            </div>
+        </div>
+                <nav class="sidebar-nav">
+            <div class="nav-section-label">Main Menu</div>
+            <button class="nav-item active" onclick="showPage('dashboard')">
+                <span class="icon menu-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 11.5 12 4l9 7.5"></path>
+                        <path d="M5.5 10.5V20h13v-9.5"></path>
+                        <path d="M9.5 20v-6h5v6"></path>
+                    </svg>
+                </span>
+                Dashboard
+            </button>
+            <button class="nav-item" onclick="showPage('berkas')">
+                <span class="icon menu-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3.5 7.5h6l2 3h10v8.5a2 2 0 0 1-2 2h-16Z"></path>
+                        <path d="M3.5 7.5V5a2 2 0 0 1 2-2h4l2 4.5"></path>
+                    </svg>
+                </span>
+                Semua Berkas
+            </button>
+            <button class="nav-item" onclick="showPage('petugas')">
+                <span class="icon menu-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="9" cy="8" r="3.5"></circle>
+                        <path d="M3.5 20a5.5 5.5 0 0 1 11 0"></path>
+                        <path d="M17 11.5a3 3 0 0 0 0-6"></path>
+                        <path d="M18.5 20a4.5 4.5 0 0 0-3-4.25"></path>
+                    </svg>
+                </span>
+                Kelola Petugas
+            </button>
+            <button class="nav-item" onclick="showPage('kuota')">
+                <span class="icon menu-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M4 20V4"></path>
+                        <path d="M4 20h17"></path>
+                        <rect x="7" y="12" width="3.5" height="5"></rect>
+                        <rect x="12.5" y="8" width="3.5" height="9"></rect>
+                        <rect x="18" y="5" width="3.5" height="12"></rect>
+                    </svg>
+                </span>
+                Kelola Kuota
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <button class="btn btn-secondary btn-block admin-logout" onclick="logout()">
+                <span class="logout-symbol">-&gt;</span>
+                Keluar
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+        <!-- DASHBOARD -->
+        <div id="page-dashboard">
+            <div class="page-header">
+                <h1>Dashboard Admin</h1>
+                <div class="title-accent"></div>
+                <p>Ringkasan sistem booking BPN Luwu Timur</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card stat-blue">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H9l2 2h7.5A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5Z"></path></svg>
+                    </div>
+                    <div class="stat-copy">
+                    <div class="stat-label">Total Berkas</div>
+                    <div class="stat-value" id="stat-total">-</div>
+                    </div>
+                </div>
+                <div class="stat-card stat-orange">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path></svg>
+                    </div>
+                    <div class="stat-copy">
+                    <div class="stat-label">Menunggu Konfirmasi</div>
+                    <div class="stat-value" id="stat-pending">-</div>
+                    </div>
+                </div>
+                <div class="stat-card stat-pink">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v6h-6"></path><path d="M20 13a8 8 0 1 1-2.35-5.65"></path></svg>
+                    </div>
+                    <div class="stat-copy">
+                    <div class="stat-label">Jadwal Diubah Pemohon</div>
+                    <div class="stat-value" id="stat-rescheduled-user">-</div>
+                    </div>
+                </div>
+                <div class="stat-card stat-indigo">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v6h-6"></path><path d="M20 13a8 8 0 1 1-2.35-5.65"></path></svg>
+                    </div>
+                    <div class="stat-copy">
+                    <div class="stat-label">Jadwal Diubah Petugas</div>
+                    <div class="stat-value" id="stat-rescheduled-petugas">-</div>
+                    </div>
+                </div>
+                <div class="stat-card stat-sky">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect x="3.5" y="5" width="17" height="17" rx="2.5"></rect><path d="M3.5 10h17"></path></svg>
+                    </div>
+                    <div class="stat-copy">
+                    <div class="stat-label">Jadwal Ditetapkan</div>
+                    <div class="stat-value" id="stat-fix">-</div>
+                    </div>
+                </div>
+                <div class="stat-card stat-green">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>
+                    </div>
+                    <div class="stat-copy">
+                    <div class="stat-label">Selesai</div>
+                    <div class="stat-value" id="stat-selesai">-</div>
+                    </div>
+                </div>
+                <div class="stat-card stat-red">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>
+                    </div>
+                    <div class="stat-copy">
+                    <div class="stat-label">Ditolak</div>
+                    <div class="stat-value" id="stat-ditolak">-</div>
+                    </div>
+                </div>
+                <div class="stat-card stat-slate">
+                    <div class="stat-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 8l8 8"></path><path d="M16 8l-8 8"></path></svg>
+                    </div>
+                    <div class="stat-copy">
+                    <div class="stat-label">Dibatalkan</div>
+                    <div class="stat-value" id="stat-dibatalkan">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card dashboard-table-card">
+                <div class="card-header">
+                    <h3>Berkas Terbaru</h3>
+                    <button class="btn btn-primary btn-sm" onclick="showPage('berkas')">Lihat Semua <span>-&gt;</span></button>
+                </div>
+                <div class="card-body">
+                    <div class="table-wrap">
+                        <table>
+                            <colgroup>
+                                <col class="dash-col-berkas">
+                                <col class="dash-col-pemohon">
+                                <col class="dash-col-kecamatan">
+                                <col class="dash-col-kelurahan">
+                                <col class="dash-col-petugas">
+                                <col class="dash-col-date">
+                                <col class="dash-col-status">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>No. Berkas</th>
+                                    <th>Pemohon</th>
+                                    <th>Kecamatan</th>
+                                    <th>Kelurahan</th>
+                                    <th>Petugas</th>
+                                    <th>Tgl Peninjauan</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabel-dashboard">
+                                <tr>
+                                    <td colspan="7" class="loading"><span class="spinner"></span> Memuat...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEMUA BERKAS -->
+        <div id="page-berkas" style="display:none">
+            <div class="page-header">
+                <h1>Semua Berkas</h1>
+                <p>Monitor seluruh pengajuan pemeriksaan tanah</p>
+            </div>
+
+            <!-- Filter & Search -->
+            <div class="admin-berkas-filter">
+                <div class="admin-berkas-search">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m16.5 16.5 4 4"></path>
+                    </svg>
+                    <input type="text" id="search-berkas" placeholder="Cari nomor berkas / pemohon..."
+                        oninput="filterBerkas()">
+                </div>
+                <select id="filter-status" onchange="filterBerkas()"
+                    class="admin-berkas-status">
+                    <option value="">Semua Status</option>
+                    <option value="pending">Menunggu Konfirmasi</option>
+                    <option value="rescheduled_by_user">Jadwal Diubah Pemohon</option>
+                    <option value="rescheduled_by_petugas">Jadwal Diubah Petugas</option>
+                    <option value="jadwal_fix">Jadwal Ditetapkan</option>
+                    <option value="selesai">Selesai</option>
+                    <option value="ditolak">Ditolak</option>
+                    <option value="dibatalkan">Dibatalkan</option>
+                </select>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-wrap">
+                        <table>
+                            <colgroup>
+                                <col class="col-berkas">
+                                <col class="col-pemohon">
+                                <col class="col-kecamatan">
+                                <col class="col-kelurahan">
+                                <col class="col-petugas">
+                                <col class="col-date">
+                                <col class="col-date">
+                                <col class="col-reschedule">
+                                <col class="col-status">
+                                <col class="col-aksi">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>No. Berkas</th>
+                                    <th>Pemohon</th>
+                                    <th>Kecamatan</th>
+                                    <th>Kelurahan</th>
+                                    <th>Petugas</th>
+                                    <th>Tgl Diminta</th>
+                                    <th>Tgl Fix</th>
+                                    <th>Reschedule</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabel-berkas">
+                                <tr>
+                                    <td colspan="10" class="loading"><span class="spinner"></span> Memuat...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KELOLA PETUGAS -->
+        <div id="page-petugas" style="display:none">
+            <div class="page-header">
+                <h1>Kelola Petugas</h1>
+                <p>Tambah, edit, dan nonaktifkan akun petugas</p>
+            </div>
+            <div class="card" style="margin-bottom:16px">
+                <div class="card-header">
+                    <h3>Tambah Petugas Baru</h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>NIP</label>
+                            <input type="text" id="new-nip" placeholder="Nomor Induk Pegawai">
+                        </div>
+                        <div class="form-group">
+                            <label>Nama Lengkap</label>
+                            <input type="text" id="new-nama" placeholder="Nama lengkap petugas">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="new-email" placeholder="Email petugas">
+                        </div>
+                        <div class="form-group">
+                            <label>No. HP</label>
+                            <input type="text" id="new-hp" placeholder="No. HP petugas">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="new-password" placeholder="Password awal">
+                    </div>
+                    <div id="petugas-error" class="alert alert-error" style="display:none"></div>
+                    <div id="petugas-success" class="alert alert-success" style="display:none"></div>
+                    <button class="btn btn-primary" onclick="tambahPetugas()">+ Tambah Petugas</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Daftar Petugas</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>NIP</th>
+                                    <th>Nama</th>
+                                    <th>Email</th>
+                                    <th>No. HP</th>
+                                    <th>Status</th>
+                                    <th>Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabel-petugas">
+                                <tr>
+                                    <td colspan="6" class="loading"><span class="spinner"></span> Memuat...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KELOLA KUOTA -->
+        <div id="page-kuota" style="display:none">
+            <div class="page-header">
+                <h1>Kelola Kuota</h1>
+                <p>Atur batas slot pemeriksaan harian per kecamatan, kelurahan, dan petugas</p>
+            </div>
+
+            <!-- Tab kuota -->
+            <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid #e2e8f0;padding-bottom:0">
+                <button class="kuota-tab active" id="ktab-kecamatan" onclick="switchKuotaTab('kecamatan')">
+                    <span class="kuota-tab-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M4 10h16"></path>
+                            <path d="M5 10 12 4l7 6"></path>
+                            <path d="M6 10v9"></path>
+                            <path d="M10 10v9"></path>
+                            <path d="M14 10v9"></path>
+                            <path d="M18 10v9"></path>
+                            <path d="M3 19h18"></path>
+                        </svg>
+                    </span>
+                    Kecamatan
+                </button>
+                <button class="kuota-tab" id="ktab-kelurahan" onclick="switchKuotaTab('kelurahan')">
+                    <span class="kuota-tab-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3.5 11.5 12 4l8.5 7.5"></path>
+                            <path d="M5.5 10.5V20h13v-9.5"></path>
+                            <path d="M9 20v-5h6v5"></path>
+                        </svg>
+                    </span>
+                    Kelurahan
+                </button>
+                <button class="kuota-tab" id="ktab-petugas" onclick="switchKuotaTab('petugas')">
+                    <span class="kuota-tab-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="7.5" r="3.5"></circle>
+                            <path d="M5 21a7 7 0 0 1 14 0"></path>
+                            <path d="m9.5 14 2.5 2 2.5-2"></path>
+                        </svg>
+                    </span>
+                    Petugas
+                </button>
+            </div>
+
+            <!-- Panel Kecamatan -->
+            <div id="kpanel-kecamatan">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+                    <!-- Form set -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Set Kuota Kecamatan</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Kecamatan</label>
+                                <select id="kec-target"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tanggal</label>
+                                <input type="date" id="kec-tanggal">
+                            </div>
+                            <div class="form-group">
+                                <label>Kuota Maksimal</label>
+                                <input type="number" id="kec-max" value="10" min="1">
+                            </div>
+                            <div class="form-group quota-check-group">
+                                <label class="quota-check">
+                                    <input type="checkbox" id="kec-unlimited" onchange="toggleUnlimitedKuota('kecamatan')">
+                                    <span>Bebaskan Kuota</span>
+                                </label>
+                                <p class="quota-check-note">Jika aktif, kuota maksimal tidak dibatasi.</p>
+                            </div>
+                            <div id="kec-error" class="alert alert-error" style="display:none"></div>
+                            <div id="kec-success" class="alert alert-success" style="display:none"></div>
+                            <button class="btn btn-primary" onclick="simpanKuota('kecamatan')">Simpan Kuota</button>
+                        </div>
+                    </div>
+                    <!-- Daftar aktif -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Kuota Aktif</h3>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="date" id="kec-lihat-tanggal"
+                                    style="padding:6px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="lihatKuota('kecamatan')">Tampilkan</button>
+                            </div>
+                        </div>
+                        <div class="card-body" id="kec-result">
+                            <p style="color:#888;font-size:13px">Pilih tanggal untuk melihat kuota aktif.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Kelurahan -->
+            <div id="kpanel-kelurahan" style="display:none">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Set Kuota Kelurahan</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Filter Kecamatan</label>
+                                <select id="kel-filter-kec" onchange="filterKelurahanKuota()">
+                                    <option value="">-- Semua Kecamatan --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Kelurahan</label>
+                                <select id="kel-target"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tanggal</label>
+                                <input type="date" id="kel-tanggal">
+                            </div>
+                            <div class="form-group">
+                                <label>Kuota Maksimal</label>
+                                <input type="number" id="kel-max" value="10" min="1">
+                            </div>
+                            <div class="form-group quota-check-group">
+                                <label class="quota-check">
+                                    <input type="checkbox" id="kel-unlimited" onchange="toggleUnlimitedKuota('kelurahan')">
+                                    <span>Bebaskan Kuota</span>
+                                </label>
+                                <p class="quota-check-note">Jika aktif, kuota maksimal tidak dibatasi.</p>
+                            </div>
+                            <div id="kel-error" class="alert alert-error" style="display:none"></div>
+                            <div id="kel-success" class="alert alert-success" style="display:none"></div>
+                            <button class="btn btn-primary" onclick="simpanKuota('kelurahan')">Simpan Kuota</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Kuota Aktif</h3>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="date" id="kel-lihat-tanggal"
+                                    style="padding:6px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="lihatKuota('kelurahan')">Tampilkan</button>
+                            </div>
+                        </div>
+                        <div class="card-body" id="kel-result">
+                            <p style="color:#888;font-size:13px">Pilih tanggal untuk melihat kuota aktif.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Petugas -->
+            <div id="kpanel-petugas" style="display:none">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Set Kuota Petugas</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Petugas</label>
+                                <select id="pet-target"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tanggal</label>
+                                <input type="date" id="pet-tanggal">
+                            </div>
+                            <div class="form-group">
+                                <label>Kuota Maksimal</label>
+                                <input type="number" id="pet-max" value="10" min="1">
+                            </div>
+                            <div id="pet-kq-error" class="alert alert-error" style="display:none"></div>
+                            <div id="pet-kq-success" class="alert alert-success" style="display:none"></div>
+                            <button class="btn btn-primary" onclick="simpanKuota('petugas')">Simpan Kuota</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Kuota Aktif</h3>
+                            <div style="display:flex;gap:8px;align-items:center">
+                                <input type="date" id="pet-lihat-tanggal"
+                                    style="padding:6px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
+                                <button class="btn btn-secondary btn-sm"
+                                    onclick="lihatKuota('petugas')">Tampilkan</button>
+                            </div>
+                        </div>
+                        <div class="card-body" id="pet-result">
+                            <p style="color:#888;font-size:13px">Pilih tanggal untuk melihat kuota aktif.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL DETAIL BERKAS -->
+    <div class="modal-overlay" id="modal-detail">
+        <div class="modal" style="max-width:640px">
+            <div class="modal-header">
+                <h3>Detail Berkas</h3>
+                <button class="modal-close" onclick="closeModal('modal-detail')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-detail-body"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-detail')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL HAPUS BERKAS -->
+    <div class="modal-overlay" id="modal-hapus-berkas">
+        <div class="modal modal-danger-confirm">
+            <div class="modal-header">
+                <h3>Hapus Berkas Permanen</h3>
+                <button class="modal-close" onclick="closeModal('modal-hapus-berkas')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="danger-confirm-box">
+                    <strong>Perhatian: tindakan ini permanen.</strong>
+                    <p>Berkas, riwayat reschedule, hasil pemeriksaan, notifikasi terkait, dan file pemeriksaan akan dihapus dari sistem.</p>
+                </div>
+                <div class="delete-berkas-summary" id="delete-berkas-summary"></div>
+                <div class="form-group">
+                    <label>Ketik <strong>HAPUS</strong> untuk konfirmasi <span style="color:red">*</span></label>
+                    <input type="text" id="delete-berkas-confirm" placeholder="HAPUS" autocomplete="off"
+                        oninput="validateDeleteBerkasConfirm()">
+                </div>
+                <div id="delete-berkas-error" class="alert alert-error" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-hapus-berkas')">Batal</button>
+                <button class="btn btn-danger" id="btn-confirm-delete-berkas" onclick="submitHapusBerkas()" disabled>
+                    Hapus Permanen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT PETUGAS -->
+    <div class="modal-overlay" id="modal-edit-petugas">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Petugas</h3>
+                <button class="modal-close" onclick="closeModal('modal-edit-petugas')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-id">
+                <div class="form-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="edit-nama">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="edit-email">
+                </div>
+                <div class="form-group">
+                    <label>No. HP</label>
+                    <input type="text" id="edit-hp">
+                </div>
+                <div class="form-group">
+                    <label>Password Baru <span style="color:#888;font-size:12px">(kosongkan jika tidak
+                            diubah)</span></label>
+                    <input type="password" id="edit-password" placeholder="Password baru">
+                </div>
+                <div id="edit-error" class="alert alert-error" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-edit-petugas')">Batal</button>
+                <button class="btn btn-primary" onclick="submitEditPetugas()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const nama = localStorage.getItem('nama');
+        const role = localStorage.getItem('role');
+
+        if (!token || role !== 'admin') {
+            localStorage.clear();
+            window.location.href = '/login-petugas';
+        }
+
+        document.getElementById('sidebar-nama').textContent = nama;
+
+        let allBerkas = [];
+        let allPetugas = [];
+        let wilayahData = { kecamatan: [], kelurahan: [] };
+        let selectedDeleteBerkas = null;
+
+        // ============================================================
+        // NAVIGASI
+        // ============================================================
+        function showPage(page) {
+            ['dashboard', 'berkas', 'petugas', 'kuota'].forEach(p => {
+                document.getElementById('page-' + p).style.display = p === page ? 'block' : 'none';
+            });
+            document.querySelectorAll('.nav-item').forEach((el, i) => {
+                el.classList.toggle('active', i === ['dashboard', 'berkas', 'petugas', 'kuota'].indexOf(page));
+            });
+            if (page === 'dashboard') loadDashboard();
+            if (page === 'berkas') loadBerkas();
+            if (page === 'petugas') loadPetugas();
+            if (page === 'kuota') loadWilayahKuota();
+        }
+
+        // ============================================================
+        // API HELPER
+        // ============================================================
+        async function apiFetch(url, options = {}) {
+            const res = await fetch(url, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token,
+                    ...(options.headers || {})
+                }
+            });
+            if (res.status === 401) { logout(); return null; }
+            return res;
+        }
+
+        // ============================================================
+        // DASHBOARD
+        // ============================================================
+        async function loadDashboard() {
+            try {
+                const resBerkas = await apiFetch('/api/admin/bookings');
+                allBerkas = await resBerkas.json();
+
+                document.getElementById('stat-total').textContent = allBerkas.length;
+                document.getElementById('stat-pending').textContent =
+                    allBerkas.filter(b => b.status === 'pending').length;
+                document.getElementById('stat-rescheduled-user').textContent =
+                    allBerkas.filter(b => b.status === 'rescheduled_by_user').length;
+                document.getElementById('stat-rescheduled-petugas').textContent =
+                    allBerkas.filter(b => b.status === 'rescheduled_by_petugas').length;
+                document.getElementById('stat-fix').textContent =
+                    allBerkas.filter(b => b.status === 'jadwal_fix').length;
+                document.getElementById('stat-selesai').textContent =
+                    allBerkas.filter(b => b.status === 'selesai').length;
+                document.getElementById('stat-ditolak').textContent =
+                    allBerkas.filter(b => b.status === 'ditolak').length;
+                document.getElementById('stat-dibatalkan').textContent =
+                    allBerkas.filter(b => b.status === 'dibatalkan').length;
+
+                const tbody = document.getElementById('tabel-dashboard');
+                const recent = allBerkas.slice(0, 8);
+                if (recent.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+            ${adminIcon('emptyFile', 'empty-icon empty-icon-svg')}<p>Belum ada berkas</p></div></td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = recent.map(b => `
+          <tr>
+            <td><strong>${b.nomor_berkas}</strong></td>
+            <td>${b.nama_pemohon}</td>
+            <td>${b.nama_kecamatan}</td>
+            <td>${b.nama_kelurahan}</td>
+            <td>${b.nama_petugas}</td>
+            <td>${formatDate(b.tanggal_diminta)}</td>
+            <td>${badgeStatus(b.status)}</td>
+          </tr>`).join('');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // ============================================================
+        // SEMUA BERKAS
+        // ============================================================
+        async function loadBerkas() {
+            const tbody = document.getElementById('tabel-berkas');
+            try {
+                const res = await apiFetch('/api/admin/bookings');
+                allBerkas = await res.json();
+                renderBerkas(allBerkas);
+            } catch {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:red">Gagal memuat data</td></tr>`;
+            }
+        }
+
+        function filterBerkas() {
+            const q = document.getElementById('search-berkas').value.toLowerCase();
+            const status = document.getElementById('filter-status').value;
+            let filtered = allBerkas;
+            if (q) filtered = filtered.filter(b =>
+                b.nomor_berkas.toLowerCase().includes(q) ||
+                b.nama_pemohon.toLowerCase().includes(q)
+            );
+            if (status) filtered = filtered.filter(b => b.status === status);
+            renderBerkas(filtered);
+        }
+
+        function renderBerkas(data) {
+            const tbody = document.getElementById('tabel-berkas');
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">
+          ${adminIcon('emptyFile', 'empty-icon empty-icon-svg')}<p>Tidak ada data</p></div></td></tr>`;
+                return;
+            }
+            tbody.innerHTML = data.map(b => `
+        <tr>
+          <td><strong>${b.nomor_berkas}</strong></td>
+          <td>${b.nama_pemohon}</td>
+          <td>${b.nama_kecamatan}</td>
+          <td>${b.nama_kelurahan}</td>
+          <td>${b.nama_petugas}</td>
+          <td>${formatDate(b.tanggal_diminta)}</td>
+          <td>${b.tanggal_fix ? formatDate(b.tanggal_fix) : '<span style="color:#aaa">-</span>'}</td>
+          <td style="text-align:center">${b.reschedule_count}x</td>
+          <td>${badgeStatus(b.status)}</td>
+          <td class="table-actions">
+            <button class="btn btn-secondary btn-sm" onclick="lihatDetail(${b.id})">Detail</button>
+            <button class="btn btn-danger btn-sm" onclick="openHapusBerkas(${b.id})">Hapus</button>
+          </td>
+        </tr>`).join('');
+        }
+
+        function formatDateTime(d) {
+            if (!d) return '-';
+            return new Date(d).toLocaleDateString('id-ID', {
+                day: '2-digit', month: 'long', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        async function lihatDetail(id) {
+            const body = document.getElementById('modal-detail-body');
+            body.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat detail...</div>';
+            document.getElementById('modal-detail').classList.add('show');
+
+            try {
+                const res = await apiFetch('/api/admin/berkas/' + id);
+                const data = await res.json();
+                const b = data.booking;
+
+                body.innerHTML = `
+        <!-- INFO BERKAS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">
+            ${detailRow('No. Berkas', '<strong>' + b.nomor_berkas + '</strong>')}
+            ${detailRow('Tgl Berkas', formatDate(b.tanggal_berkas))}
+            ${detailRow('Nama Pemohon', b.nama_pemohon)}
+            ${detailRow('No. Telepon', b.no_telepon)}
+            ${detailRow('Email', b.email_user)}
+            ${detailRow('Kecamatan', b.nama_kecamatan)}
+            ${detailRow('Kelurahan', b.nama_kelurahan)}
+            ${detailRow('Petugas', b.nama_petugas + '<br><span style="font-size:11px;color:#888">NIP: ' + b.nip + '</span>')}
+            ${detailRow('Tgl Diminta', formatDate(b.tanggal_diminta))}
+            ${detailRow('Tgl Fix', b.tanggal_fix ? formatDate(b.tanggal_fix) : '-')}
+            ${detailRow('Reschedule', b.reschedule_count + 'x')}
+            ${detailRow('Status', badgeStatus(b.status))}
+        </div>
+
+        ${b.alamat_lokasi ? `
+        <div style="margin-bottom:24px">
+            <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:6px">Alamat Lokasi</div>
+            <div style="background:#f8fafc;border-radius:8px;padding:10px 14px;font-size:13px;color:#334155">${b.alamat_lokasi}</div>
+            ${b.koordinat_maps ? `<a href="https://www.google.com/maps?q=${b.koordinat_maps}" target="_blank" 
+                style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#2e86c1;text-decoration:none">
+                ${adminIcon('mapPin')} Buka Google Maps <span aria-hidden="true">-&gt;</span></a>` : ''}
+        </div>` : ''}
+
+        <!-- TIMELINE -->
+        <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:14px;letter-spacing:0.06em">
+            Alur & Riwayat Berkas
+        </div>
+        <div class="timeline-wrap">
+
+            <!-- Booking dibuat -->
+            <div class="timeline-item tl-created">
+                <div class="tl-dot"></div>
+                <div class="tl-content">
+                    <div class="tl-title">Permohonan Diajukan</div>
+                    <div class="tl-time">${formatDateTime(b.created_at)}</div>
+                    <div class="tl-desc">Pemohon <strong>${b.nama_pemohon}</strong> mengajukan permohonan pemeriksaan tanah kepada petugas <strong>${b.nama_petugas}</strong>.</div>
+                </div>
+            </div>
+
+            <!-- Reschedule log -->
+            ${data.reschedule_log.map(r => {
+                    const isDitolak = r.alasan && r.alasan.startsWith('[DITOLAK]');
+                    const isDibatalkan = r.alasan && r.alasan.startsWith('[DIBATALKAN]');
+                    const alasan = r.alasan ? r.alasan.replace('[DITOLAK] ', '').replace('[DIBATALKAN] ', '') : null;
+                    if (isDitolak) return `
+                    <div class="timeline-item tl-danger">
+                        <div class="tl-dot"></div>
+                        <div class="tl-content">
+                            <div class="tl-title">Ditolak</div>
+                            <div class="tl-time">${formatDateTime(r.created_at)}</div>
+                            ${alasan ? `<div class="tl-desc">Alasan: <strong>${escapeHTML(alasan)}</strong></div>` : ''}
+                        </div>
+                    </div>`;
+                    if (isDibatalkan) return `
+                    <div class="timeline-item tl-muted">
+                        <div class="tl-dot"></div>
+                        <div class="tl-content">
+                            <div class="tl-title">Dibatalkan Pemohon</div>
+                            <div class="tl-time">${formatDateTime(r.created_at)}</div>
+                            ${alasan ? `<div class="tl-desc">Alasan: <strong>${escapeHTML(alasan)}</strong></div>` : ''}
+                        </div>
+                    </div>`;
+                    return `
+                    <div class="timeline-item tl-${r.diminta_oleh === 'user' ? 'user' : 'petugas'}">
+                        <div class="tl-dot"></div>
+                        <div class="tl-content">
+                            <div class="tl-title">${r.diminta_oleh === 'user' ? 'Jadwal Diubah Pemohon' : 'Jadwal Diubah Petugas'}</div>
+                            <div class="tl-time">${formatDateTime(r.created_at)}</div>
+                            <div class="tl-desc">
+                                Dari <strong>${formatDate(r.tanggal_lama)}</strong> -&gt; <strong>${formatDate(r.tanggal_baru)}</strong>
+                                ${alasan ? '<br>Alasan: ' + escapeHTML(alasan) : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('')}
+
+            <!-- Status saat ini -->
+            ${b.status === 'jadwal_fix' ? `
+            <div class="timeline-item tl-info">
+                <div class="tl-dot"></div>
+                <div class="tl-content">
+                    <div class="tl-title">Jadwal Ditetapkan</div>
+                    <div class="tl-time">${formatDate(b.tanggal_fix)}</div>
+                    <div class="tl-desc">Jadwal pemeriksaan telah fix. Petugas akan melakukan peninjauan.</div>
+                </div>
+            </div>` : ''}
+
+            <!-- Hasil pemeriksaan -->
+            ${data.hasil ? `
+            <div class="timeline-item tl-success">
+                <div class="tl-dot"></div>
+                <div class="tl-content">
+                    <div class="tl-title">Selesai</div>
+                    <div class="tl-time">${formatDateTime(data.hasil.created_at)}</div>
+                    ${data.hasil.catatan_lapangan ? `<div class="tl-desc">Catatan: ${data.hasil.catatan_lapangan}</div>` : ''}
+                    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+                        ${data.hasil.foto_lokasi ? `<a href="/uploads/${data.hasil.foto_lokasi}" target="_blank" 
+                            style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#2e86c1;text-decoration:none">${adminIcon('image')} Foto Lokasi</a>` : ''}
+                        ${data.hasil.foto_risalah ? `<a href="/uploads/${data.hasil.foto_risalah}" target="_blank"
+                            style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#2e86c1;text-decoration:none">${adminIcon('document')} Foto Risalah</a>` : ''}
+                    </div>
+                </div>
+            </div>` : ''}
+
+            <!-- Status ditolak final -->
+            ${b.status === 'ditolak' ? `
+            <div class="timeline-item tl-danger">
+                <div class="tl-dot"></div>
+                <div class="tl-content">
+                    <div class="tl-title">Ditolak</div>
+                    <div class="tl-time">${formatDateTime(b.updated_at)}</div>
+                </div>
+            </div>` : ''}
+
+            ${b.status === 'dibatalkan' ? `
+            <div class="timeline-item tl-muted">
+                <div class="tl-dot"></div>
+                <div class="tl-content">
+                    <div class="tl-title">Dibatalkan</div>
+                    <div class="tl-time">${formatDateTime(b.updated_at)}</div>
+                    <div class="tl-desc">Permohonan dibatalkan oleh pemohon.</div>
+                </div>
+            </div>` : ''}
+
+        </div>`;
+            } catch (err) {
+                body.innerHTML = '<div class="alert alert-error">Gagal memuat detail berkas</div>';
+            }
+        }
+
+        function detailRow(label, value) {
+            return `<div>
+        <div style="font-size:12px;color:#888;margin-bottom:2px">${label}</div>
+        <div style="font-size:14px;font-weight:500">${value}</div>
+      </div>`;
+        }
+
+        function openHapusBerkas(id) {
+            const berkas = allBerkas.find(b => b.id === id);
+            selectedDeleteBerkas = berkas || { id, nomor_berkas: '-', nama_pemohon: '-' };
+
+            document.getElementById('delete-berkas-summary').innerHTML = `
+                <div><span>No. Berkas</span><strong>${selectedDeleteBerkas.nomor_berkas || '-'}</strong></div>
+                <div><span>Pemohon</span><strong>${selectedDeleteBerkas.nama_pemohon || '-'}</strong></div>
+                <div><span>Status</span>${selectedDeleteBerkas.status ? badgeStatus(selectedDeleteBerkas.status) : '-'}</div>
+            `;
+            document.getElementById('delete-berkas-confirm').value = '';
+            document.getElementById('delete-berkas-error').style.display = 'none';
+            document.getElementById('btn-confirm-delete-berkas').disabled = true;
+            document.getElementById('modal-hapus-berkas').classList.add('show');
+        }
+
+        function validateDeleteBerkasConfirm() {
+            const value = document.getElementById('delete-berkas-confirm').value;
+            document.getElementById('btn-confirm-delete-berkas').disabled = value !== 'HAPUS';
+        }
+
+        async function submitHapusBerkas() {
+            const errEl = document.getElementById('delete-berkas-error');
+            const btn = document.getElementById('btn-confirm-delete-berkas');
+            const confirmation = document.getElementById('delete-berkas-confirm').value;
+
+            errEl.style.display = 'none';
+            if (!selectedDeleteBerkas || confirmation !== 'HAPUS') {
+                errEl.textContent = 'Ketik HAPUS dengan huruf besar untuk menghapus berkas.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Menghapus...';
+            try {
+                const res = await apiFetch(`/api/admin/berkas/${selectedDeleteBerkas.id}`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ confirmation })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errEl.textContent = data.message || 'Gagal menghapus berkas';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                closeModal('modal-hapus-berkas');
+                closeModal('modal-detail');
+                selectedDeleteBerkas = null;
+                await loadBerkas();
+                await loadDashboard();
+            } catch {
+                errEl.textContent = 'Terjadi kesalahan saat menghapus berkas';
+                errEl.style.display = 'block';
+            } finally {
+                btn.textContent = 'Hapus Permanen';
+                validateDeleteBerkasConfirm();
+            }
+        }
+
+        // ============================================================
+        // KELOLA PETUGAS
+        // ============================================================
+        async function loadPetugas() {
+            const tbody = document.getElementById('tabel-petugas');
+            try {
+                const res = await apiFetch('/api/admin/petugas');
+                allPetugas = await res.json();
+
+                if (allPetugas.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
+            ${adminIcon('users', 'empty-icon empty-icon-svg')}<p>Belum ada petugas</p></div></td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = allPetugas.map(p => `
+          <tr>
+            <td>${p.nip}</td>
+            <td><strong>${p.nama_lengkap}</strong></td>
+            <td>${p.email}</td>
+            <td>${p.no_hp}</td>
+            <td>
+              <span class="badge ${p.is_active ? 'badge-confirmed' : 'badge-ditolak'}">
+                ${p.is_active ? 'Aktif' : 'Nonaktif'}
+              </span>
+            </td>
+            <td style="display:flex;gap:6px;flex-wrap:wrap">
+  <button class="btn btn-secondary btn-sm" onclick="openEditPetugas(${p.id})">Edit</button>
+  <button class="btn btn-sm ${p.is_active ? 'btn-danger' : 'btn-success'}"
+    onclick="togglePetugas(${p.id}, ${p.is_active})">
+    ${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+  </button>
+  <button class="btn btn-sm" 
+    style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5"
+    onclick="hapusPetugas(${p.id}, '${p.nama_lengkap}')">
+    ${adminIcon('trash', 'btn-icon')} Hapus
+  </button>
+</td>
+          </tr>`).join('');
+            } catch {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:red">Gagal memuat data</td></tr>`;
+            }
+        }
+
+        async function tambahPetugas() {
+            const nip = document.getElementById('new-nip').value.trim();
+            const nama_lengkap = document.getElementById('new-nama').value.trim();
+            const email = document.getElementById('new-email').value.trim();
+            const no_hp = document.getElementById('new-hp').value.trim();
+            const password = document.getElementById('new-password').value;
+            const errEl = document.getElementById('petugas-error');
+            const sucEl = document.getElementById('petugas-success');
+            errEl.style.display = 'none';
+            sucEl.style.display = 'none';
+
+            if (!nip || !nama_lengkap || !email || !no_hp || !password) {
+                errEl.textContent = 'Semua field wajib diisi';
+                errEl.style.display = 'block';
+                return;
+            }
+            try {
+                const res = await apiFetch('/api/admin/petugas', {
+                    method: 'POST',
+                    body: JSON.stringify({ nip, nama_lengkap, email, no_hp, password })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errEl.textContent = data.message;
+                    errEl.style.display = 'block';
+                    return;
+                }
+                sucEl.textContent = 'Petugas berhasil ditambahkan';
+                sucEl.style.display = 'block';
+                ['new-nip', 'new-nama', 'new-email', 'new-hp', 'new-password']
+                    .forEach(id => document.getElementById(id).value = '');
+                loadPetugas();
+            } catch {
+                errEl.textContent = 'Terjadi kesalahan';
+                errEl.style.display = 'block';
+            }
+        }
+
+        function openEditPetugas(id) {
+            const p = allPetugas.find(x => x.id === id);
+            if (!p) return;
+            document.getElementById('edit-id').value = p.id;
+            document.getElementById('edit-nama').value = p.nama_lengkap;
+            document.getElementById('edit-email').value = p.email;
+            document.getElementById('edit-hp').value = p.no_hp;
+            document.getElementById('edit-password').value = '';
+            document.getElementById('edit-error').style.display = 'none';
+            document.getElementById('modal-edit-petugas').classList.add('show');
+        }
+
+        async function submitEditPetugas() {
+            const id = document.getElementById('edit-id').value;
+            const nama_lengkap = document.getElementById('edit-nama').value.trim();
+            const email = document.getElementById('edit-email').value.trim();
+            const no_hp = document.getElementById('edit-hp').value.trim();
+            const password = document.getElementById('edit-password').value;
+            const errEl = document.getElementById('edit-error');
+            errEl.style.display = 'none';
+
+            try {
+                const res = await apiFetch(`/api/admin/petugas/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ nama_lengkap, email, no_hp, password })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errEl.textContent = data.message;
+                    errEl.style.display = 'block';
+                    return;
+                }
+                closeModal('modal-edit-petugas');
+                loadPetugas();
+            } catch {
+                errEl.textContent = 'Terjadi kesalahan';
+                errEl.style.display = 'block';
+            }
+        }
+
+        async function togglePetugas(id, isActive) {
+            const konfirm = confirm(isActive
+                ? 'Nonaktifkan petugas ini? Petugas tidak bisa login.'
+                : 'Aktifkan kembali petugas ini?');
+            if (!konfirm) return;
+            try {
+                await apiFetch(`/api/admin/petugas/${id}/toggle`, { method: 'PATCH' });
+                loadPetugas();
+            } catch {
+                alert('Gagal mengubah status petugas');
+            }
+        }
+
+        async function hapusPetugas(id, nama) {
+            const konfirm = confirm(
+                `Hapus petugas "${nama}" secara permanen?\n\nPetugas tidak dapat dihapus jika masih memiliki berkas aktif.`
+            );
+            if (!konfirm) return;
+            try {
+                const res = await apiFetch(`/api/admin/petugas/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) {
+                    alert('Gagal: ' + data.message);
+                    return;
+                }
+                loadPetugas();
+            } catch {
+                alert('Terjadi kesalahan saat menghapus petugas');
+            }
+        }
+
+        // ============================================================
+        // KELOLA KUOTA
+        // ============================================================
+        async function loadWilayahKuota() {
+            try {
+                const res = await fetch('/api/admin/wilayah');
+                wilayahData = await res.json();
+                const resPet = await apiFetch('/api/admin/petugas');
+                allPetugas = await resPet.json();
+
+                // Isi dropdown kecamatan
+                const selKec = document.getElementById('kec-target');
+                selKec.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
+                wilayahData.kecamatan.forEach(k => {
+                    selKec.innerHTML += `<option value="${k.id}">${k.nama_kecamatan}</option>`;
+                });
+
+                // Isi filter kecamatan untuk kelurahan
+                const selFilterKec = document.getElementById('kel-filter-kec');
+                selFilterKec.innerHTML = '<option value="">-- Semua Kecamatan --</option>';
+                wilayahData.kecamatan.forEach(k => {
+                    selFilterKec.innerHTML += `<option value="${k.id}">${k.nama_kecamatan}</option>`;
+                });
+
+                // Isi dropdown kelurahan (semua)
+                filterKelurahanKuota();
+
+                // Isi dropdown petugas
+                const selPet = document.getElementById('pet-target');
+                selPet.innerHTML = '<option value="">-- Pilih Petugas --</option>';
+                allPetugas.filter(p => p.is_active).forEach(p => {
+                    selPet.innerHTML += `<option value="${p.id}">${p.nama_lengkap} (${p.nip})</option>`;
+                });
+
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('kec-lihat-tanggal').value = today;
+                document.getElementById('kel-lihat-tanggal').value = today;
+                document.getElementById('pet-lihat-tanggal').value = today;
+
+                // Auto load kuota hari ini untuk tab yang aktif
+                lihatKuota('kecamatan');
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function filterKelurahanKuota() {
+            const kecId = document.getElementById('kel-filter-kec').value;
+            const sel = document.getElementById('kel-target');
+            sel.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+            const filtered = kecId
+                ? wilayahData.kelurahan.filter(k => k.kecamatan_id == kecId)
+                : wilayahData.kelurahan;
+            filtered.forEach(k => {
+                sel.innerHTML += `<option value="${k.id}">${k.nama_kelurahan}</option>`;
+            });
+        }
+
+        function switchKuotaTab(tab) {
+            ['kecamatan', 'kelurahan', 'petugas'].forEach(t => {
+                document.getElementById('kpanel-' + t).style.display = t === tab ? 'block' : 'none';
+                document.getElementById('ktab-' + t).classList.toggle('active', t === tab);
+            });
+        }
+
+        async function simpanKuota(tipe) {
+            const map = {
+                kecamatan: { id: 'kec-target', tgl: 'kec-tanggal', max: 'kec-max', unl: 'kec-unlimited', err: 'kec-error', suc: 'kec-success' },
+                kelurahan: { id: 'kel-target', tgl: 'kel-tanggal', max: 'kel-max', unl: 'kel-unlimited', err: 'kel-error', suc: 'kel-success' },
+                petugas: { id: 'pet-target', tgl: 'pet-tanggal', max: 'pet-max', unl: null, err: 'pet-kq-error', suc: 'pet-kq-success' },
+            };
+            const m = map[tipe];
+            const id = document.getElementById(m.id).value;
+            const tanggal = document.getElementById(m.tgl).value;
+            const kuota_max = parseInt(document.getElementById(m.max).value);
+            const is_unlimited = m.unl ? (document.getElementById(m.unl).checked ? 1 : 0) : 0;
+            const errEl = document.getElementById(m.err);
+            const sucEl = document.getElementById(m.suc);
+            errEl.style.display = 'none';
+            sucEl.style.display = 'none';
+
+            if (!id || !tanggal) {
+                errEl.textContent = 'Pilih target dan tanggal terlebih dahulu';
+                errEl.style.display = 'block';
+                return;
+            }
+            try {
+                const res = await apiFetch('/api/admin/kuota', {
+                    method: 'POST',
+                    body: JSON.stringify({ tipe, id, tanggal, kuota_max, is_unlimited })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    errEl.textContent = data.message;
+                    errEl.style.display = 'block';
+                    return;
+                }
+                sucEl.textContent = 'Kuota berhasil disimpan';
+                sucEl.style.display = 'block';
+                // Auto refresh tampilan kuota aktif
+                lihatKuota(tipe);
+            } catch {
+                errEl.textContent = 'Terjadi kesalahan';
+                errEl.style.display = 'block';
+            }
+        }
+
+        function toggleUnlimitedKuota(tipe) {
+            const map = {
+                kecamatan: { max: 'kec-max', unl: 'kec-unlimited' },
+                kelurahan: { max: 'kel-max', unl: 'kel-unlimited' },
+            };
+            const m = map[tipe];
+            if (!m) return;
+
+            const maxEl = document.getElementById(m.max);
+            const unlimitedEl = document.getElementById(m.unl);
+            const isUnlimited = unlimitedEl.checked;
+
+            maxEl.disabled = isUnlimited;
+            maxEl.classList.toggle('input-disabled', isUnlimited);
+            if (isUnlimited) maxEl.value = '';
+            if (!isUnlimited && !maxEl.value) maxEl.value = '10';
+        }
+
+        async function lihatKuota(tipe) {
+            const tglMap = { kecamatan: 'kec-lihat-tanggal', kelurahan: 'kel-lihat-tanggal', petugas: 'pet-lihat-tanggal' };
+            const resMap = { kecamatan: 'kec-result', kelurahan: 'kel-result', petugas: 'pet-result' };
+            const tanggal = document.getElementById(tglMap[tipe]).value;
+            const el = document.getElementById(resMap[tipe]);
+
+            if (!tanggal) {
+                el.innerHTML = '<p style="color:#888;font-size:13px">Pilih tanggal terlebih dahulu.</p>';
+                return;
+            }
+            el.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat...</div>';
+            try {
+                const res = await apiFetch(`/api/admin/kuota?tanggal=${tanggal}`);
+                const data = await res.json();
+
+                let items = [];
+                if (tipe === 'kecamatan') items = data.kecamatan;
+                else if (tipe === 'kelurahan') items = data.kelurahan;
+                else if (tipe === 'petugas') items = data.petugas;
+
+                if (items.length === 0) {
+                    const tglEl = { kecamatan: 'kec-lihat-tanggal', kelurahan: 'kel-lihat-tanggal', petugas: 'pet-lihat-tanggal' };
+                    const tgl = document.getElementById(tglEl[tipe]).value;
+                    const isToday = tgl === new Date().toISOString().split('T')[0];
+                    el.innerHTML = `<div class="empty-state">
+        ${adminIcon('checkCircle', 'empty-icon empty-icon-svg')}
+        <p style="font-size:13px">
+            ${isToday
+                            ? 'Tidak ada pengaturan kuota khusus hari ini.<br>Kuota default <strong>10 slot</strong> berlaku untuk semua ' + tipe + '.'
+                            : 'Belum ada kuota diset untuk tanggal ini.<br>Default: <strong>10 slot</strong> per ' + tipe + '.'}
+        </p>
+    </div>`;
+                    return;
+                }
+
+                el.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">` +
+                    items.map(item => {
+                        const nama = item.nama_kecamatan || item.nama_kelurahan || item.nama_lengkap;
+                        const unlimited = item.is_unlimited;
+                        const terisi = item.terisi;
+                        const max = item.kuota_max;
+                        const pct = unlimited ? 0 : Math.round((terisi / max) * 100);
+                        const barColor = unlimited ? '#10B981' : pct >= 100 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#10B981';
+                        const textColor = unlimited ? '#059669' : pct >= 100 ? '#DC2626' : pct >= 70 ? '#D97706' : '#059669';
+                        const sub = tipe === 'kelurahan' ? `<span style="font-size:11px;color:#888">${item.nama_kecamatan || ''}</span>` : '';
+
+                        return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:#1e293b">${nama}</div>
+                            ${sub}
+                        </div>
+                        <span style="font-size:12px;font-weight:600;color:${textColor};background:${barColor}20;padding:2px 8px;border-radius:99px">
+                            ${unlimited ? 'Unlimited' : `${terisi}/${max}`}
+                        </span>
+                    </div>
+                    ${!unlimited ? `
+                    <div style="height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden">
+                        <div style="height:100%;width:${Math.min(pct, 100)}%;background:${barColor};border-radius:99px;transition:width 0.3s"></div>
+                    </div>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:4px">${terisi} slot terisi dari ${max} slot</div>
+                    ` : `<div style="font-size:11px;color:#059669">Kuota tidak dibatasi</div>`}
+                </div>`;
+                    }).join('') + `</div>`;
+            } catch {
+                el.innerHTML = '<div class="alert alert-error">Gagal memuat kuota</div>';
+            }
+        }
+
+        function switchKuotaTab(tab) {
+            ['kecamatan', 'kelurahan', 'petugas'].forEach(t => {
+                document.getElementById('kpanel-' + t).style.display = t === tab ? 'block' : 'none';
+                document.getElementById('ktab-' + t).classList.toggle('active', t === tab);
+            });
+            lihatKuota(tab); // auto refresh saat ganti tab
+        }
+
+        // ============================================================
+        // HELPERS
+        // ============================================================
+        function adminIcon(name, className = 'admin-inline-icon') {
+            const icons = {
+                emptyFile: '<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6Z"></path><path d="M15 3v4h4"></path><path d="M9 12h6"></path><path d="M9 16h4"></path></svg>',
+                mapPin: '<svg viewBox="0 0 24 24"><path d="M12 21s7-5.4 7-12a7 7 0 0 0-14 0c0 6.6 7 12 7 12Z"></path><circle cx="12" cy="9" r="2.5"></circle></svg>',
+                image: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="10" r="1.5"></circle><path d="m21 15-4.5-4.5L9 18"></path></svg>',
+                document: '<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6Z"></path><path d="M15 3v4h4"></path><path d="M9 13h6"></path><path d="M9 17h5"></path></svg>',
+                users: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 20a5.5 5.5 0 0 1 11 0"></path><path d="M17 11.5a3 3 0 0 0 0-6"></path><path d="M18.5 20a4.5 4.5 0 0 0-3-4.25"></path></svg>',
+                trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M6 7l1 14h10l1-14"></path><path d="M9 7V4h6v3"></path></svg>',
+                checkCircle: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>'
+            };
+            return `<span class="${className}" aria-hidden="true">${icons[name] || icons.emptyFile}</span>`;
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        function logout() { localStorage.clear(); window.location.href = '/login-petugas'; }
+        function formatDate(d) {
+            if (!d) return '-';
+            return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+        function formatWaktu(d) {
+            if (!d) return '';
+            const diff = Date.now() - new Date(d).getTime();
+            const menit = Math.floor(diff / 60000);
+            const jam = Math.floor(diff / 3600000);
+            const hari = Math.floor(diff / 86400000);
+            if (menit < 1) return 'Baru saja';
+            if (menit < 60) return menit + ' menit lalu';
+            if (jam < 24) return jam + ' jam lalu';
+            if (hari < 7) return hari + ' hari lalu';
+            return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+        function stripHTML(value) {
+            return String(value || '').replace(/<[^>]*>/g, '');
+        }
+        function escapeHTML(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+        function badgeStatus(status) {
+            const label = {
+                pending: 'Menunggu Konfirmasi',
+                rescheduled_by_user: 'Jadwal Diubah Pemohon',
+                rescheduled_by_petugas: 'Jadwal Diubah Petugas',
+                jadwal_fix: 'Jadwal Ditetapkan',
+                selesai: 'Selesai',
+                ditolak: 'Ditolak',
+                dibatalkan: 'Dibatalkan'
+            };
+            return `<span class="badge badge-${status}">${label[status] || status}</span>`;
+        }
+
+        // INIT
+        loadDashboard();
+    </script>
+</body>
+
+</html>
+

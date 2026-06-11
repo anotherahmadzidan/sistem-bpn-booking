@@ -1,0 +1,642 @@
+/* ============================================================
+   GLOBAL RESET & VARIABEL TARGET
+   ============================================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-biru: #0B3A68;
+    /* Sedikit lebih gelap menyesuaikan gambar target */
+    --secondary-kuning: #F5A623;
+    /* Kuning keemasan */
+    --white: #ffffff;
+    --gray-100: #F0F4F8;
+    /* Warna background input dari desain */
+    --gray-200: #e9ecef;
+    --gray-500: #8FA4B5;
+    /* Warna ikon dan teks sekunder */
+
+    /* Radius */
+    --radius-input: 10px;
+    --radius-button: 10px;
+    --radius-card: 20px;
+
+    /* Shadow */
+    --glow-blue: 0 4px 12px rgba(11, 58, 104, 0.2);
+    --shadow-card: 0 15px 40px rgba(0, 0, 0, 0.08);
+
+    /* Fonts */
+    --font-main: 'Public Sans', system-ui, -apple-system, sans-serif;
+    --font-secondary: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================================
+   BODY & VIEWPORT 
+   ============================================================ */
+.mobile-body {
+    /* Panggil file SVG latar putih Anda di sini */
+    background-image: url('/img/white-bg-login.svg');
+    background-color: #F0F4F8;
+    /* Fallback warna jika gambar gagal dimuat */
+    background-size: cover;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    font-family: var(--font-secondary);
+}
+
+.mobile-viewport-container {
+    width: 100%;
+    max-width: 420px;
+
+    /* Panggil file SVG latar biru Anda di sini */
+    background-image: url('/img/blue-bg-login.svg');
+    background-position: top center;
+
+    /* Lebar penuh 100%, tingginya menyesuaikan rasio otomatis (auto) */
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Mengatur jarak konten dari atas layar HP */
+.mobile-viewport {
+    flex: 1;
+    /* padding atas menggunakan vh (viewport height) agar jaraknya relatif terhadap tinggi layar HP */
+    padding: max(24px, 4vh) 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Garis Kuning di bawah Judul */
+.title-line {
+    width: 60px;
+    height: 3px;
+    background-color: var(--secondary-kuning);
+    border-radius: 2px;
+    margin-top: 12px;
+    /* Jarak dirapatkan sedikit */
+}
+
+/* Sembunyikan Info Card di versi Mobile */
+.info-card {
+    display: none;
+}
+
+/* ============================================================
+   HEADER AREA (BAGIAN KIRI)
+   ============================================================ */
+.header-area {
+    margin-bottom: 24px;
+}
+
+.logo-text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.target-logo {
+    /* Logo mengecil otomatis di HP sempit, tapi maksimal 56px */
+    width: clamp(44px, 12vw, 56px);
+    margin-bottom: 12px;
+}
+
+.target-title {
+    font-family: var(--font-main);
+    font-weight: 700;
+    /* Ukuran font otomatis mengecil di HP sempit, batas bawah 18px, batas atas 24px */
+    font-size: clamp(18px, 6vw, 24px);
+    color: var(--white);
+    line-height: 1.25;
+    margin: 0;
+}
+
+.text-yellow {
+    color: var(--secondary-kuning);
+}
+
+.target-subtitle {
+    font-family: var(--font-secondary);
+    /* Subtitle otomatis menyesuaikan ukuran */
+    font-size: clamp(12px, 3.5vw, 14px);
+    font-weight: 400;
+    color: #D1E0EE;
+    margin-top: 10px;
+    line-height: 1.4;
+    max-width: 100%;
+}
+
+/* KARTU INFO KANTOR */
+.info-card {
+    display: none;
+}
+
+.info-icon {
+    background-color: var(--white);
+    color: var(--primary-biru);
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+}
+
+.info-text {
+    display: flex;
+    flex-direction: column;
+    color: var(--white);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.info-text strong {
+    font-size: 13px;
+    font-family: var(--font-main);
+    margin-bottom: 2px;
+}
+
+/* ============================================================
+   KARTU LOGIN (BAGIAN KANAN)
+   ============================================================ */
+.target-card {
+    background-color: var(--white);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    position: relative;
+    padding-bottom: 24px;
+    overflow: hidden;
+
+    /* Kombinasi ini akan membuat kartu melayang aman di area putih */
+    margin-top: auto;
+    margin-bottom: auto;
+}
+
+/* Aksen lengkungan kuning di sudut kiri atas */
+.card-accent-corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+
+    /* 1. Hapus warna background dan border-radius bawaan CSS sebelumnya */
+    background-color: transparent;
+    border-radius: 0;
+
+    /* 2. Panggil file SVG Anda di sini (sesuaikan path/lokasi filenya) */
+    background-image: url('/img/card-login/yellow-bolb.svg');
+
+    /* 3. Atur properti gambar agar tidak terpotong atau berulang */
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: top left;
+
+    /* 4. Sesuaikan ukuran width & height dengan kebutuhan/desain asli SVG Anda */
+    width: 150px;
+    /* Silakan perbesar/perkecil angka ini */
+    height: 150px;
+    /* Silakan perbesar/perkecil angka ini */
+
+    z-index: 0;
+}
+
+.card-header-new {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    padding: 32px 24px 16px 32px;
+}
+
+.avatar-icon {
+    width: 56px;
+    height: 56px;
+    background-color: #E8F0FE;
+    /* Lingkaran biru muda */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+.header-text h2 {
+    font-family: var(--font-main);
+    font-size: 20px;
+    color: var(--primary-biru);
+    margin-bottom: 4px;
+}
+
+.header-text p {
+    font-size: 13px;
+    color: var(--gray-500);
+    line-height: 1.4;
+}
+
+/* Gaya untuk tombol back yang lebih kecil dan tidak bulat */
+.btn-back-small {
+    background-color: var(--white);
+    border: 1px solid var(--gray-200);
+    color: var(--primary-biru);
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    /* Pengaturan ukuran dan bentuk */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    /* Ukuran diperkecil */
+    height: 36px;
+    /* Ukuran diperkecil */
+    border-radius: 8px;
+    /* Sudut melengkung sedikit (tidak bulat) */
+    margin-right: 16px;
+    /* Jarak ke teks Daftar Akun */
+    flex-shrink: 0;
+}
+
+.btn-back-small:hover {
+    background-color: var(--gray-100);
+    border-color: var(--primary-biru);
+    transform: translateX(-4px);
+    /* Efek geser ke kiri saat disorot */
+}
+
+/* ============================================================
+   FORM FIELDS & INPUT ICONS
+   ============================================================ */
+.form-fields {
+    padding: 0 32px;
+}
+
+.form-fields label {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--primary-biru);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.input-wrapper {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.input-wrapper .icon-left {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-500);
+}
+
+.input-wrapper .icon-right {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-500);
+}
+
+.form-fields input {
+    width: 100%;
+    background-color: var(--gray-100);
+    border: 1px solid transparent;
+    border-radius: var(--radius-input);
+    padding: 14px 16px 14px 44px;
+    /* Padding kiri lebih besar untuk ikon */
+    font-family: var(--font-secondary);
+    font-size: 14px;
+    color: var(--primary-biru);
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+/* Jika input tidak punya ikon kiri (misal nama lengkap di register) */
+#reg-nama,
+#reg-email,
+#reg-hp {
+    padding-left: 16px;
+}
+
+.form-fields input::placeholder {
+    color: #A0B3C1;
+}
+
+.form-fields input:focus {
+    border-color: var(--primary-biru);
+    background-color: var(--white);
+}
+
+/* ============================================================
+   BUTTONS & SEPARATOR
+   ============================================================ */
+.button-group {
+    padding: 0 32px;
+}
+
+.button-group button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-main);
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.btn-masuk {
+    background-color: var(--primary-biru);
+    color: var(--white);
+    border: none;
+    box-shadow: var(--glow-blue);
+}
+
+.btn-masuk:hover {
+    background-color: #082a4d;
+    transform: translateY(-1px);
+}
+
+/* Outline Button untuk "Buat akun baru" sesuai gambar */
+.btn-buat-akun {
+    background-color: transparent;
+    color: var(--primary-biru);
+    border: 1px solid var(--secondary-kuning);
+    /* Border kuning */
+}
+
+.btn-buat-akun:hover {
+    background-color: rgba(245, 166, 35, 0.05);
+    /* Sedikit kuning saat dihover */
+}
+
+/* Tombol Utama untuk form Daftar (Kuning) */
+.btn-daftar {
+    background-color: var(--secondary-kuning);
+    color: var(--white);
+    /* Warna teks biru gelap agar kontras dan mudah dibaca */
+    border: none;
+    box-shadow: 0 4px 12px rgba(245, 166, 35, 0.25);
+    /* Efek bayangan / glow kuning yang lembut */
+}
+
+.btn-daftar:hover {
+    background-color: #E09612;
+    /* Warna kuning yang sedikit lebih gelap saat disorot */
+    transform: translateY(-1px);
+}
+
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #D1D9E0;
+    margin-bottom: 14px;
+}
+
+.separator span {
+    padding: 0 16px;
+    font-size: 12px;
+}
+
+.separator::before,
+.separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+/* ============================================================
+   ALERTS
+   ============================================================ */
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--font-secondary);
+}
+
+.alert-error {
+    background: #fadbd8;
+    color: #922b21;
+    border: 1px solid #f5b7b1;
+}
+
+.alert-success {
+    background: #d5f5e3;
+    color: #1e8449;
+    border: 1px solid #a9dfbf;
+}
+
+/* ============================================================
+   RESPONSIVE DESKTOP (Split Screen)
+   ============================================================ */
+@media (min-width: 768px) {
+
+    .target-logo {
+        width: 72px;
+        margin-bottom: 24px;
+    }
+
+    .target-title {
+        font-size: 38px;
+    }
+
+    .target-subtitle {
+        font-size: 15px;
+        margin-top: 16px;
+        line-height: 1.5;
+    }
+
+    .info-card {
+        display: flex;
+        width: fit-content;
+        /* Tambahkan baris ini agar kotak tidak melebar */
+        padding-right: 24px;
+        /* Memberi sedikit ruang lebih di sebelah kanan teks */
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 16px 24px 16px 16px;
+        /* Format: atas kanan bawah kiri */
+        margin-top: 32px;
+        backdrop-filter: blur(10px);
+    }
+
+    .mobile-body {
+        align-items: center;
+        background-image: url('/img/login-bg.svg');
+    }
+
+    .mobile-viewport-container {
+        max-width: 1100px;
+        /* Diperlebar agar ruang teks & form pas */
+    }
+
+    .mobile-viewport {
+        flex: 1;
+        /* padding atas menggunakan vh (viewport height) agar jaraknya relatif terhadap tinggi layar HP */
+        padding: max(24px, 4vh) 24px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .header-area {
+        flex: 1;
+        margin-bottom: 0;
+    }
+
+    .target-title {
+        font-size: 38px;
+    }
+
+    .target-subtitle {
+        font-size: 15px;
+    }
+
+    .target-card {
+        flex: 0 0 440px;
+        /* Lebar tetap untuk form login di desktop */
+        margin-bottom: 0;
+    }
+
+    /* Penyesuaian form register agar konsisten tingginya */
+    #form-register .form-fields {
+        margin-bottom: 0;
+    }
+
+    #form-register .input-wrapper {
+        margin-bottom: 14px;
+    }
+}
+
+/* ============================================================
+   RESPONSIVE DESKTOP (Split Screen)
+   ============================================================ */
+@media (min-width: 768px) {
+    
+    .mobile-body {
+            align-items: center;
+            /* Panggil gambar utuh desktop Anda */
+            background-image: url('/img/login-bg.svg');
+    
+            /* 4 Baris sakti untuk mengunci background di Desktop */
+            background-size: cover;
+            /* Memaksa gambar menutupi 100% layar */
+            background-position: center;
+            /* Memastikan titik tengah gambar selalu di tengah layar */
+            background-repeat: no-repeat;
+            /* Mencegah gambar berulang/tiling seperti di gambar ke-2 Anda */
+            background-attachment: fixed;
+            /* Menahan gambar agar tidak ikut bergeser saat di-zoom atau di-scroll */
+        }
+    
+        .mobile-viewport-container {
+            background-image: none;
+            /* Menonaktifkan pecahan background biru dari versi mobile */
+            background-color: transparent;
+            /* Memastikan kotak ini bening */
+            max-width: 1280px;
+        }
+
+    .mobile-viewport {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        /* 2. Sesuaikan padding agar tidak terlalu ke tengah */
+        padding: 40px 80px;
+        /* 3. Perbesar jarak antara teks kiri dan form kanan dari 80px menjadi 120px */
+        gap: 120px;
+    }
+
+    .header-area {
+        flex: 1;
+        margin-bottom: 0;
+        /* Reset margin */
+        margin-left: -20px;
+    }
+
+    .target-title {
+        font-size: 38px;
+    }
+
+    .target-subtitle {
+        font-size: 15px;
+    }
+
+    .target-card {
+        flex: 0 0 440px;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    #form-register .form-fields {
+        margin-bottom: 0;
+    }
+
+    #form-register .input-wrapper {
+        margin-bottom: 14px;
+    }
+
+    #form-register .button-group {
+        margin-top: 24px;
+        /* Mendorong tombol 'Daftar' menjauh dari form Kata sandi */
+    }
+
+    /* 1. Kurangi ruang kosong di bagian atas header */
+    #form-register .card-header-new {
+        padding: 24px 24px 16px 32px;
+    }
+
+    /* 2. Rapatkan jarak antara teks label (Nama, Email, dll) dengan kotaknya */
+    #form-register .form-fields label {
+        margin-bottom: 4px;
+    }
+
+    /* 3. Rapatkan jarak antar kolom input satu dengan yang lain */
+    #form-register .input-wrapper {
+        margin-bottom: 12px;
+    }
+
+    /* 4. Kurangi jarak antara kotak password/error dengan tombol Daftar */
+    #form-register .button-group {
+        margin-top: 12px;
+        margin-bottom: 0;
+        /* Hindari margin bawah berlebih */
+    }
+
+    /* 5. Buat kotak pesan error sedikit lebih tipis khusus di form register */
+    #form-register .alert {
+        padding: 8px 16px;
+        margin-bottom: 12px;
+        font-size: 12px;
+        /* Perkecil sedikit font error-nya */
+    }
+
+    /* 6. Mengecilkan tinggi kotak input khusus di form register */
+    #form-register .form-fields input {
+        padding-top: 13px;
+        padding-bottom: 13px;
+        font-size: 13px;
+        /* Sedikit mengecilkan ukuran teks agar proporsional dengan tinggi kotak baru */
+    }
+}

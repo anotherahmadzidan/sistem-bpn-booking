@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPN Luwu Timur - Portal Pemohon Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Public+Sans:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/css/user.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+
+<body>
+
+    <header class="hero-header">
+        <div class="hero-inner">
+            <div class="brand-group">
+                <img src="/img/logo-bpn.svg" alt="BPN" class="hero-logo" onerror="this.style.display='none'">
+                <div class="brand-text">
+                    <h3>BPN Luwu Timur</h3>
+                    <p>Kementerian ATR/BPN</p>
+                </div>
+                <div class="header-actions">
+                    <div class="notification-badge notif-wrap" title="Notifikasi" onclick="toggleNotif()" id="notif-btn"
+                        style="cursor:pointer;position:relative">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span class="badge-count" id="notif-badge" style="display:none">0</span>
+                        <div class="notif-dropdown" id="notif-dropdown" style="display:none">
+                            <div class="notif-header">
+                                <span>Notifikasi</span>
+                                <button onclick="event.stopPropagation();markAllRead()"
+                                    style="font-size:12px;background:none;border:none;color:#2e86c1;cursor:pointer;font-family:inherit">Tandai
+                                    semua dibaca</button>
+                            </div>
+                            <div class="notif-list-scroll" id="notif-list">
+                                <div class="notif-empty">Belum ada notifikasi</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <div class="profile-dropdown-wrapper">
+                            <button class="profile-trigger" onclick="toggleProfileMenu()">
+                                <div class="profile-avatar-box" id="header-avatar">AZ</div>
+                                <div class="profile-text-info">
+                                    <span class="role-badge">Pemohon</span>
+                                    <span class="user-name-short" id="header-name-short">-</span>
+                                </div>
+                                <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+
+                            <div class="dropdown-menu" id="profile-menu">
+                                <button class="dropdown-item text-danger" onclick="logout()">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                                    </svg>
+                                    <span>Keluar dari Sistem</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="welcome-text">
+                <h1>Layanan Mandiri Pemohon</h1>
+                <p>Ajukan permohonan jadwal peninjauan dan pantau status berkas Anda.</p>
+            </div>
+        </div>
+    </header>
+
+    <div class="app-layout-wrapper">
+
+        <aside class="desktop-sidebar">
+            <div class="sidebar-hero-text">
+                <h1>Layanan Mandiri Pemohon</h1>
+                <p>Ajukan permohonan jadwal peninjauan dan pantau status berkas Anda.</p>
+            </div>
+
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">Langkah Pengajuan</h3>
+                <ul class="step-list">
+                    <li class="active">
+                        <div class="step-num">1</div>
+                        <div class="step-text"><strong>Form Booking</strong>Isi data dan detail pengajuan</div>
+                    </li>
+                    <li>
+                        <div class="step-num">2</div>
+                        <div class="step-text"><strong>Verifikasi Data</strong>Data akan diverifikasi petugas</div>
+                    </li>
+                    <li>
+                        <div class="step-num">3</div>
+                        <div class="step-text"><strong>Jadwal Disetujui</strong>Anda akan mendapatkan jadwal</div>
+                    </li>
+                    <li>
+                        <div class="step-num">4</div>
+                        <div class="step-text"><strong>Peninjauan</strong>Petugas melakukan peninjauan</div>
+                    </li>
+                    <li>
+                        <div class="step-num">5</div>
+                        <div class="step-text"><strong>Selesai</strong>Laporan & dokumen tersedia</div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="sidebar-card">
+                <h3 class="sidebar-title">Informasi Layanan</h3>
+                <ul class="info-list">
+                    <li><span class="info-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M8 2v4"></path>
+                                <path d="M16 2v4"></path>
+                                <rect x="3" y="5" width="18" height="17" rx="2"></rect>
+                                <path d="M3 10h18"></path>
+                            </svg>
+                        </span>
+                        <div><strong>Jam Layanan</strong>Senin - Jumat, 08.00 - 16.00 WITA</div>
+                    </li>
+                    <li><span class="info-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="13" r="8"></circle>
+                                <path d="M12 9v4l3 2"></path>
+                                <path d="M9 2h6"></path>
+                            </svg>
+                        </span>
+                        <div><strong>Estimasi Proses</strong>3 - 7 hari kerja</div>
+                    </li>
+                    <li><span class="info-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                <path d="m9 12 2 2 4-5"></path>
+                            </svg>
+                        </span>
+                        <div><strong>Keamanan Data</strong>Data terjamin 100% aman dan terpercaya</div>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content-panel">
+
+            <div class="dock-container desktop-integrated">
+                <nav class="menu-dock">
+                    <button class="dock-btn active" id="nav-booking" onclick="showPage('booking')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span>Form Booking</span>
+                    </button>
+                    <button class="dock-btn" id="nav-profil" onclick="showPage('profil')">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>Profil & Riwayat</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div class="content-wrap">
+
+                <div id="page-booking">
+
+                    <div class="form-split-grid">
+
+                        <div class="premium-card card-data-berkas">
+                            <div class="card-section-title">DATA BERKAS</div>
+
+                            <div class="field-row">
+                                <div class="form-group">
+                                    <label>Nomor Berkas <span class="req">*</span></label>
+                                    <div class="input-icon-wrapper">
+                                        <svg class="input-inside-icon" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                        <input type="text" id="nomor_berkas" placeholder="Nomor berkas BPN">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tanggal Berkas <span class="req">*</span></label>
+                                    <div class="input-icon-wrapper">
+                                        <svg class="input-inside-icon" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>
+                                        <input type="date" id="tanggal_berkas">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Nama Pemohon <span class="req">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <svg class="input-inside-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <input type="text" id="nama_pemohon" placeholder="Nama sesuai berkas">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>No. Telepon / WhatsApp <span class="req">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <svg class="input-inside-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path
+                                            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                                        </path>
+                                    </svg>
+                                    <input type="text" id="no_telepon" placeholder="No. HP yang bisa dihubungi">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="premium-card card-lokasi-tanah">
+                            <div class="card-section-title">LOKASI TANAH</div>
+
+                            <div class="form-group">
+                                <label>Kecamatan <span class="req">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <svg class="input-inside-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    <select id="kecamatan_id" onchange="loadKelurahan()">
+                                        <option value="">-- Pilih Kecamatan --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Desa / Kelurahan <span class="req">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <svg class="input-inside-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                    <select id="kelurahan_id">
+                                        <option value="">-- Pilih Kelurahan --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Alamat Lengkap Lokasi <span class="req">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <svg class="input-inside-icon" style="top: 16px;" viewBox="0 0 24 24" fill="none"
+                                        stroke="currentColor" stroke-width="2">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    </svg>
+                                    <textarea id="alamat_lokasi"
+                                        placeholder="Alamat lengkap lokasi tanah yang akan diperiksa"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Sematkan Koordinat Presisi <span class="opt">(Geser pin peta ke
+                                        lokasi)</span></label>
+                                <div style="position:relative">
+                                    <div id="map-picker"></div>
+                                    <button onclick="bukaMapModal()" title="Perbesar peta"
+                                        style="position:absolute;top:8px;right:8px;z-index:999;background:white;border:1px solid #ccc;border-radius:6px;padding:5px 8px;cursor:pointer;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,0.2)">
+                                        <span class="map-expand-icon" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24">
+                                                <path d="M8 3H3v5"></path>
+                                                <path d="M16 3h5v5"></path>
+                                                <path d="M21 16v5h-5"></path>
+                                                <path d="M3 16v5h5"></path>
+                                            </svg>
+                                        </span>
+                                        Perbesar
+                                    </button>
+                                </div>
+                                <div class="field-row" style="margin-top: 12px;">
+                                    <input type="text" id="koordinat_lat" placeholder="Latitude" readonly
+                                        class="input-readonly">
+                                    <input type="text" id="koordinat_lng" placeholder="Longitude" readonly
+                                        class="input-readonly">
+                                </div>
+                                <input type="hidden" id="koordinat_maps">
+                            </div>
+                        </div>
+
+                        <div class="premium-card card-jadwal-agenda">
+                            <div class="card-section-title">JADWAL & AGENDA</div>
+
+                            <div class="form-group">
+                                <label>Petugas Pemeriksa <span class="req">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <svg class="input-inside-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="9" cy="7" r="4"></circle>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                    </svg>
+                                    <select id="petugas_id" onchange="cekKuotaOtomatis()">
+                                        <option value="">-- Pilih Petugas --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Tanggal Peninjauan <span class="req">*</span></label>
+                                <div class="input-icon-wrapper">
+                                    <svg class="input-inside-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                                    </svg>
+                                    <input type="date" id="tanggal_diminta" onchange="cekKuotaOtomatis()">
+                                </div>
+                            </div>
+
+                            <div id="info-kuota" style="display:none" class="kuota-info"></div>
+
+                            <div id="booking-error" class="alert alert-error" style="display:none"></div>
+                            <div id="booking-success" class="alert alert-success" style="display:none"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions-row split-desktop">
+                        <button class="btn-secondary-outline" onclick="resetForm()">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M3 12a9 9 0 0 1 15.3-6.36L21 8"></path>
+                                <path d="M21 3v5h-5"></path>
+                                <path d="M21 12a9 9 0 0 1-15.3 6.36L3 16"></path>
+                                <path d="M3 21v-5h5"></path>
+                            </svg>
+                            <span>Reset</span>
+                        </button>
+                        <button class="btn-primary-gradient" id="btn-submit" onclick="submitBooking()">
+                            <span>Ajukan Booking</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="page-profil" style="display:none">
+                    <div class="premium-card user-profile-container">
+                        <div class="profil-avatar" id="profil-avatar">?</div>
+                        <div class="profil-info">
+                            <h2 id="profil-nama">-</h2>
+                            <p id="profil-email" class="profile-meta">-</p>
+                            <p id="profil-hp" class="profile-meta">-</p>
+                        </div>
+                    </div>
+
+                    <div class="section-title-bar">
+                        <h3>Riwayat Pengajuan Berkas Anda</h3>
+                    </div>
+
+                    <div id="riwayat-list">
+                        <div class="loading"><span class="spinner"></span> Memuat riwayat...</div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="modal-reschedule">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Ajukan Reschedule</h3>
+                <button class="modal-close" onclick="closeModal('modal-reschedule')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning alert-with-icon">
+                    <span class="alert-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3 2.8 20h18.4L12 3Z"></path>
+                            <path d="M12 8v5"></path>
+                            <path d="M12 17h.01"></path>
+                        </svg>
+                    </span>
+                    <span>Anda hanya dapat melakukan reschedule 1 kali. Selanjutnya ditentukan oleh Petugas BPN.</span>
+                </div>
+                <div class="form-group">
+                    <label>Pilih Tanggal Baru <span class="req">*</span></label>
+                    <input type="date" id="reschedule-tanggal">
+                </div>
+                <div class="form-group">
+                    <label>Alasan Perubahan</label>
+                    <textarea id="reschedule-alasan"
+                        placeholder="Tulis alasan singkat perubahan agenda peninjauan..."></textarea>
+                </div>
+                <div id="reschedule-error" class="alert alert-error" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-reschedule')">Batal</button>
+                <button class="btn btn-warning" onclick="submitReschedule()">Ajukan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-cancel-booking">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Batalkan Permohonan</h3>
+                <button class="modal-close" onclick="closeModal('modal-cancel-booking')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    Pembatalan bersifat final. Kuota jadwal akan dilepas dan berkas tidak bisa dilanjutkan kembali.
+                </div>
+                <div class="form-group">
+                    <label>Alasan Pembatalan <span class="req">*</span></label>
+                    <textarea id="cancel-alasan"
+                        placeholder="Tulis alasan pembatalan permohonan karena jadwal tidak dapat disepakati..."></textarea>
+                </div>
+                <div id="cancel-error" class="alert alert-error" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-cancel-booking')">Kembali</button>
+                <button class="btn btn-danger" onclick="submitCancelBooking()">Batalkan Permohonan</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-notif-detail">
+        <div class="modal modal-notif-detail">
+            <div class="modal-header">
+                <h3 id="notif-detail-title">Detail Notifikasi</h3>
+                <button class="modal-close" onclick="closeModal('modal-notif-detail')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="notif-detail-message" class="notif-detail-message"></p>
+                <div id="notif-detail-time" class="notif-detail-time"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-notif-detail')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PETA FULLSCREEN -->
+    <div id="modal-map"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:20px">
+        <div
+            style="background:white;border-radius:12px;width:100%;max-width:860px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+            <div
+                style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #e2e8f0">
+                <div>
+                    <div style="font-weight:600;color:#0F4069;font-size:15px">Pilih Koordinat Lokasi</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:2px">Klik atau geser pin ke lokasi tanah yang
+                        akan
+                        diperiksa</div>
+                </div>
+                <button class="modal-close" onclick="tutupMapModal()" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="map-modal-inner" style="height:480px"></div>
+            <div
+                style="padding:12px 18px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#f8fafc">
+                <div style="font-size:13px;color:#475569">
+                    <span class="map-coordinate-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 21s7-5.4 7-12a7 7 0 0 0-14 0c0 6.6 7 12 7 12Z"></path>
+                            <circle cx="12" cy="9" r="2.5"></circle>
+                        </svg>
+                    </span>
+                    <span id="modal-koordinat-text">Belum ada koordinat dipilih</span>
+                </div>
+                <button onclick="tutupMapModal()"
+                    style="background:#0F4069;color:white;border:none;padding:8px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">
+                    Gunakan Koordinat Ini
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="app-security-footer">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span>Keamanan data terjamin 100% aman dan terpercaya</span>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const nama = localStorage.getItem('nama');
+        const role = localStorage.getItem('role');
+
+        if (!token || role !== 'user') {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+
+        if (document.getElementById('header-avatar') && nama) {
+            document.getElementById('header-avatar').textContent = nama.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+            const namaDepan = nama.split(' ')[0];
+            document.getElementById('header-name-short').textContent = namaDepan;
+        }
+
+        function toggleProfileMenu() {
+            const wrapper = document.querySelector('.profile-dropdown-wrapper');
+            wrapper.classList.toggle('active');
+        }
+
+        window.addEventListener('click', function (e) {
+            const wrapper = document.querySelector('.profile-dropdown-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                wrapper.classList.remove('active');
+            }
+        });
+
+        let wilayahData = { kecamatan: [], kelurahan: [] };
+        let selectedBookingId = null;
+        let kuotaTimeout = null;
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('tanggal_diminta').min = today;
+        document.getElementById('tanggal_berkas').max = today;
+
+        let map = null;
+        let marker = null;
+        let focusMapRequestId = 0;
+        const MAP_DEFAULT_CENTER = { lat: -2.6000000, lng: 121.1700000, zoom: 10 };
+        const KECAMATAN_CENTER = {
+            angkona: { lat: -2.6100000, lng: 121.1900000, zoom: 12 },
+            burau: { lat: -2.8200000, lng: 120.9100000, zoom: 12 },
+            kalaena: { lat: -2.4900000, lng: 120.9700000, zoom: 12 },
+            malili: { lat: -2.6350000, lng: 121.0950000, zoom: 12 },
+            mangkutana: { lat: -2.4100000, lng: 120.8050000, zoom: 12 },
+            nuha: { lat: -2.4850000, lng: 121.3750000, zoom: 11 },
+            tomoni: { lat: -2.5450000, lng: 120.7700000, zoom: 12 },
+            'tomoni timur': { lat: -2.5350000, lng: 120.8450000, zoom: 12 },
+            towuti: { lat: -2.7600000, lng: 121.4550000, zoom: 11 },
+            wasponda: { lat: -2.5250000, lng: 121.2100000, zoom: 12 },
+            wotu: { lat: -2.6000000, lng: 120.8050000, zoom: 12 }
+        };
+        const geocodeCache = new Map();
+
+        // ============================================================
+        // NOTIFIKASI
+        // ============================================================
+        let notifOpen = false;
+
+        async function loadNotifikasi() {
+            try {
+                const res = await apiFetch('/api/auth/notifications');
+                if (!res) return;
+                const data = await res.json();
+
+                const badge = document.getElementById('notif-badge');
+                const list = document.getElementById('notif-list');
+
+                if (data.unread > 0) {
+                    badge.textContent = data.unread > 99 ? '99+' : data.unread;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                if (data.notifications.length === 0) {
+                    list.innerHTML = '<div class="notif-empty">Belum ada notifikasi</div>';
+                    return;
+                }
+
+                list.innerHTML = data.notifications.map((n, index) => {
+                    const pesan = stripHTML(n.pesan);
+                    const isLong = pesan.length > 92;
+                    return `
+            <div class="notif-item ${n.is_read ? '' : 'unread'} ${isLong ? 'is-expandable' : ''}"
+                data-index="${index}" onclick="${isLong ? `openNotifDetail(${index})` : ''}">
+                <div class="notif-item-judul">${escapeHTML(n.judul)}</div>
+                <div class="notif-item-pesan">${escapeHTML(pesan)}</div>
+                ${isLong ? '<button class="notif-more" type="button">Lihat lengkap</button>' : ''}
+                <div class="notif-item-waktu">${formatWaktu(n.created_at)}</div>
+            </div>
+        `;
+                }).join('');
+                window.latestNotifikasi = data.notifications.map(n => ({
+                    judul: n.judul,
+                    pesan: stripHTML(n.pesan),
+                    waktu: formatWaktu(n.created_at)
+                }));
+            } catch (err) {
+                console.error('Gagal load notifikasi', err);
+            }
+        }
+
+        function openNotifDetail(index) {
+            const n = (window.latestNotifikasi || [])[index];
+            if (!n) return;
+            document.getElementById('notif-detail-title').textContent = n.judul || 'Detail Notifikasi';
+            document.getElementById('notif-detail-message').textContent = n.pesan || '-';
+            document.getElementById('notif-detail-time').textContent = n.waktu || '';
+            document.getElementById('modal-notif-detail').classList.add('show');
+        }
+
+        function toggleNotif() {
+            notifOpen = !notifOpen;
+            const dropdown = document.getElementById('notif-dropdown');
+            dropdown.style.display = notifOpen ? 'block' : 'none';
+            if (notifOpen) {
+                loadNotifikasi();
+                markAllRead();
+            }
+        }
+
+        async function markAllRead() {
+            try {
+                await apiFetch('/api/auth/notifications/read', { method: 'PATCH' });
+                setTimeout(loadNotifikasi, 500);
+            } catch (err) {
+                console.error('Gagal mark read', err);
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const wrap = document.getElementById('notif-btn');
+            if (wrap && !wrap.contains(e.target) && notifOpen) {
+                document.getElementById('notif-dropdown').style.display = 'none';
+                notifOpen = false;
+            }
+        });
+
+        function formatWaktu(d) {
+            if (!d) return '';
+            const diff = Date.now() - new Date(d).getTime();
+            const menit = Math.floor(diff / 60000);
+            const jam = Math.floor(diff / 3600000);
+            const hari = Math.floor(diff / 86400000);
+            if (menit < 1) return 'Baru saja';
+            if (menit < 60) return menit + ' menit lalu';
+            if (jam < 24) return jam + ' jam lalu';
+            if (hari < 7) return hari + ' hari lalu';
+            return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function stripHTML(value) {
+            return String(value || '').replace(/<[^>]*>/g, '');
+        }
+
+        function escapeHTML(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function userIcon(name, className = 'user-inline-icon') {
+            const icons = {
+                check: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>',
+                error: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>',
+                mail: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m4 7 8 6 8-6"></path></svg>',
+                phone: '<svg viewBox="0 0 24 24"><path d="M7 4h10v16H7Z"></path><path d="M10 18h4"></path></svg>',
+                emptyFile: '<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6Z"></path><path d="M15 3v4h4"></path><path d="M9 12h6"></path><path d="M9 16h4"></path></svg>'
+            };
+            return `<span class="${className}" aria-hidden="true">${icons[name] || icons.emptyFile}</span>`;
+        }
+
+        function initMap(lat = MAP_DEFAULT_CENTER.lat, lng = MAP_DEFAULT_CENTER.lng, zoom = MAP_DEFAULT_CENTER.zoom) {
+            if (map) {
+                setTimeout(() => map.invalidateSize(), 200);
+                return;
+            }
+            setTimeout(() => {
+                map = L.map('map-picker', { attributionControl: false }).setView([lat, lng], zoom);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+                marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+                marker.on('dragend', () => {
+                    const latlng = marker.getLatLng();
+                    map.setView(latlng, map.getZoom()); // re-center peta kecil
+                    updateKoordinat(latlng);
+                    // sync ke modal kalau terbuka
+                    if (mapModal && document.getElementById('modal-map').style.display !== 'none') {
+                        mapModal.setView(latlng, mapModal.getZoom());
+                        markerModal.setLatLng(latlng);
+                        updateKoordinatModal(latlng);
+                    }
+                });
+
+                map.on('click', (e) => {
+                    marker.setLatLng(e.latlng);
+                    map.setView(e.latlng, map.getZoom()); // re-center
+                    updateKoordinat(e.latlng);
+                    if (mapModal && document.getElementById('modal-map').style.display !== 'none') {
+                        mapModal.setView(e.latlng, mapModal.getZoom());
+                        markerModal.setLatLng(e.latlng);
+                        updateKoordinatModal(e.latlng);
+                    }
+                });
+
+                updateKoordinat({ lat, lng });
+            }, 200);
+        }
+
+        function normalizeWilayahName(name) {
+            return String(name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+        }
+
+        function getById(items, id) {
+            return items.find(item => String(item.id) === String(id));
+        }
+
+        function getRowCoordinate(row) {
+            if (!row) return null;
+            const lat = parseFloat(row.lat ?? row.latitude ?? row.koordinat_lat);
+            const lng = parseFloat(row.lng ?? row.longitude ?? row.koordinat_lng);
+            if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+            return null;
+        }
+
+        function getKecamatanCenter(kecId) {
+            const kec = getById(wilayahData.kecamatan, kecId);
+            const dbCoord = getRowCoordinate(kec);
+            if (dbCoord) return { ...dbCoord, zoom: 12 };
+            return KECAMATAN_CENTER[normalizeWilayahName(kec?.nama_kecamatan)];
+        }
+
+        function getEstimatedKelurahanCenter(kecId, kelId) {
+            const kecCenter = getKecamatanCenter(kecId);
+            if (!kecCenter) return null;
+
+            const kelList = wilayahData.kelurahan.filter(k => String(k.kecamatan_id) === String(kecId));
+            const index = Math.max(0, kelList.findIndex(k => String(k.id) === String(kelId)));
+            const total = Math.max(kelList.length, 1);
+            const angle = (Math.PI * 2 * index) / total;
+            const ring = 0.010 + ((index % 3) * 0.006);
+
+            return {
+                lat: kecCenter.lat + Math.sin(angle) * ring,
+                lng: kecCenter.lng + Math.cos(angle) * ring,
+                zoom: 14
+            };
+        }
+
+        function getSelectedOptionText(id) {
+            const el = document.getElementById(id);
+            return el.options[el.selectedIndex]?.text || '';
+        }
+
+        function setMapLocation(lat, lng, zoom = 13) {
+            if (!map || !marker) {
+                initMap(lat, lng, zoom);
+                updateKoordinat({ lat, lng });
+                return;
+            }
+
+            if (map && marker) {
+                map.setView([lat, lng], zoom);
+                marker.setLatLng([lat, lng]);
+                setTimeout(() => map.invalidateSize(), 80);
+            }
+
+            if (mapModal && markerModal && document.getElementById('modal-map').style.display !== 'none') {
+                mapModal.setView([lat, lng], zoom);
+                markerModal.setLatLng([lat, lng]);
+                setTimeout(() => mapModal.invalidateSize(), 80);
+                updateKoordinatModal({ lat, lng });
+            } else {
+                updateKoordinat({ lat, lng });
+            }
+        }
+
+        async function geocodeWilayah(query) {
+            const key = normalizeWilayahName(query);
+            if (!key) return null;
+            if (geocodeCache.has(key)) return geocodeCache.get(key);
+
+            try {
+                const url = 'https://nominatim.openstreetmap.org/search?q='
+                    + encodeURIComponent(query)
+                    + '&format=json&limit=1&countrycodes=id';
+                const res = await fetch(url);
+                const data = await res.json();
+                const found = data.length > 0
+                    ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+                    : null;
+                geocodeCache.set(key, found);
+                return found;
+            } catch (err) {
+                console.error('Geocode wilayah gagal', err);
+                return null;
+            }
+        }
+
+        async function focusMapToSelection(level = 'kecamatan') {
+            const requestId = ++focusMapRequestId;
+            const kecId = document.getElementById('kecamatan_id').value;
+            const kelId = document.getElementById('kelurahan_id').value;
+            const kecNama = getSelectedOptionText('kecamatan_id');
+            const kelNama = getSelectedOptionText('kelurahan_id');
+            const kecCenter = getKecamatanCenter(kecId);
+
+            if (level === 'kecamatan' && kecCenter) {
+                setMapLocation(kecCenter.lat, kecCenter.lng, kecCenter.zoom);
+            }
+
+            if (level === 'kelurahan' && kelId && kelNama && kecNama) {
+                const kel = getById(wilayahData.kelurahan, kelId);
+                const dbCoord = getRowCoordinate(kel);
+                if (dbCoord) {
+                    setMapLocation(dbCoord.lat, dbCoord.lng, 14);
+                    return;
+                }
+
+                const estimated = getEstimatedKelurahanCenter(kecId, kelId);
+                if (estimated) {
+                    setMapLocation(estimated.lat, estimated.lng, estimated.zoom);
+                }
+
+                const query = `${kelNama}, ${kecNama}, Kabupaten Luwu Timur, Sulawesi Selatan, Indonesia`;
+                const found = await geocodeWilayah(query);
+                if (requestId !== focusMapRequestId) return;
+                if (found) {
+                    setMapLocation(found.lat, found.lng, 14);
+                    return;
+                }
+                if (!estimated && kecCenter) setMapLocation(kecCenter.lat, kecCenter.lng, kecCenter.zoom);
+            }
+        }
+
+        function updateKoordinat(latlng) {
+            const lat = parseFloat(latlng.lat).toFixed(7);
+            const lng = parseFloat(latlng.lng).toFixed(7);
+            document.getElementById('koordinat_lat').value = lat;
+            document.getElementById('koordinat_lng').value = lng;
+            document.getElementById('koordinat_maps').value = lat + ',' + lng;
+        }
+
+        async function geocodeAlamat() {
+            if (!map) return;
+            const kecEl = document.getElementById('kecamatan_id');
+            const kelEl = document.getElementById('kelurahan_id');
+            const alamat = document.getElementById('alamat_lokasi').value.trim();
+
+            const kecNama = kecEl.options[kecEl.selectedIndex]?.text || '';
+            const kelNama = kelEl.options[kelEl.selectedIndex]?.text || '';
+            const parts = [alamat, kelNama, kecNama, 'Luwu Timur', 'Sulawesi Selatan'].filter(Boolean);
+            const query = parts.join(', ');
+
+            try {
+                const res = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&limit=1');
+                const data = await res.json();
+                if (data.length > 0) {
+                    const lat = parseFloat(data[0].lat);
+                    const lng = parseFloat(data[0].lon);
+                    // Update peta utama
+                    map.setView([lat, lng], 14);
+                    marker.setLatLng([lat, lng]);
+                    updateKoordinat({ lat, lng });
+                    // Sync ke modal kalau terbuka
+                    if (mapModal && document.getElementById('modal-map').style.display !== 'none') {
+                        mapModal.setView([lat, lng], 14);
+                        markerModal.setLatLng([lat, lng]);
+                        updateKoordinatModal({ lat, lng });
+                    }
+                }
+            } catch (err) {
+                console.error('Geocode gagal', err);
+            }
+        }
+        // ============================================================
+        // MODAL PETA FULLSCREEN
+        // ============================================================
+        let mapModal = null;
+        let markerModal = null;
+
+        function bukaMapModal() {
+            const modalEl = document.getElementById('modal-map');
+            modalEl.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            const lat = parseFloat(document.getElementById('koordinat_lat').value) || -2.5;
+            const lng = parseFloat(document.getElementById('koordinat_lng').value) || 121.5;
+
+            setTimeout(() => {
+                if (!mapModal) {
+                    mapModal = L.map('map-modal-inner', { attributionControl: false }).setView([lat, lng], map ? map.getZoom() : 13);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapModal);
+
+                    markerModal = L.marker([lat, lng], { draggable: true }).addTo(mapModal);
+
+                    markerModal.on('dragend', () => {
+                        const latlng = markerModal.getLatLng();
+                        mapModal.setView(latlng, mapModal.getZoom()); // re-center modal
+                        updateKoordinatModal(latlng);
+                        // sync ke peta kecil
+                        if (map && marker) {
+                            map.setView(latlng, map.getZoom());
+                            marker.setLatLng(latlng);
+                        }
+                    });
+
+                    mapModal.on('click', (e) => {
+                        markerModal.setLatLng(e.latlng);
+                        mapModal.setView(e.latlng, mapModal.getZoom()); // re-center
+                        updateKoordinatModal(e.latlng);
+                        if (map && marker) {
+                            map.setView(e.latlng, map.getZoom());
+                            marker.setLatLng(e.latlng);
+                        }
+                    });
+
+                    updateKoordinatModal({ lat, lng });
+                } else {
+                    mapModal.setView([lat, lng], mapModal.getZoom());
+                    markerModal.setLatLng([lat, lng]);
+                    mapModal.invalidateSize();
+                }
+            }, 150);
+        }
+
+        function updateKoordinatModal(latlng) {
+            const lat = parseFloat(latlng.lat).toFixed(7);
+            const lng = parseFloat(latlng.lng).toFixed(7);
+
+            // Update koordinat utama juga
+            document.getElementById('koordinat_lat').value = lat;
+            document.getElementById('koordinat_lng').value = lng;
+            document.getElementById('koordinat_maps').value = lat + ',' + lng;
+
+            // Update teks di modal
+            document.getElementById('modal-koordinat-text').textContent = lat + ', ' + lng;
+
+            // Sync marker peta utama
+            if (marker) marker.setLatLng([lat, lng]);
+        }
+
+        function tutupMapModal() {
+            document.getElementById('modal-map').style.display = 'none';
+            document.body.style.overflow = '';
+
+            // Sync posisi dari modal ke peta kecil setelah tutup
+            if (mapModal && map && marker) {
+                const latlng = markerModal.getLatLng();
+                map.setView(latlng, map.getZoom());
+                marker.setLatLng(latlng);
+                setTimeout(() => map.invalidateSize(), 100);
+            }
+        }
+
+        function showPage(page) {
+            const pages = ['booking', 'profil'];
+
+            pages.forEach(p => {
+                const el = document.getElementById('page-' + p);
+                const btn = document.getElementById('nav-' + p);
+                if (p === page) {
+                    el.style.display = 'block';
+                    // Re-trigger animasi
+                    el.style.animation = 'none';
+                    el.offsetHeight; // force reflow
+                    el.style.animation = '';
+                } else {
+                    el.style.display = 'none';
+                }
+                btn.classList.toggle('active', p === page);
+            });
+
+            if (page === 'profil') loadProfil();
+            if (page === 'booking') {
+                loadWilayahDanPetugas();
+                initMap();
+            }
+        }
+
+        async function apiFetch(url, options = {}) {
+            const res = await fetch(url, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token,
+                    ...(options.headers || {})
+                }
+            });
+            if (res.status === 401) { logout(); return null; }
+            return res;
+        }
+
+        async function loadWilayahDanPetugas() {
+            try {
+                const res = await fetch('/api/admin/wilayah');
+                const data = await res.json();
+                wilayahData = data;
+
+                const selKec = document.getElementById('kecamatan_id');
+                if (selKec.options.length > 1) return;
+                data.kecamatan.forEach(k => {
+                    selKec.innerHTML += `<option value="${k.id}">${k.nama_kecamatan}</option>`;
+                });
+
+                const resPet = await fetch('/api/auth/petugas-aktif');
+                const pets = await resPet.json();
+                const selPet = document.getElementById('petugas_id');
+                pets.forEach(p => {
+                    selPet.innerHTML += `<option value="${p.id}">${p.nama_lengkap} (${p.nip})</option>`;
+                });
+            } catch (err) {
+                console.error('Gagal load data awal', err);
+            }
+        }
+
+        function loadKelurahan() {
+            const kecId = document.getElementById('kecamatan_id').value;
+            const selKel = document.getElementById('kelurahan_id');
+            selKel.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+            if (!kecId) {
+                setMapLocation(MAP_DEFAULT_CENTER.lat, MAP_DEFAULT_CENTER.lng, MAP_DEFAULT_CENTER.zoom);
+                return;
+            }
+            wilayahData.kelurahan
+                .filter(k => k.kecamatan_id == kecId)
+                .forEach(k => {
+                    selKel.innerHTML += `<option value="${k.id}">${k.nama_kelurahan}</option>`;
+                });
+            cekKuotaOtomatis();
+            focusMapToSelection('kecamatan');
+        }
+
+        document.getElementById('kelurahan_id').addEventListener('change', () => {
+            cekKuotaOtomatis();
+            focusMapToSelection('kelurahan');
+        });
+        document.getElementById('alamat_lokasi').addEventListener('blur', geocodeAlamat);
+
+        async function cekKuotaOtomatis() {
+            const kecId = document.getElementById('kecamatan_id').value;
+            const kelId = document.getElementById('kelurahan_id').value;
+            const petId = document.getElementById('petugas_id').value;
+            const tgl = document.getElementById('tanggal_diminta').value;
+            const el = document.getElementById('info-kuota');
+            if (!kecId || !kelId || !petId || !tgl) { el.style.display = 'none'; return; }
+
+            clearTimeout(kuotaTimeout);
+            kuotaTimeout = setTimeout(async () => {
+                el.className = 'kuota-info kuota-loading';
+                el.innerHTML = '<span class="spinner"></span> Mengecek slot kuota peninjauan...';
+                el.style.display = 'flex';
+
+                try {
+                    const res = await apiFetch(`/api/booking/kuota?kecamatan_id=${kecId}&kelurahan_id=${kelId}&petugas_id=${petId}&tanggal=${tgl}`);
+                    const data = await res.json();
+                    if (data.tersedia) {
+                        const sk = data.kecamatan.sisa !== null ? data.kecamatan.sisa + ' slot' : 'Unlimited';
+                        const sl = data.kelurahan.sisa !== null ? data.kelurahan.sisa + ' slot' : 'Unlimited';
+                        const sp = data.petugas.sisa !== null ? data.petugas.sisa + ' slot' : '-';
+                        el.className = 'kuota-info kuota-ok';
+                        el.innerHTML = `${userIcon('check')} <span>Slot tersedia &nbsp;|&nbsp; Kec: <b>${sk}</b> &nbsp;|&nbsp; Kel: <b>${sl}</b> &nbsp;|&nbsp; Petugas: <b>${sp}</b></span>`;
+                    } else {
+                        el.className = 'kuota-info kuota-full';
+                        let msg = 'Slot penuh pada agenda tanggal ini -';
+                        if (!data.kecamatan.tersedia) msg += ' Kuota kecamatan habis.';
+                        if (!data.kelurahan.tersedia) msg += ' Kuota kelurahan habis.';
+                        if (!data.petugas.tersedia) msg += ' Kuota petugas penuh.';
+                        el.innerHTML = `${userIcon('error')} <span>${escapeHTML(msg)}</span>`;
+                    }
+                } catch (e) { el.style.display = 'none'; }
+            }, 500);
+        }
+
+        async function submitBooking() {
+            const errEl = document.getElementById('booking-error');
+            const sucEl = document.getElementById('booking-success');
+            errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+            const body = {
+                nomor_berkas: document.getElementById('nomor_berkas').value.trim(),
+                tanggal_berkas: document.getElementById('tanggal_berkas').value,
+                nama_pemohon: document.getElementById('nama_pemohon').value.trim(),
+                kecamatan_id: document.getElementById('kecamatan_id').value,
+                kelurahan_id: document.getElementById('kelurahan_id').value,
+                alamat_lokasi: document.getElementById('alamat_lokasi').value.trim(),
+                koordinat_maps: document.getElementById('koordinat_maps').value.trim(),
+                no_telepon: document.getElementById('no_telepon').value.trim(),
+                petugas_id: document.getElementById('petugas_id').value,
+                tanggal_diminta: document.getElementById('tanggal_diminta').value,
+            };
+
+            const required = ['nomor_berkas', 'tanggal_berkas', 'nama_pemohon', 'kecamatan_id', 'kelurahan_id', 'alamat_lokasi', 'no_telepon', 'petugas_id', 'tanggal_diminta'];
+            if (required.some(f => !body[f])) {
+                errEl.textContent = 'Seluruh field wajib Anda isi lengkap';
+                errEl.style.display = 'block'; return;
+            }
+
+            const btn = document.getElementById('btn-submit');
+            btn.disabled = true; btn.textContent = 'Memproses...';
+
+            try {
+                const res = await apiFetch('/api/booking', { method: 'POST', body: JSON.stringify(body) });
+                const data = await res.json();
+                if (!res.ok) {
+                    errEl.textContent = data.message; errEl.style.display = 'block'; return;
+                }
+                sucEl.textContent = 'Pengajuan booking berhasil masuk! Menunggu Konfirmasi.';
+                sucEl.style.display = 'block';
+                resetForm();
+                setTimeout(() => showPage('profil'), 2000);
+            } catch (e) {
+                errEl.textContent = 'Terjadi kesalahan koneksi jaringan, coba kembali.';
+                errEl.style.display = 'block';
+            } finally {
+                btn.disabled = false; btn.textContent = 'Ajukan Booking';
+            }
+        }
+
+        function resetForm() {
+            ['nomor_berkas', 'tanggal_berkas', 'nama_pemohon', 'kecamatan_id', 'kelurahan_id', 'alamat_lokasi', 'koordinat_maps', 'no_telepon', 'petugas_id', 'tanggal_diminta'].forEach(id => {
+                document.getElementById(id).value = '';
+            });
+            document.getElementById('koordinat_lat').value = '';
+            document.getElementById('koordinat_lng').value = '';
+            document.getElementById('info-kuota').style.display = 'none';
+        }
+
+        async function loadProfil() {
+            try {
+                const res = await apiFetch('/api/auth/profile');
+                const user = await res.json();
+                document.getElementById('profil-nama').textContent = user.nama_lengkap;
+                document.getElementById('profil-email').innerHTML = userIcon('mail') + '<span>' + escapeHTML(user.email) + '</span>';
+                document.getElementById('profil-hp').innerHTML = userIcon('phone') + '<span>' + escapeHTML(user.no_hp) + '</span>';
+                document.getElementById('profil-avatar').textContent = user.nama_lengkap[0].toUpperCase();
+            } catch (err) { console.error(err); }
+
+            const list = document.getElementById('riwayat-list');
+            list.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat daftar berkas...</div>';
+            try {
+                const res = await apiFetch('/api/booking/my');
+                const data = await res.json();
+
+                if (data.length === 0) {
+                    list.innerHTML = '<div class="empty-state">' + userIcon('emptyFile', 'empty-icon empty-icon-svg') + '<p>Belum ada riwayat pengajuan agenda.</p></div>';
+                    return;
+                }
+
+                list.innerHTML = data.map(function (b) {
+                    const alasanPetugas = b.status === 'rescheduled_by_petugas' && b.last_reschedule_by === 'petugas'
+                        ? (b.last_reschedule_alasan || 'Petugas mengusulkan perubahan jadwal tanpa catatan tambahan.')
+                        : null;
+                    const bisaAjukanJadwal = ['jadwal_fix', 'rescheduled_by_petugas'].includes(b.status) && b.reschedule_count < 1;
+                    return `<article class="berkas-card status-${b.status}">
+                        <section class="berkas-top">
+                            <div class="berkas-nomor">#${escapeHTML(b.nomor_berkas)}</div>
+                            ${badgeStatus(b.status)}
+                            <div class="berkas-date-block">
+                                <span class="date-icon"></span>
+                                <strong>${formatDate(b.tanggal_fix || b.tanggal_diminta)}</strong>
+                                <small>Tgl Pemeriksaan</small>
+                            </div>
+                        </section>
+                        <section class="berkas-detail">
+                            <div class="berkas-row"><span>Pemohon</span><b>:</b><strong>${escapeHTML(b.nama_pemohon)}</strong></div>
+                            <div class="berkas-row"><span>Wilayah</span><b>:</b><strong>${escapeHTML(b.nama_kecamatan)}, ${escapeHTML(b.nama_kelurahan)}</strong></div>
+                            <div class="berkas-row"><span>Petugas</span><b>:</b><strong>${escapeHTML(b.nama_petugas || '-')}</strong></div>
+                            <div class="berkas-row"><span>Alamat</span><b>:</b><strong>${escapeHTML(b.alamat_lokasi || '-')}</strong></div>
+                            <div class="berkas-row"><span>Catatan</span><b>:</b><strong>${escapeHTML(b.catatan_lapangan || '-')}</strong></div>
+                        </section>
+                        <section class="berkas-info-box">
+                            <h4>Info Berkas</h4>
+                            <div><span>Nomor Berkas</span><b>:</b><strong>${escapeHTML(b.nomor_berkas)}</strong></div>
+                            <div><span>Tanggal Berkas</span><b>:</b><strong>${formatDate(b.tanggal_berkas || b.created_at)}</strong></div>
+                            <div><span>Status Berkas</span><b>:</b><strong>${badgeLabel(b.status)}</strong></div>
+                            <div><span>Jadwal Ditetapkan</span><b>:</b><strong>${b.tanggal_fix ? formatDate(b.tanggal_fix) : '-'}</strong></div>
+                        </section>
+                        <section class="berkas-action-panel">
+                            <div class="berkas-action-title">Tindak Lanjut Berkas</div>
+                            ${alasanPetugas ? `
+                            <div class="berkas-reason">
+                                <span>Alasan Petugas</span>
+                                <p>${escapeHTML(alasanPetugas)}</p>
+                            </div>` : ''}
+                            ${b.status === 'rescheduled_by_petugas' ? `
+                            <button class="berkas-action-row action-confirm" onclick="approvePetugasSchedule(${b.id})">
+                                ${riwayatActionIcon('confirm')}<strong>Setujui Jadwal</strong><small>Gunakan jadwal dari petugas</small>
+                            </button>
+                            ${bisaAjukanJadwal ? `<button class="berkas-action-row action-reschedule" onclick="openReschedule(${b.id})">${riwayatActionIcon('reschedule')}<strong>Ajukan Jadwal Lain</strong><small>Ajukan perubahan satu kali</small></button>` : ''}
+                            <button class="berkas-action-row action-cancel" onclick="openCancelBooking(${b.id})">
+                                ${riwayatActionIcon('cancel')}<strong>Batalkan Permohonan</strong><small>Jika jadwal tidak bisa disepakati</small>
+                            </button>` : ''}
+                            ${b.status !== 'rescheduled_by_petugas' && bisaAjukanJadwal ? `
+                            <button class="berkas-action-row action-reschedule" onclick="openReschedule(${b.id})">
+                                ${riwayatActionIcon('reschedule')}<strong>Ajukan Reschedule</strong><small>Ajukan perubahan satu kali</small>
+                            </button>` : ''}
+                            ${!bisaAjukanJadwal && b.status !== 'rescheduled_by_petugas' ? `<p class="berkas-action-note">${riwayatStatusNote(b.status)}</p>` : ''}
+                        </section>
+                    </article>`;
+                }).join('');
+            } catch (e) { list.innerHTML = '<div class="alert alert-error">Gagal memuat agenda.</div>'; }
+        }
+
+        async function approvePetugasSchedule(id) {
+            try {
+                const res = await apiFetch(`/api/booking/approve-petugas-schedule/${id}`, {
+                    method: 'POST'
+                });
+                if (!res.ok) {
+                    const data = await res.json();
+                    alert(data.message || 'Gagal menyetujui jadwal.');
+                    return;
+                }
+                loadProfil();
+                loadNotifikasi();
+            } catch (e) {
+                alert('Gagal menyetujui jadwal.');
+            }
+        }
+
+        function openCancelBooking(id) {
+            selectedBookingId = id;
+            document.getElementById('cancel-alasan').value = '';
+            document.getElementById('cancel-error').style.display = 'none';
+            document.getElementById('modal-cancel-booking').classList.add('show');
+        }
+
+        async function submitCancelBooking() {
+            const alasan = document.getElementById('cancel-alasan').value.trim();
+            const errEl = document.getElementById('cancel-error');
+            errEl.style.display = 'none';
+
+            if (!alasan) {
+                errEl.textContent = 'Alasan pembatalan wajib diisi.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await apiFetch(`/api/booking/cancel/${selectedBookingId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ alasan })
+                });
+                if (!res.ok) {
+                    const data = await res.json();
+                    errEl.textContent = data.message || 'Gagal membatalkan permohonan.';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                closeModal('modal-cancel-booking');
+                loadProfil();
+                loadNotifikasi();
+            } catch (e) {
+                errEl.textContent = 'Gagal membatalkan permohonan.';
+                errEl.style.display = 'block';
+            }
+        }
+
+        function openReschedule(id) {
+            selectedBookingId = id;
+            document.getElementById('reschedule-tanggal').value = '';
+            document.getElementById('reschedule-alasan').value = '';
+            document.getElementById('reschedule-error').style.display = 'none';
+            document.getElementById('reschedule-tanggal').min = today;
+            document.getElementById('modal-reschedule').classList.add('show');
+        }
+
+        async function submitReschedule() {
+            const tanggal_baru = document.getElementById('reschedule-tanggal').value;
+            const alasan = document.getElementById('reschedule-alasan').value;
+            const errEl = document.getElementById('reschedule-error');
+            errEl.style.display = 'none';
+
+            if (!tanggal_baru) {
+                errEl.textContent = 'Tanggal pengajuan baru wajib diisi.';
+                errEl.style.display = 'block'; return;
+            }
+            try {
+                const res = await apiFetch(`/api/booking/reschedule/${selectedBookingId}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ tanggal_baru, alasan })
+                });
+                if (!res.ok) { const d = await res.json(); errEl.textContent = d.message; errEl.style.display = 'block'; return; }
+                closeModal('modal-reschedule');
+                loadProfil();
+            } catch (e) { errEl.textContent = 'Gagal menyimpan perubahan.'; errEl.style.display = 'block'; }
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+        function logout() { localStorage.clear(); window.location.href = '/'; }
+        function formatDate(d) {
+            if (!d) return '-';
+            return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+        function badgeLabel(status) {
+            const label = {
+                pending: 'Menunggu Konfirmasi',
+                rescheduled_by_user: 'Jadwal Diubah Pemohon',
+                rescheduled_by_petugas: 'Jadwal Diubah Petugas',
+                jadwal_fix: 'Jadwal Ditetapkan',
+                selesai: 'Selesai',
+                ditolak: 'Ditolak',
+                dibatalkan: 'Dibatalkan'
+            };
+            return label[status] || status;
+        }
+
+        function riwayatStatusNote(status) {
+            const notes = {
+                pending: 'Berkas sedang menunggu konfirmasi petugas.',
+                rescheduled_by_user: 'Usulan jadwal baru Anda sedang menunggu konfirmasi petugas.',
+                jadwal_fix: 'Jadwal pemeriksaan sudah ditetapkan.',
+                selesai: 'Pemeriksaan berkas telah selesai.',
+                ditolak: 'Berkas ditolak dan tidak memiliki aksi lanjutan.',
+                dibatalkan: 'Permohonan dibatalkan oleh pemohon.'
+            };
+            return notes[status] || 'Tidak ada aksi lanjutan untuk status ini.';
+        }
+
+        function riwayatActionIcon(type) {
+            const icons = {
+                confirm: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>',
+                reschedule: '<svg viewBox="0 0 24 24"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect x="3.5" y="5" width="17" height="16" rx="2.5"></rect><path d="M3.5 10h17"></path><path d="M8 15h6"></path><path d="m13 12 3 3-3 3"></path></svg>',
+                cancel: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>'
+            };
+            return `<span class="berkas-action-icon" aria-hidden="true">${icons[type] || icons.confirm}</span>`;
+        }
+
+        function badgeStatus(status) {
+            return '<span class="badge badge-' + status + '">' + badgeLabel(status) + '</span>';
+        }
+
+        // Init Peta Otomatis
+        loadWilayahDanPetugas();
+        initMap();
+        loadNotifikasi();
+        setInterval(loadNotifikasi, 30000);
+    </script>
+</body>
+
+</html>

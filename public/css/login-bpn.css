@@ -1,0 +1,473 @@
+/* ============================================================
+   GLOBAL RESET & VARIABEL TARGET
+   ============================================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-biru: #0B3A68;
+    --secondary-kuning: #F5A623;
+    --white: #ffffff;
+    --gray-100: #F0F4F8;
+    --gray-200: #e9ecef;
+    --gray-500: #8FA4B5;
+
+    --radius-input: 10px;
+    --radius-button: 10px;
+    --radius-card: 20px;
+
+    --glow-blue: 0 4px 12px rgba(11, 58, 104, 0.2);
+    --shadow-card: 0 15px 40px rgba(0, 0, 0, 0.08);
+
+    --font-main: 'Public Sans', system-ui, -apple-system, sans-serif;
+    --font-secondary: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================================
+   BODY & VIEWPORT (MOBILE FIRST)
+   ============================================================ */
+.mobile-body {
+    /* Panggil file SVG latar putih Anda di sini */
+    background-image: url('/img/white-bg-login.svg');
+    background-color: #F0F4F8;
+    background-size: cover;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    font-family: var(--font-secondary);
+}
+
+.mobile-viewport-container {
+    width: 100%;
+    max-width: 420px;
+
+    /* Panggil file SVG latar biru Anda di sini */
+    background-image: url('/img/blue-bg-login.svg');
+    background-position: top center;
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-viewport {
+    flex: 1;
+    padding: max(24px, 4vh) 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================================
+   HEADER AREA (BAGIAN KIRI)
+   ============================================================ */
+.header-area {
+    padding-bottom: 24px;
+}
+
+.logo-text-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.target-logo {
+    /* Diubah menjadi lebih besar karena bentuk logonya memanjang (horizontal) */
+    width: clamp(160px, 45vw, 220px);
+    height: auto;
+    margin-bottom: 16px;
+}
+
+.target-title {
+    font-family: var(--font-main);
+    font-weight: 700;
+    font-size: clamp(18px, 6vw, 24px);
+    color: var(--white);
+    line-height: 1.25;
+    margin: 0;
+}
+
+.text-yellow {
+    color: var(--secondary-kuning);
+}
+
+.title-line {
+    width: 60px;
+    height: 3px;
+    background-color: var(--secondary-kuning);
+    border-radius: 2px;
+    margin-top: 12px;
+}
+
+.target-subtitle {
+    font-family: var(--font-secondary);
+    font-size: clamp(12px, 3.5vw, 14px);
+    font-weight: 400;
+    color: #D1E0EE;
+    margin-top: 10px;
+    line-height: 1.4;
+    max-width: 100%;
+}
+
+/* ============================================================
+   KARTU INFO / ALERT KEAMANAN (DEFAULT MOBILE)
+   ============================================================ */
+.info-card {
+    display: flex;
+    align-items: center;
+    margin-top: 64px;
+    /* Dorong ke area putih di HP */
+    background-color: var(--white);
+    border: 1px solid #fadbd8;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(231, 76, 60, 0.08);
+}
+
+.info-icon {
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+}
+
+.info-text {
+    display: flex;
+    flex-direction: column;
+    color: var(--gray-500);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.info-text strong {
+    font-size: 13px;
+    font-family: var(--font-main);
+    color: var(--primary-biru);
+    /* Teks gelap di HP */
+    margin-bottom: 2px;
+}
+
+/* ============================================================
+   KARTU LOGIN (BAGIAN KANAN)
+   ============================================================ */
+.target-card {
+    background-color: var(--white);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    position: relative;
+    padding-bottom: 24px;
+    overflow: hidden;
+    margin-top: 0px;
+        /* Biarkan menempel rapi di bawah info card */
+        margin-bottom: 40px;
+        /* Beri jarak napas dari ujung bawah layar HP */
+}
+
+.card-accent-corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: transparent;
+    border-radius: 0;
+    /* Ganti dengan blob kuning Anda jika ada */
+    background-image: url('/img/blob-baru.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: top left;
+    width: 80px;
+    height: 80px;
+    z-index: 0;
+}
+
+/* ============================================================
+   TABS STYLING (PETUGAS / ADMIN)
+   ============================================================ */
+.tab-container {
+    display: flex;
+    gap: 12px;
+    padding: 0 24px;
+    margin-top: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+}
+
+.tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+    background-color: var(--white);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.tab-btn:hover {
+    background-color: var(--gray-100);
+}
+
+.tab-btn.active {
+    background-color: var(--primary-biru);
+    border-color: var(--primary-biru);
+    box-shadow: var(--glow-blue);
+    transform: translateY(-2px);
+}
+
+.tab-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--gray-500);
+    flex-shrink: 0;
+}
+
+.tab-btn.active .tab-icon {
+    color: var(--white);
+}
+
+.tab-text strong {
+    display: block;
+    font-family: var(--font-main);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary-biru);
+    margin-bottom: 2px;
+}
+
+.tab-btn.active .tab-text strong {
+    color: var(--white);
+}
+
+.tab-text span {
+    font-size: 10px;
+    color: var(--gray-500);
+}
+
+.tab-btn.active .tab-text span {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ============================================================
+   FORM FIELDS & INPUT ICONS
+   ============================================================ */
+.form-fields {
+    padding: 0 24px;
+}
+
+.form-fields label {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--primary-biru);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.input-wrapper {
+    position: relative;
+    margin-bottom: 16px;
+}
+
+.input-wrapper .icon-left,
+.input-wrapper .icon-right {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-500);
+}
+
+.input-wrapper .icon-left {
+    left: 16px;
+}
+
+.input-wrapper .icon-right {
+    right: 16px;
+}
+
+.form-fields input {
+    width: 100%;
+    background-color: var(--gray-100);
+    border: 1px solid transparent;
+    border-radius: var(--radius-input);
+    padding: 12px 16px 12px 44px;
+    font-family: var(--font-secondary);
+    font-size: 13px;
+    color: var(--primary-biru);
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.form-fields input::placeholder {
+    color: #A0B3C1;
+}
+
+.form-fields input:focus {
+    border-color: var(--primary-biru);
+    background-color: var(--white);
+}
+
+/* ============================================================
+   BUTTONS & ALERTS
+   ============================================================ */
+.button-group {
+    padding: 0 24px;
+}
+
+.btn-masuk {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-main);
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    padding: 14px;
+    background-color: var(--primary-biru);
+    color: var(--white);
+    border: none;
+    box-shadow: var(--glow-blue);
+}
+
+.btn-masuk:hover {
+    background-color: #082a4d;
+    transform: translateY(-1px);
+}
+
+.alert {
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: var(--font-secondary);
+}
+
+.alert-error {
+    background: #fadbd8;
+    color: #922b21;
+    border: 1px solid #f5b7b1;
+}
+
+/* ============================================================
+   RESPONSIVE DESKTOP (Split Screen)
+   ============================================================ */
+@media (min-width: 768px) {
+    .mobile-body {
+        align-items: center;
+        background-image: url('/img/login-bg.svg');
+        background-size: cover;
+        /* KUNCI 1: Tahan background agar selalu berpusat di tengah layar */
+        background-position: center;
+    }
+
+    .mobile-viewport-container {
+        background-image: none;
+        /* 1. Perlebar kembali kontainer utamanya agar tidak sempit */
+        max-width: 1280px;
+    }
+
+    .mobile-viewport {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 40px 80px;
+        gap: 120px;
+    }
+
+    .header-area {
+        flex: 1;
+        margin-bottom: 0;
+        margin-left: -20px;
+    }
+
+        .target-logo {
+            width: 72px;
+            margin-bottom: 24px;
+            height: auto;
+        }
+
+    .target-title {
+        font-size: 38px;
+    }
+
+    .target-subtitle {
+        font-size: 15px;
+        margin-top: 16px;
+        line-height: 1.5;
+    }
+
+    /* Munculkan info card (Akses Terbatas) di PC dengan efek Glassmorphism */
+    .info-card {
+        margin-top: 32px;
+        /* Kembalikan jaraknya */
+        width: fit-content;
+        padding-right: 24px;
+
+        /* TIMPA GAYA HP MENJADI KACA TRANSPARAN */
+        background-color: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
+        box-shadow: none;
+        /* Hilangkan bayangan merah dari HP */
+    }
+
+    .info-text strong {
+        color: var(--white);
+        /* Kembalikan teks menjadi putih untuk Desktop */
+    }
+
+    .info-icon {
+        border-radius: 10px;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+    }
+
+    .info-text {
+        display: flex;
+        flex-direction: column;
+        color: var(--white);
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .info-text strong {
+        font-size: 13px;
+        font-family: var(--font-main);
+        margin-bottom: 2px;
+    }
+
+    .target-card {
+        flex: 0 0 440px;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .tab-container {
+        padding: 0 32px;
+    }
+
+    .form-fields {
+        padding: 0 32px;
+    }
+
+    .button-group {
+        padding: 0 32px;
+    }
+}

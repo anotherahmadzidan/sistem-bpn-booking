@@ -1,0 +1,1000 @@
+/* ============================================================
+   PETUGAS DASHBOARD THEME
+   Mengikuti gaya admin: navy, blue, gold, light glassmorphism
+   ============================================================ */
+
+.petugas-dashboard {
+    --petugas-navy: #082c66;
+    --petugas-ink: #08245b;
+    --petugas-blue: #1677ff;
+    --petugas-gold: #f6b300;
+    --petugas-line: #dce6f5;
+    background: url("/img/admin-bg.svg") center center / cover no-repeat fixed;
+    color: var(--petugas-ink);
+    scrollbar-gutter: stable;
+}
+
+.petugas-dashboard::before {
+    display: none;
+}
+
+.petugas-dashboard .sidebar {
+    width: 286px;
+    padding: 24px 18px;
+    background: transparent;
+    box-shadow: none;
+}
+
+.petugas-dashboard .sidebar-header {
+    padding: 0 10px 28px;
+    border: 0;
+}
+
+.petugas-dashboard .brand-mark {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.petugas-dashboard .brand-mark img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+}
+
+.petugas-dashboard .brand-mark h2 {
+    margin: 0;
+    color: #fff;
+    font-size: 21px;
+    line-height: 1;
+    letter-spacing: -0.01em;
+}
+
+.petugas-dashboard .brand-mark p {
+    margin-top: 7px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.petugas-dashboard .sidebar-user {
+    width: calc(100% - 20px);
+    margin: 2px 10px 24px;
+    min-height: 78px;
+    padding: 16px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.055);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-sizing: border-box;
+}
+
+.petugas-dashboard .sidebar-user span {
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 13px;
+}
+
+.petugas-dashboard .sidebar-user strong {
+    display: block;
+    margin-top: 8px;
+    color: #fff;
+    font-size: 15px;
+}
+
+.petugas-dashboard .sidebar-user-shield {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    color: #ffc400;
+    background: rgba(255, 196, 0, 0.12);
+    border: 1px solid rgba(255, 196, 0, 0.22);
+}
+
+.petugas-dashboard .sidebar-user-shield svg,
+.petugas-dashboard .nav-item svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.1;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.petugas-dashboard .sidebar-nav {
+    padding: 0 10px;
+    position: relative;
+    z-index: 1;
+}
+
+.petugas-dashboard .nav-section-label {
+    padding: 0 8px;
+    margin: 8px 0 12px;
+    color: rgba(255, 255, 255, 0.64);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.petugas-dashboard .nav-item {
+    width: 100%;
+    height: 50px;
+    margin: 0 0 8px;
+    padding: 0 16px;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-weight: 600;
+    box-sizing: border-box;
+}
+
+.petugas-dashboard .nav-item .icon {
+    width: 22px;
+    height: 22px;
+    margin-right: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: currentColor;
+    font-size: 0;
+}
+
+.petugas-dashboard .nav-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.petugas-dashboard .nav-item.active {
+    background: linear-gradient(135deg, #0b65d8, #07499f);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 12px 26px rgba(5, 32, 88, 0.34),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.petugas-dashboard .nav-item.active .menu-icon {
+    color: #ffd21a;
+}
+
+.petugas-dashboard .sidebar-footer {
+    padding: 0 10px;
+    border: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.petugas-dashboard .petugas-logout {
+    width: 100%;
+    height: 52px;
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.045) !important;
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    border-radius: 11px !important;
+}
+
+.petugas-dashboard .logout-symbol {
+    transform: rotate(180deg);
+    font-weight: 800;
+}
+
+.petugas-dashboard .main-content {
+    margin-left: 286px;
+    max-width: calc(100vw - 286px);
+    min-height: 100vh;
+    padding: 24px 34px 46px;
+    background: transparent;
+}
+
+.petugas-dashboard .petugas-welcome-header {
+    min-height: 70px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 22px;
+}
+
+.petugas-dashboard .petugas-welcome-copy {
+    min-width: 0;
+    padding-top: 2px;
+}
+
+.petugas-dashboard .petugas-welcome-copy h1 {
+    margin: 0 0 8px;
+    color: var(--petugas-ink);
+    font-size: 24px;
+    line-height: 1.18;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.petugas-dashboard .petugas-welcome-copy h1 span {
+    color: #064bb2;
+    font-weight: 800;
+}
+
+.petugas-dashboard .petugas-welcome-copy p {
+    margin: 0;
+    color: #3f5377;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.petugas-dashboard .petugas-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex: 0 0 auto;
+}
+
+.petugas-dashboard .role-notif-wrap {
+    position: relative;
+}
+
+.petugas-dashboard .petugas-date-pill,
+.petugas-dashboard .petugas-notification-button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid rgba(220, 230, 245, 0.96);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 12px 28px rgba(8, 36, 91, 0.12);
+    backdrop-filter: blur(12px);
+}
+
+.petugas-dashboard .petugas-date-pill {
+    gap: 10px;
+    padding: 0 16px;
+}
+
+.petugas-dashboard .petugas-date-pill strong {
+    color: var(--petugas-ink);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.petugas-dashboard .petugas-calendar-icon,
+.petugas-dashboard .petugas-bell-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    color: #064bb2;
+}
+
+.petugas-dashboard .petugas-calendar-icon svg,
+.petugas-dashboard .petugas-bell-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.petugas-dashboard .petugas-notification-button {
+    position: relative;
+    width: 48px;
+    justify-content: center;
+    padding: 0;
+    color: #064bb2;
+    cursor: pointer;
+}
+
+.petugas-dashboard .petugas-notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -7px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    background: #ef233c;
+    color: #fff;
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 800;
+}
+
+.petugas-dashboard .role-notif-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    right: 0;
+    z-index: 40;
+    width: min(360px, calc(100vw - 40px));
+    max-height: 420px;
+    overflow-y: auto;
+    border: 1px solid #dce6f5;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 22px 48px rgba(8, 36, 91, 0.18);
+}
+
+.petugas-dashboard .role-notif-header {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 15px;
+    background: #fff;
+    border-bottom: 1px solid #e5edf8;
+    color: var(--petugas-ink);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.petugas-dashboard .role-notif-header button {
+    border: 0;
+    background: transparent;
+    color: #0b5fc5;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.petugas-dashboard .role-notif-item {
+    padding: 13px 15px;
+    border-bottom: 1px solid #eef3fb;
+    background: #fff;
+}
+
+.petugas-dashboard .role-notif-item.unread {
+    background: #f3f8ff;
+    border-left: 3px solid #1677ff;
+}
+
+.petugas-dashboard .role-notif-title {
+    color: var(--petugas-ink);
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+.petugas-dashboard .role-notif-message {
+    margin-top: 5px;
+    color: #516895;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.petugas-dashboard .role-notif-time,
+.petugas-dashboard .role-notif-empty {
+    margin-top: 7px;
+    color: #8fa4c3;
+    font-size: 11px;
+}
+
+.petugas-dashboard .role-notif-empty {
+    padding: 18px 15px;
+    margin-top: 0;
+    text-align: center;
+}
+
+.petugas-dashboard .page-header {
+    margin-bottom: 24px;
+}
+
+.petugas-dashboard .page-header h1 {
+    color: var(--petugas-ink);
+    font-size: 30px;
+    letter-spacing: -0.02em;
+}
+
+.petugas-dashboard .page-header h1::after {
+    content: "";
+    display: block;
+    width: 66px;
+    height: 3px;
+    margin: 8px 0 12px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--petugas-ink) 0 48%, var(--petugas-gold) 48% 100%);
+}
+
+.petugas-dashboard .page-header p {
+    color: #3f5377;
+    font-size: 14px;
+}
+
+.petugas-dashboard .petugas-filter-shell {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 18px 8px 8px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(220, 230, 245, 0.95);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 14px 34px rgba(8, 36, 91, 0.08);
+    backdrop-filter: blur(12px);
+}
+
+.petugas-dashboard .petugas-filter-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.petugas-dashboard .petugas-filter-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.petugas-dashboard .petugas-filter-tab {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--petugas-ink);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.petugas-dashboard .petugas-filter-tab b {
+    font-weight: 800;
+}
+
+.petugas-dashboard .petugas-filter-tab:hover {
+    background: #f3f7ff;
+}
+
+.petugas-dashboard .petugas-filter-tab.active {
+    background: linear-gradient(135deg, #082c66, #07377f);
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(8, 44, 102, 0.22);
+}
+
+.petugas-dashboard .tab-icon {
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: currentColor;
+}
+
+.petugas-dashboard .tab-icon svg {
+    width: 14px;
+    height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.petugas-dashboard #filter-dropdown {
+    position: absolute;
+    width: 1px !important;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.petugas-dashboard .tugas-card,
+.petugas-dashboard .card {
+    border: 1px solid #dce6f5;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 18px 46px rgba(8, 36, 91, 0.08);
+}
+
+.petugas-dashboard .tugas-card-modern {
+    --status-accent: #1677ff;
+    --status-bg: #dbeafe;
+    --status-text: #1e40af;
+    position: relative;
+    display: grid;
+    grid-template-columns: 150px minmax(260px, 1.45fr) minmax(230px, 0.95fr) minmax(250px, 0.9fr);
+    gap: 22px;
+    align-items: stretch;
+    padding: 18px 20px 18px 18px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    border-color: color-mix(in srgb, var(--status-accent) 26%, #dce6f5);
+    box-shadow: 0 16px 40px color-mix(in srgb, var(--status-accent) 10%, transparent);
+}
+
+.petugas-dashboard .tugas-card-modern::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 14px;
+    bottom: 14px;
+    width: 4px;
+    border-radius: 99px;
+    background: var(--status-accent);
+}
+
+.petugas-dashboard .tugas-card-modern.status-pending {
+    --status-accent: #f5a400;
+    --status-bg: #fef3c7;
+    --status-text: #92400e;
+}
+
+.petugas-dashboard .tugas-card-modern.status-rescheduled_by_user {
+    --status-accent: #db2777;
+    --status-bg: #fce7f3;
+    --status-text: #9d174d;
+}
+
+.petugas-dashboard .tugas-card-modern.status-rescheduled_by_petugas {
+    --status-accent: #7c3aed;
+    --status-bg: #ede9fe;
+    --status-text: #5b21b6;
+}
+
+.petugas-dashboard .tugas-card-modern.status-jadwal_fix {
+    --status-accent: #1677ff;
+    --status-bg: #dbeafe;
+    --status-text: #1e40af;
+}
+
+.petugas-dashboard .tugas-card-modern.status-selesai {
+    --status-accent: #10b981;
+    --status-bg: #d5f5e3;
+    --status-text: #1e8449;
+}
+
+.petugas-dashboard .tugas-card-modern.status-ditolak {
+    --status-accent: #ef4444;
+    --status-bg: #fee2e2;
+    --status-text: #991b1b;
+}
+
+.petugas-dashboard .tugas-card-modern.status-dibatalkan {
+    --status-accent: #64748b;
+    --status-bg: #e2e8f0;
+    --status-text: #334155;
+}
+
+.petugas-dashboard .tugas-card-modern .date-icon {
+    color: var(--status-accent);
+}
+
+.petugas-dashboard .tugas-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 10px 0 6px 6px;
+}
+
+.petugas-dashboard .tugas-nomor {
+    color: var(--petugas-ink);
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.petugas-dashboard .tugas-date-block {
+    margin-top: auto;
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    gap: 4px 8px;
+    align-items: center;
+    color: var(--petugas-ink);
+}
+
+.petugas-dashboard .tugas-date-block strong {
+    font-size: 14px;
+}
+
+.petugas-dashboard .tugas-date-block small {
+    grid-column: 2;
+    color: #516895;
+    font-size: 11px;
+}
+
+.petugas-dashboard .date-icon {
+    width: 16px;
+    height: 16px;
+    position: relative;
+    border: 1.8px solid #0b5fc5;
+    border-radius: 4px;
+}
+
+.petugas-dashboard .date-icon::before {
+    content: "";
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    top: 4px;
+    border-top: 1.8px solid #0b5fc5;
+}
+
+.petugas-dashboard .date-icon::after {
+    content: "";
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    left: 4px;
+    top: -3px;
+    border-radius: 2px;
+    background: #0b5fc5;
+    box-shadow: 7px 0 0 #0b5fc5;
+}
+
+.petugas-dashboard .tugas-detail-panel {
+    padding: 2px 0 0 18px;
+    border-left: 1px solid #dce6f5;
+}
+
+.petugas-dashboard .tugas-detail-row,
+.petugas-dashboard .tugas-info-box div {
+    display: grid;
+    grid-template-columns: 104px 10px 1fr;
+    gap: 8px;
+    align-items: start;
+    margin-bottom: 10px;
+    color: #294776;
+    font-size: 13px;
+}
+
+.petugas-dashboard .tugas-detail-row span,
+.petugas-dashboard .tugas-info-box span {
+    color: #516895;
+}
+
+.petugas-dashboard .tugas-detail-row strong,
+.petugas-dashboard .tugas-info-box strong {
+    color: var(--petugas-ink);
+    line-height: 1.45;
+}
+
+.petugas-dashboard .tugas-detail-panel .tugas-actions-primary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.petugas-dashboard .tugas-info-box {
+    padding: 16px 18px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f7faff, #eef5ff);
+}
+
+.petugas-dashboard .tugas-info-box h4,
+.petugas-dashboard .action-panel-title {
+    margin: 0 0 13px;
+    color: var(--petugas-ink);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.petugas-dashboard .tugas-action-panel {
+    padding-left: 20px;
+    border-left: 1px solid #dce6f5;
+}
+
+.petugas-dashboard .action-row {
+    width: 100%;
+    min-height: 54px;
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 2px 10px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.62);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.petugas-dashboard .action-row .action-icon {
+    grid-row: span 2;
+    width: 28px;
+    height: 28px;
+    display: inline-grid;
+    place-items: center;
+    border: 1.5px solid color-mix(in srgb, currentColor 48%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, currentColor 9%, #fff);
+    color: currentColor;
+    flex: 0 0 auto;
+}
+
+.petugas-dashboard .action-row .action-icon svg {
+    width: 17px;
+    height: 17px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.petugas-dashboard .action-reschedule .action-icon,
+.petugas-dashboard .action-result .action-icon {
+    border-radius: 8px;
+}
+
+.petugas-dashboard .action-row strong {
+    font-size: 13px;
+}
+
+.petugas-dashboard .action-row small {
+    color: #516895;
+    font-size: 11.5px;
+}
+
+.petugas-dashboard .action-confirm {
+    border: 1px solid #8ab5ff;
+    color: #075be0;
+}
+
+.petugas-dashboard .action-reschedule {
+    border: 1px solid #ffc46b;
+    color: #e67600;
+    background: #fff8ed;
+}
+
+.petugas-dashboard .action-reject {
+    border: 1px solid #ffb6b6;
+    color: #e12727;
+    background: #fff2f2;
+}
+
+.petugas-dashboard .action-location {
+    border: 1px solid #9ed8c0;
+    color: #00865a;
+    background: #f0fff8;
+}
+
+.petugas-dashboard .action-contact {
+    border: 1px solid #9ed8c0;
+    color: #00865a;
+    background: #f7fffb;
+}
+
+.petugas-dashboard .action-result {
+    border: 1px solid #8ab5ff;
+    color: #075be0;
+    background: #f4f8ff;
+}
+
+.petugas-dashboard .action-row:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.petugas-dashboard .action-note {
+    margin: 10px 0 0;
+    color: #516895;
+    font-size: 12px;
+}
+
+.petugas-dashboard .action-note.success {
+    color: #0aa263;
+    font-weight: 700;
+}
+
+.petugas-dashboard .btn,
+.petugas-dashboard .btn-aksi {
+    border-radius: 9px;
+}
+
+.petugas-dashboard .btn-primary,
+.petugas-dashboard .btn-aksi-hasil {
+    background: linear-gradient(135deg, #082c66, #06255a);
+    box-shadow: 0 10px 22px rgba(8, 44, 102, 0.22);
+}
+
+.petugas-dashboard .btn-aksi-maps {
+    background: #eef6ff;
+    color: #0b5fc5;
+    border-color: #c8dfff;
+}
+
+.petugas-dashboard .btn-aksi-wa {
+    background: #eafaf2;
+    color: #087a4a;
+    border-color: #bdebd5;
+}
+
+.petugas-dashboard .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+}
+
+.petugas-dashboard .badge-ditolak {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.petugas-dashboard .badge-dibatalkan {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.petugas-dashboard .badge-selesai {
+    background: #d5f5e3;
+    color: #1e8449;
+}
+
+.petugas-dashboard .badge-confirmed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.petugas-dashboard .badge-jadwal_fix {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.petugas-dashboard .badge-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.petugas-dashboard .badge-rescheduled_by_user {
+    background: #fce7f3;
+    color: #9d174d;
+}
+
+.petugas-dashboard .badge-rescheduled_by_petugas {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+.petugas-dashboard .tugas-identity .badge {
+    align-self: flex-start;
+    max-width: 138px;
+}
+
+.petugas-dashboard .card-body {
+    padding: 24px;
+}
+
+.petugas-dashboard input,
+.petugas-dashboard select,
+.petugas-dashboard textarea {
+    border-color: #dce6f5;
+    background: #f8fbff;
+}
+
+.petugas-dashboard input:focus,
+.petugas-dashboard select:focus,
+.petugas-dashboard textarea:focus {
+    border-color: var(--petugas-blue);
+    box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12);
+}
+
+@media (max-width: 1024px) {
+    .petugas-dashboard .tugas-card-modern {
+        grid-template-columns: 150px 1fr;
+    }
+
+    .petugas-dashboard .tugas-info-box,
+    .petugas-dashboard .tugas-action-panel {
+        grid-column: 2;
+    }
+
+    .petugas-dashboard .tugas-action-panel {
+        padding-left: 0;
+        border-left: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .petugas-dashboard .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+    }
+
+    .petugas-dashboard .main-content {
+        margin-left: 0;
+        max-width: 100%;
+        padding: 20px;
+    }
+
+    .petugas-dashboard .petugas-welcome-header {
+        min-height: 0;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .petugas-dashboard .petugas-header-actions {
+        justify-content: space-between;
+    }
+
+    .petugas-dashboard .petugas-date-pill {
+        flex: 1;
+    }
+
+    .petugas-dashboard .petugas-filter-shell {
+        padding-right: 14px;
+    }
+
+    .petugas-dashboard .petugas-filter-tab {
+        min-height: 32px;
+        padding: 0 10px;
+        font-size: 11px;
+    }
+
+    .petugas-dashboard .sidebar-nav {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 0 10px 14px;
+    }
+
+    .petugas-dashboard .nav-section-label {
+        display: none;
+    }
+
+    .petugas-dashboard .nav-item {
+        min-width: 160px;
+        margin-bottom: 0;
+    }
+
+    .petugas-dashboard .tugas-card-modern,
+    .petugas-dashboard .tugas-detail-panel .tugas-actions-primary {
+        grid-template-columns: 1fr;
+    }
+
+    .petugas-dashboard .tugas-info-box,
+    .petugas-dashboard .tugas-action-panel {
+        grid-column: auto;
+    }
+
+    .petugas-dashboard .tugas-detail-panel {
+        padding-left: 0;
+        border-left: 0;
+    }
+}
