@@ -22,9 +22,11 @@ PORT=3000
 TRUST_PROXY=1
 CORS_ORIGINS=https://domain-testing-anda
 DB_HOST=localhost
+DB_PORT=3306
 DB_USER=user_database_testing
 DB_PASSWORD=password_database_testing
 DB_NAME=bpn_booking_testing
+DB_SSL=false
 DB_TIMEZONE=+08:00
 JWT_SECRET=isi_secret_panjang_minimal_32_karakter
 JWT_EXPIRES_IN=1d
@@ -33,12 +35,27 @@ EMAIL_PASS=app_password_gmail_16_karakter
 EMAIL_SERVICE=gmail
 ```
 
+Jika memakai Clever Cloud MySQL, kamu boleh langsung memakai env dari Clever Cloud:
+
+```env
+MYSQL_ADDON_HOST=host_mysql_clever_cloud
+MYSQL_ADDON_DB=nama_database_clever_cloud
+MYSQL_ADDON_USER=user_database_clever_cloud
+MYSQL_ADDON_PORT=3306
+MYSQL_ADDON_PASSWORD=password_database_clever_cloud
+MYSQL_ADDON_URI=mysql://user:password@host:3306/database
+DB_TIMEZONE=+08:00
+```
+
+Aplikasi akan memprioritaskan `MYSQL_ADDON_*` di atas `DB_*`.
+
 ## Perintah Deploy
 
 Jalankan dari folder project di server:
 
 ```powershell
 npm ci --omit=dev
+npm.cmd run test:db
 npm.cmd run test:email
 npm start
 ```
@@ -47,6 +64,7 @@ Untuk Linux server:
 
 ```bash
 npm ci --omit=dev
+npm run test:db
 npm run test:email
 npm start
 ```

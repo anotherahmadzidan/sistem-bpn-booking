@@ -90,7 +90,8 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server berjalan di http://localhost:${PORT}`);
+    const serviceUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    console.log(`Server berjalan di ${serviceUrl}`);
     if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
         console.warn('[Security] JWT_SECRET sebaiknya minimal 32 karakter untuk testing/production.');
     }
