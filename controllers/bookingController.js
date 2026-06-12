@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 const { kirimNotifikasi, kirimNotifikasiAdmin } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
-const { reserveKuotaAktif, kurangiKuotaAktif } = require('../utils/kuota');
+const { reserveKuotaAktif, kurangiKuotaAktif, getEffectiveKuota } = require('../utils/kuota');
 
 const formatTgl = (d) => new Date(d).toLocaleDateString('id-ID', {
     day: '2-digit', month: 'long', year: 'numeric'
@@ -33,23 +33,10 @@ const cekKuota = async (req, res) => {
         return res.status(400).json({ message: 'Parameter kurang' });
 
     try {
-        const cek = async (tabel, kolom, id) => {
-            const [rows] = await pool.query(
-                `SELECT kuota_max, terisi, is_unlimited FROM ${tabel}
-         WHERE ${kolom} = ? AND tanggal = ?`,
-                [id, tanggal]
-            );
-            if (rows.length === 0) return { tersedia: true, sisa: 10 };
-            const { kuota_max, terisi, is_unlimited } = rows[0];
-            if (is_unlimited) return { tersedia: true, sisa: null };
-            const sisa = kuota_max - terisi;
-            return { tersedia: sisa > 0, sisa };
-        };
-
         const [kec, kel, pet] = await Promise.all([
-            cek('kuota_kecamatan', 'kecamatan_id', kecamatan_id),
-            cek('kuota_kelurahan', 'kelurahan_id', kelurahan_id),
-            cek('kuota_petugas', 'petugas_id', petugas_id),
+            getEffectiveKuota({ tipe: 'kecamatan', id: kecamatan_id, tanggal }),
+            getEffectiveKuota({ tipe: 'kelurahan', id: kelurahan_id, tanggal }),
+            getEffectiveKuota({ tipe: 'petugas', id: petugas_id, tanggal }),
         ]);
 
         const tersedia = kec.tersedia && kel.tersedia && pet.tersedia;

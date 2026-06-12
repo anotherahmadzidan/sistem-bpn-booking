@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config();
 const { ensureNotificationSchema, verifyEmailTransport } = require('./utils/notifikasi');
+const { ensureQuotaSchema } = require('./utils/kuota');
 const pool = require('./config/db');
 
 const app = express();
@@ -33,6 +34,21 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+const configuredSlowRequestMs = Number(process.env.SLOW_REQUEST_MS);
+const slowRequestMs = Number.isFinite(configuredSlowRequestMs) && configuredSlowRequestMs > 0
+    ? configuredSlowRequestMs
+    : 5000;
+app.use((req, res, next) => {
+    const startedAt = Date.now();
+    res.on('finish', () => {
+        const elapsed = Date.now() - startedAt;
+        if (req.path.startsWith('/api/') && elapsed >= slowRequestMs) {
+            console.warn(`[Slow API] ${req.method} ${req.originalUrl} ${res.statusCode} - ${elapsed}ms`);
+        }
+    });
+    next();
+});
 
 app.get('/api/health', async (req, res) => {
     try {
@@ -100,6 +116,9 @@ app.listen(PORT, () => {
     }
     ensureNotificationSchema().catch(err => {
         console.error('Gagal menyiapkan schema notifikasi:', err.message);
+    });
+    ensureQuotaSchema().catch(err => {
+        console.error('Gagal menyiapkan schema kuota:', err.message);
     });
     verifyEmailTransport().catch(err => {
         console.error('Gagal memeriksa SMTP email:', err.message);

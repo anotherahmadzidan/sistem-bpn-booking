@@ -4,6 +4,12 @@ const fs = require('fs');
 const path = require('path');
 const { ensureNotificationSchema } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
+const {
+    ensureQuotaSchema,
+    setKuotaHarian,
+    setKuotaRentang,
+    isDateOnly
+} = require('../utils/kuota');
 
 // SEMUA BOOKINGS
 const getAllBookings = async (req, res) => {
@@ -99,33 +105,136 @@ const togglePetugas = async (req, res) => {
     }
 };
 
+function mapRowsBy(rows, key) {
+    return new Map(rows.map(row => [String(row[key]), row]));
+}
+
+function buildEffectiveQuotaRow(base, dateQuota, defaultQuota, supportsUnlimited) {
+    const dateOrder = Number(dateQuota?.set_order || 0);
+    const defaultOrder = Number(defaultQuota?.set_order || 0);
+    const defaultWins = defaultQuota && (!dateQuota || defaultOrder >= dateOrder);
+    const active = defaultWins ? defaultQuota : dateQuota;
+
+    if (!active) {
+        return {
+            ...base,
+            configured: true,
+            kuota_max: 0,
+            terisi: Number(dateQuota?.terisi || 0),
+            is_unlimited: 1
+        };
+    }
+
+    return {
+        ...base,
+        configured: true,
+        kuota_max: active.kuota_max,
+        terisi: Number(dateQuota?.terisi || 0),
+        is_unlimited: supportsUnlimited && active.is_unlimited ? 1 : 0
+    };
+}
+
 // LIHAT KUOTA
 const getKuota = async (req, res) => {
-    const { tanggal } = req.query;
+    const { tanggal, kecamatan_id } = req.query;
     if (!tanggal)
         return res.status(400).json({ message: 'Tanggal wajib diisi' });
 
     try {
-        const [kec] = await pool.query(
-            `SELECT kk.*, k.nama_kecamatan
-       FROM kuota_kecamatan kk
-       JOIN kecamatan k ON kk.kecamatan_id = k.id
-       WHERE kk.tanggal = ?`, [tanggal]
+        await ensureQuotaSchema();
+
+        const [kecamatanTargets] = await pool.query(
+            `SELECT id AS kecamatan_id, nama_kecamatan
+             FROM kecamatan
+             ORDER BY nama_kecamatan`
         );
-        const [kel] = await pool.query(
-            `SELECT kk.*, k.nama_kelurahan, kc.nama_kecamatan
-       FROM kuota_kelurahan kk
-       JOIN kelurahan k ON kk.kelurahan_id = k.id
-       JOIN kecamatan kc ON k.kecamatan_id = kc.id
-       WHERE kk.tanggal = ?`, [tanggal]
+        const [kecTanggal] = await pool.query(
+            `SELECT kecamatan_id, kuota_max, terisi, is_unlimited, set_order
+             FROM kuota_kecamatan
+             WHERE tanggal = ?`,
+            [tanggal]
         );
-        const [pet] = await pool.query(
-            `SELECT kp.*, p.nama_lengkap, p.nip
-       FROM kuota_petugas kp
-       JOIN petugas p ON kp.petugas_id = p.id
-       WHERE kp.tanggal = ?`, [tanggal]
+        const [kecDefault] = await pool.query(
+            `SELECT target_id AS kecamatan_id, kuota_max, is_unlimited, set_order
+             FROM kuota_default
+             WHERE tipe = 'kecamatan'`
         );
-        res.json({ kecamatan: kec, kelurahan: kel, petugas: pet });
+
+        const kelParams = [];
+        let kelWhere = '';
+        if (kecamatan_id) {
+            kelWhere = 'WHERE k.kecamatan_id = ?';
+            kelParams.push(kecamatan_id);
+        }
+        const [kelurahanTargets] = await pool.query(
+            `SELECT
+                k.id AS kelurahan_id,
+                k.nama_kelurahan,
+                k.kecamatan_id,
+                kc.nama_kecamatan
+             FROM kelurahan k
+             JOIN kecamatan kc ON k.kecamatan_id = kc.id
+             ${kelWhere}
+             ORDER BY kc.nama_kecamatan, k.nama_kelurahan`,
+            kelParams
+        );
+        const [kelTanggal] = await pool.query(
+            `SELECT kelurahan_id, kuota_max, terisi, is_unlimited, set_order
+             FROM kuota_kelurahan
+             WHERE tanggal = ?`,
+            [tanggal]
+        );
+        const [kelDefault] = await pool.query(
+            `SELECT target_id AS kelurahan_id, kuota_max, is_unlimited, set_order
+             FROM kuota_default
+             WHERE tipe = 'kelurahan'`
+        );
+
+        const [petugasTargets] = await pool.query(
+            `SELECT id AS petugas_id, nip, nama_lengkap
+             FROM petugas
+             WHERE is_active = 1
+             ORDER BY nama_lengkap`
+        );
+        const [petTanggal] = await pool.query(
+            `SELECT petugas_id, kuota_max, terisi, 0 AS is_unlimited, set_order
+             FROM kuota_petugas
+             WHERE tanggal = ?`,
+            [tanggal]
+        );
+        const [petDefault] = await pool.query(
+            `SELECT target_id AS petugas_id, kuota_max, 0 AS is_unlimited, set_order
+             FROM kuota_default
+             WHERE tipe = 'petugas'`
+        );
+
+        const kecTanggalMap = mapRowsBy(kecTanggal, 'kecamatan_id');
+        const kecDefaultMap = mapRowsBy(kecDefault, 'kecamatan_id');
+        const kelTanggalMap = mapRowsBy(kelTanggal, 'kelurahan_id');
+        const kelDefaultMap = mapRowsBy(kelDefault, 'kelurahan_id');
+        const petTanggalMap = mapRowsBy(petTanggal, 'petugas_id');
+        const petDefaultMap = mapRowsBy(petDefault, 'petugas_id');
+
+        res.json({
+            kecamatan: kecamatanTargets.map(item => buildEffectiveQuotaRow(
+                item,
+                kecTanggalMap.get(String(item.kecamatan_id)),
+                kecDefaultMap.get(String(item.kecamatan_id)),
+                true
+            )),
+            kelurahan: kelurahanTargets.map(item => buildEffectiveQuotaRow(
+                item,
+                kelTanggalMap.get(String(item.kelurahan_id)),
+                kelDefaultMap.get(String(item.kelurahan_id)),
+                true
+            )),
+            petugas: petugasTargets.map(item => buildEffectiveQuotaRow(
+                item,
+                petTanggalMap.get(String(item.petugas_id)),
+                petDefaultMap.get(String(item.petugas_id)),
+                false
+            ))
+        });
     } catch (err) {
         return serverError(res, err);
     }
@@ -133,37 +242,49 @@ const getKuota = async (req, res) => {
 
 // SET KUOTA
 const setKuota = async (req, res) => {
-    const { tipe, id, tanggal, kuota_max, is_unlimited } = req.body;
-    if (!tipe || !id || !tanggal)
-        return res.status(400).json({ message: 'tipe, id, dan tanggal wajib diisi' });
+    const {
+        tipe,
+        id,
+        tanggal,
+        tanggal_mulai,
+        tanggal_selesai,
+        kuota_max,
+        is_unlimited,
+        mode = 'range'
+    } = req.body;
+    if (!tipe || !id)
+        return res.status(400).json({ message: 'tipe dan target wajib diisi' });
 
     try {
-        if (tipe === 'kecamatan') {
-            await pool.query(
-                `INSERT INTO kuota_kecamatan (kecamatan_id, tanggal, kuota_max, terisi, is_unlimited)
-         VALUES (?, ?, ?, 0, ?)
-         ON DUPLICATE KEY UPDATE kuota_max = VALUES(kuota_max), is_unlimited = VALUES(is_unlimited)`,
-                [id, tanggal, kuota_max || 10, is_unlimited ? 1 : 0]
-            );
-        } else if (tipe === 'kelurahan') {
-            await pool.query(
-                `INSERT INTO kuota_kelurahan (kelurahan_id, tanggal, kuota_max, terisi, is_unlimited)
-         VALUES (?, ?, ?, 0, ?)
-         ON DUPLICATE KEY UPDATE kuota_max = VALUES(kuota_max), is_unlimited = VALUES(is_unlimited)`,
-                [id, tanggal, kuota_max || 10, is_unlimited ? 1 : 0]
-            );
-        } else if (tipe === 'petugas') {
-            await pool.query(
-                `INSERT INTO kuota_petugas (petugas_id, tanggal, kuota_max, terisi)
-         VALUES (?, ?, ?, 0)
-         ON DUPLICATE KEY UPDATE kuota_max = VALUES(kuota_max)`,
-                [id, tanggal, kuota_max || 10]
-            );
-        } else {
-            return res.status(400).json({ message: 'Tipe tidak valid' });
+        if (mode === 'daily') {
+            await setKuotaHarian({ tipe, id, kuota_max, is_unlimited });
+            return res.json({ message: 'Kuota setiap hari berhasil diset' });
         }
-        res.json({ message: 'Kuota berhasil diset' });
+
+        const mulai = tanggal_mulai || tanggal;
+        const selesai = tanggal_selesai || mulai;
+        if (!isDateOnly(mulai) || !isDateOnly(selesai)) {
+            return res.status(400).json({ message: 'Tanggal mulai dan selesai wajib diisi' });
+        }
+
+        const total = await setKuotaRentang({
+            tipe,
+            id,
+            tanggal_mulai: mulai,
+            tanggal_selesai: selesai,
+            kuota_max,
+            is_unlimited
+        });
+        res.json({ message: `Kuota berhasil diset untuk ${total} hari` });
     } catch (err) {
+        if (err.message && (
+            err.message.includes('Tipe kuota') ||
+            err.message.includes('Kuota') ||
+            err.message.includes('tanggal') ||
+            err.message.includes('Rentang')
+        )) {
+            return res.status(400).json({ message: err.message });
+        }
         return serverError(res, err);
     }
 };

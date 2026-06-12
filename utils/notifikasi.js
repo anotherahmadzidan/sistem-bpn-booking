@@ -9,6 +9,11 @@ function maskEmail(email) {
     return `${name.slice(0, 2)}***@${domain}`;
 }
 
+function positiveNumber(value, fallback) {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? number : fallback;
+}
+
 function buildEmailConfig() {
     const user = (process.env.EMAIL_USER || process.env.SMTP_USER || '').trim();
     const rawPass = process.env.EMAIL_PASS || process.env.SMTP_PASS || '';
@@ -54,6 +59,9 @@ function buildEmailConfig() {
 const emailConfig = buildEmailConfig();
 const transporter = emailConfig.enabled ? nodemailer.createTransport(emailConfig.transport) : null;
 let emailDisabledLogged = false;
+const emailQueueConcurrency = positiveNumber(process.env.EMAIL_QUEUE_CONCURRENCY || process.env.EMAIL_CONCURRENCY, 2);
+const emailQueue = [];
+let activeEmailJobs = 0;
 
 let schemaPromise = null;
 
@@ -223,6 +231,42 @@ async function kirimEmail({ email_user, judul, pesan, nomor_berkas }) {
     }
 }
 
+function enqueueEmail(payload) {
+    if (!payload.email_user) {
+        return { queued: false, skipped: 'recipient_empty' };
+    }
+
+    emailQueue.push({
+        ...payload,
+        queuedAt: Date.now()
+    });
+    setImmediate(processEmailQueue);
+    return { queued: true };
+}
+
+function processEmailQueue() {
+    while (activeEmailJobs < emailQueueConcurrency && emailQueue.length > 0) {
+        const job = emailQueue.shift();
+        activeEmailJobs += 1;
+
+        kirimEmail(job)
+            .then(result => {
+                if (String(process.env.EMAIL_DEBUG || '').toLowerCase() === 'true') {
+                    const elapsed = Date.now() - job.queuedAt;
+                    const status = result.sent ? 'terkirim' : `tidak terkirim (${result.skipped || result.error || 'unknown'})`;
+                    console.log(`[Email Queue] ${status} ke ${maskEmail(job.email_user)} setelah ${elapsed}ms`);
+                }
+            })
+            .catch(err => {
+                console.error(`[Email Queue] Error ke ${maskEmail(job.email_user)}: ${cleanMailerMessage(err)}`);
+            })
+            .finally(() => {
+                activeEmailJobs -= 1;
+                setImmediate(processEmailQueue);
+            });
+    }
+}
+
 async function kirimNotifikasi({
     user_id,
     recipient_role = 'user',
@@ -251,7 +295,7 @@ async function kirimNotifikasi({
             [legacyUserId, targetRole, targetId, booking_id || null, judul, pesan]
         );
 
-        await kirimEmail({ email_user, judul, pesan, nomor_berkas });
+        enqueueEmail({ email_user, judul, pesan, nomor_berkas });
     } catch (err) {
         // Jangan sampai gagal kirim notifikasi menghentikan proses utama.
         console.error('Notifikasi error:', err.message);
@@ -263,15 +307,20 @@ async function kirimNotifikasiAdmin(payload) {
         await ensureNotificationSchema();
 
         const [admins] = await pool.query('SELECT id, email FROM admin');
-        for (const admin of admins) {
-            await kirimNotifikasi({
-                ...payload,
-                recipient_role: 'admin',
-                recipient_id: admin.id,
-                user_id: null,
-                email_user: admin.email
-            });
-        }
+        const jobs = admins.map(admin => kirimNotifikasi({
+            ...payload,
+            recipient_role: 'admin',
+            recipient_id: admin.id,
+            user_id: null,
+            email_user: admin.email
+        }));
+
+        const results = await Promise.allSettled(jobs);
+        results.forEach(result => {
+            if (result.status === 'rejected') {
+                console.error('Notifikasi admin error:', result.reason?.message || result.reason);
+            }
+        });
     } catch (err) {
         console.error('Notifikasi admin error:', err.message);
     }

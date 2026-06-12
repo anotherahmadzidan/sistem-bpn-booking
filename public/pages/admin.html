@@ -318,7 +318,7 @@
                     </div>
                     <div id="petugas-error" class="alert alert-error" style="display:none"></div>
                     <div id="petugas-success" class="alert alert-success" style="display:none"></div>
-                    <button class="btn btn-primary" onclick="tambahPetugas()">+ Tambah Petugas</button>
+                    <button class="btn btn-primary" id="btn-add-petugas" onclick="tambahPetugas()">+ Tambah Petugas</button>
                 </div>
             </div>
 
@@ -409,8 +409,21 @@
                                 <select id="kec-target"></select>
                             </div>
                             <div class="form-group">
-                                <label>Tanggal</label>
-                                <input type="date" id="kec-tanggal">
+                                <label>Jenis Pengaturan</label>
+                                <select id="kec-mode" onchange="toggleKuotaMode('kecamatan')">
+                                    <option value="range">Rentang Tanggal</option>
+                                    <option value="daily">Setiap Hari</option>
+                                </select>
+                            </div>
+                            <div class="form-row kuota-range-fields" id="kec-range-fields">
+                                <div class="form-group">
+                                    <label>Tanggal Mulai</label>
+                                    <input type="date" id="kec-tanggal" onchange="syncKuotaEndDate('kecamatan')">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tanggal Selesai</label>
+                                    <input type="date" id="kec-tanggal-selesai">
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Kuota Maksimal</label>
@@ -425,17 +438,16 @@
                             </div>
                             <div id="kec-error" class="alert alert-error" style="display:none"></div>
                             <div id="kec-success" class="alert alert-success" style="display:none"></div>
-                            <button class="btn btn-primary" onclick="simpanKuota('kecamatan')">Simpan Kuota</button>
+                            <button class="btn btn-primary" id="btn-kuota-kecamatan" onclick="simpanKuota('kecamatan', this)">Simpan Kuota</button>
                         </div>
                     </div>
                     <!-- Daftar aktif -->
-                    <div class="card">
-                        <div class="card-header">
+                    <div class="card quota-active-card">
+                        <div class="card-header quota-active-header">
                             <h3>Kuota Aktif</h3>
-                            <div style="display:flex;gap:8px;align-items:center">
-                                <input type="date" id="kec-lihat-tanggal"
-                                    style="padding:6px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
-                                <button class="btn btn-secondary btn-sm"
+                            <div class="quota-active-controls quota-active-controls-2">
+                                <input type="date" id="kec-lihat-tanggal" class="quota-active-input">
+                                <button class="btn btn-secondary btn-sm quota-active-button"
                                     onclick="lihatKuota('kecamatan')">Tampilkan</button>
                             </div>
                         </div>
@@ -465,8 +477,21 @@
                                 <select id="kel-target"></select>
                             </div>
                             <div class="form-group">
-                                <label>Tanggal</label>
-                                <input type="date" id="kel-tanggal">
+                                <label>Jenis Pengaturan</label>
+                                <select id="kel-mode" onchange="toggleKuotaMode('kelurahan')">
+                                    <option value="range">Rentang Tanggal</option>
+                                    <option value="daily">Setiap Hari</option>
+                                </select>
+                            </div>
+                            <div class="form-row kuota-range-fields" id="kel-range-fields">
+                                <div class="form-group">
+                                    <label>Tanggal Mulai</label>
+                                    <input type="date" id="kel-tanggal" onchange="syncKuotaEndDate('kelurahan')">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tanggal Selesai</label>
+                                    <input type="date" id="kel-tanggal-selesai">
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Kuota Maksimal</label>
@@ -481,16 +506,19 @@
                             </div>
                             <div id="kel-error" class="alert alert-error" style="display:none"></div>
                             <div id="kel-success" class="alert alert-success" style="display:none"></div>
-                            <button class="btn btn-primary" onclick="simpanKuota('kelurahan')">Simpan Kuota</button>
+                            <button class="btn btn-primary" id="btn-kuota-kelurahan" onclick="simpanKuota('kelurahan', this)">Simpan Kuota</button>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
+                    <div class="card quota-active-card">
+                        <div class="card-header quota-active-header">
                             <h3>Kuota Aktif</h3>
-                            <div style="display:flex;gap:8px;align-items:center">
-                                <input type="date" id="kel-lihat-tanggal"
-                                    style="padding:6px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
-                                <button class="btn btn-secondary btn-sm"
+                            <div class="quota-active-controls quota-active-controls-3">
+                                <select id="kel-lihat-kec" class="quota-active-input"
+                                    onchange="lihatKuota('kelurahan')">
+                                    <option value="">-- Pilih Kecamatan --</option>
+                                </select>
+                                <input type="date" id="kel-lihat-tanggal" class="quota-active-input">
+                                <button class="btn btn-secondary btn-sm quota-active-button"
                                     onclick="lihatKuota('kelurahan')">Tampilkan</button>
                             </div>
                         </div>
@@ -514,8 +542,21 @@
                                 <select id="pet-target"></select>
                             </div>
                             <div class="form-group">
-                                <label>Tanggal</label>
-                                <input type="date" id="pet-tanggal">
+                                <label>Jenis Pengaturan</label>
+                                <select id="pet-mode" onchange="toggleKuotaMode('petugas')">
+                                    <option value="range">Rentang Tanggal</option>
+                                    <option value="daily">Setiap Hari</option>
+                                </select>
+                            </div>
+                            <div class="form-row kuota-range-fields" id="pet-range-fields">
+                                <div class="form-group">
+                                    <label>Tanggal Mulai</label>
+                                    <input type="date" id="pet-tanggal" onchange="syncKuotaEndDate('petugas')">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tanggal Selesai</label>
+                                    <input type="date" id="pet-tanggal-selesai">
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label>Kuota Maksimal</label>
@@ -523,16 +564,15 @@
                             </div>
                             <div id="pet-kq-error" class="alert alert-error" style="display:none"></div>
                             <div id="pet-kq-success" class="alert alert-success" style="display:none"></div>
-                            <button class="btn btn-primary" onclick="simpanKuota('petugas')">Simpan Kuota</button>
+                            <button class="btn btn-primary" id="btn-kuota-petugas" onclick="simpanKuota('petugas', this)">Simpan Kuota</button>
                         </div>
                     </div>
-                    <div class="card">
-                        <div class="card-header">
+                    <div class="card quota-active-card">
+                        <div class="card-header quota-active-header">
                             <h3>Kuota Aktif</h3>
-                            <div style="display:flex;gap:8px;align-items:center">
-                                <input type="date" id="pet-lihat-tanggal"
-                                    style="padding:6px 10px;border:1px solid #dee2e6;border-radius:6px;font-size:13px">
-                                <button class="btn btn-secondary btn-sm"
+                            <div class="quota-active-controls quota-active-controls-2">
+                                <input type="date" id="pet-lihat-tanggal" class="quota-active-input">
+                                <button class="btn btn-secondary btn-sm quota-active-button"
                                     onclick="lihatKuota('petugas')">Tampilkan</button>
                             </div>
                         </div>
@@ -634,7 +674,67 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('modal-edit-petugas')">Batal</button>
-                <button class="btn btn-primary" onclick="submitEditPetugas()">Simpan</button>
+                <button class="btn btn-primary" id="btn-edit-petugas" onclick="submitEditPetugas()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL STATUS PETUGAS -->
+    <div class="modal-overlay" id="modal-status-petugas">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="status-petugas-title">Ubah Status Petugas</h3>
+                <button class="modal-close" onclick="closeModal('modal-status-petugas')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-helper-text" id="status-petugas-message"></p>
+                <div class="delete-berkas-summary petugas-action-summary" id="status-petugas-summary"></div>
+                <div id="status-petugas-error" class="alert alert-error" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-status-petugas')">Batal</button>
+                <button class="btn btn-primary" id="btn-confirm-status-petugas" onclick="submitTogglePetugas()">
+                    Konfirmasi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL HAPUS PETUGAS -->
+    <div class="modal-overlay" id="modal-hapus-petugas">
+        <div class="modal modal-danger-confirm">
+            <div class="modal-header">
+                <h3>Hapus Petugas</h3>
+                <button class="modal-close" onclick="closeModal('modal-hapus-petugas')" aria-label="Tutup">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="danger-confirm-box">
+                    <strong>Perhatian: tindakan ini permanen.</strong>
+                    <p>Petugas hanya dapat dihapus jika tidak memiliki berkas aktif. Akun yang dihapus tidak bisa dipulihkan.</p>
+                </div>
+                <div class="delete-berkas-summary petugas-action-summary" id="delete-petugas-summary"></div>
+                <div class="form-group">
+                    <label>Ketik <strong>HAPUS</strong> untuk konfirmasi <span style="color:red">*</span></label>
+                    <input type="text" id="delete-petugas-confirm" placeholder="HAPUS" autocomplete="off"
+                        oninput="validateDeletePetugasConfirm()">
+                </div>
+                <div id="delete-petugas-error" class="alert alert-error" style="display:none"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('modal-hapus-petugas')">Batal</button>
+                <button class="btn btn-danger" id="btn-confirm-delete-petugas" onclick="submitHapusPetugas()" disabled>
+                    Hapus Petugas
+                </button>
             </div>
         </div>
     </div>
@@ -655,6 +755,31 @@
         let allPetugas = [];
         let wilayahData = { kecamatan: [], kelurahan: [] };
         let selectedDeleteBerkas = null;
+        let selectedStatusPetugas = null;
+        let selectedDeletePetugas = null;
+
+        function setAdminButtonLoading(button, isLoading, label = 'Memproses...') {
+            if (!button) return;
+
+            if (isLoading) {
+                if (!button.dataset.originalHtml) {
+                    button.dataset.originalHtml = button.innerHTML;
+                }
+                button.disabled = true;
+                button.setAttribute('aria-busy', 'true');
+                button.classList.add('is-loading');
+                button.innerHTML = `<span class="admin-button-spinner" aria-hidden="true"></span><span>${label}</span>`;
+                return;
+            }
+
+            button.disabled = false;
+            button.removeAttribute('aria-busy');
+            button.classList.remove('is-loading');
+            if (button.dataset.originalHtml) {
+                button.innerHTML = button.dataset.originalHtml;
+                delete button.dataset.originalHtml;
+            }
+        }
 
         // ============================================================
         // NAVIGASI
@@ -1031,12 +1156,12 @@
             <td style="display:flex;gap:6px;flex-wrap:wrap">
   <button class="btn btn-secondary btn-sm" onclick="openEditPetugas(${p.id})">Edit</button>
   <button class="btn btn-sm ${p.is_active ? 'btn-danger' : 'btn-success'}"
-    onclick="togglePetugas(${p.id}, ${p.is_active})">
+    onclick="openTogglePetugas(${p.id}, ${p.is_active})">
     ${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}
   </button>
   <button class="btn btn-sm" 
     style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5"
-    onclick="hapusPetugas(${p.id}, '${p.nama_lengkap}')">
+    onclick="openHapusPetugas(${p.id})">
     ${adminIcon('trash', 'btn-icon')} Hapus
   </button>
 </td>
@@ -1054,6 +1179,7 @@
             const password = document.getElementById('new-password').value;
             const errEl = document.getElementById('petugas-error');
             const sucEl = document.getElementById('petugas-success');
+            const btn = document.getElementById('btn-add-petugas');
             errEl.style.display = 'none';
             sucEl.style.display = 'none';
 
@@ -1062,6 +1188,7 @@
                 errEl.style.display = 'block';
                 return;
             }
+            setAdminButtonLoading(btn, true, 'Menyimpan...');
             try {
                 const res = await apiFetch('/api/admin/petugas', {
                     method: 'POST',
@@ -1077,10 +1204,12 @@
                 sucEl.style.display = 'block';
                 ['new-nip', 'new-nama', 'new-email', 'new-hp', 'new-password']
                     .forEach(id => document.getElementById(id).value = '');
-                loadPetugas();
+                await loadPetugas();
             } catch {
                 errEl.textContent = 'Terjadi kesalahan';
                 errEl.style.display = 'block';
+            } finally {
+                setAdminButtonLoading(btn, false);
             }
         }
 
@@ -1103,8 +1232,10 @@
             const no_hp = document.getElementById('edit-hp').value.trim();
             const password = document.getElementById('edit-password').value;
             const errEl = document.getElementById('edit-error');
+            const btn = document.getElementById('btn-edit-petugas');
             errEl.style.display = 'none';
 
+            setAdminButtonLoading(btn, true, 'Menyimpan...');
             try {
                 const res = await apiFetch(`/api/admin/petugas/${id}`, {
                     method: 'PUT',
@@ -1117,41 +1248,128 @@
                     return;
                 }
                 closeModal('modal-edit-petugas');
-                loadPetugas();
+                await loadPetugas();
             } catch {
                 errEl.textContent = 'Terjadi kesalahan';
                 errEl.style.display = 'block';
+            } finally {
+                setAdminButtonLoading(btn, false);
             }
         }
 
-        async function togglePetugas(id, isActive) {
-            const konfirm = confirm(isActive
-                ? 'Nonaktifkan petugas ini? Petugas tidak bisa login.'
-                : 'Aktifkan kembali petugas ini?');
-            if (!konfirm) return;
-            try {
-                await apiFetch(`/api/admin/petugas/${id}/toggle`, { method: 'PATCH' });
-                loadPetugas();
-            } catch {
-                alert('Gagal mengubah status petugas');
-            }
+        function openTogglePetugas(id, isActive) {
+            const petugas = allPetugas.find(p => p.id === id);
+            if (!petugas) return;
+
+            selectedStatusPetugas = { id, isActive: Boolean(isActive), petugas };
+            const action = isActive ? 'Nonaktifkan' : 'Aktifkan';
+            const nextStatus = isActive ? 'Nonaktif' : 'Aktif';
+
+            document.getElementById('status-petugas-title').textContent = `${action} Petugas`;
+            document.getElementById('status-petugas-message').textContent = isActive
+                ? 'Petugas yang dinonaktifkan tidak bisa login ke portal petugas.'
+                : 'Petugas yang diaktifkan kembali bisa login dan menerima penugasan.';
+            document.getElementById('status-petugas-summary').innerHTML = `
+                <div><span>Nama</span><strong>${escapeHTML(petugas.nama_lengkap || '-')}</strong></div>
+                <div><span>NIP</span><strong>${escapeHTML(petugas.nip || '-')}</strong></div>
+                <div><span>Email</span><strong>${escapeHTML(petugas.email || '-')}</strong></div>
+                <div><span>Status Baru</span><strong>${nextStatus}</strong></div>
+            `;
+            const errEl = document.getElementById('status-petugas-error');
+            errEl.style.display = 'none';
+            errEl.textContent = '';
+            const btn = document.getElementById('btn-confirm-status-petugas');
+            btn.className = `btn ${isActive ? 'btn-danger' : 'btn-success'}`;
+            btn.innerHTML = action;
+            delete btn.dataset.originalHtml;
+            setAdminButtonLoading(btn, false);
+            document.getElementById('modal-status-petugas').classList.add('show');
         }
 
-        async function hapusPetugas(id, nama) {
-            const konfirm = confirm(
-                `Hapus petugas "${nama}" secara permanen?\n\nPetugas tidak dapat dihapus jika masih memiliki berkas aktif.`
-            );
-            if (!konfirm) return;
+        async function submitTogglePetugas() {
+            if (!selectedStatusPetugas) return;
+
+            const { id, isActive } = selectedStatusPetugas;
+            const btn = document.getElementById('btn-confirm-status-petugas');
+            const errEl = document.getElementById('status-petugas-error');
+
+            errEl.style.display = 'none';
+            setAdminButtonLoading(btn, true, isActive ? 'Menonaktifkan...' : 'Mengaktifkan...');
             try {
-                const res = await apiFetch(`/api/admin/petugas/${id}`, { method: 'DELETE' });
-                const data = await res.json();
-                if (!res.ok) {
-                    alert('Gagal: ' + data.message);
+                const res = await apiFetch(`/api/admin/petugas/${id}/toggle`, { method: 'PATCH' });
+                if (!res || !res.ok) {
+                    const data = res ? await res.json() : {};
+                    errEl.textContent = data.message || 'Gagal mengubah status petugas';
+                    errEl.style.display = 'block';
                     return;
                 }
-                loadPetugas();
+                closeModal('modal-status-petugas');
+                selectedStatusPetugas = null;
+                await loadPetugas();
             } catch {
-                alert('Terjadi kesalahan saat menghapus petugas');
+                errEl.textContent = 'Gagal mengubah status petugas';
+                errEl.style.display = 'block';
+            } finally {
+                setAdminButtonLoading(btn, false);
+            }
+        }
+
+        function openHapusPetugas(id) {
+            const petugas = allPetugas.find(p => p.id === id);
+            if (!petugas) return;
+
+            selectedDeletePetugas = petugas;
+            document.getElementById('delete-petugas-summary').innerHTML = `
+                <div><span>Nama</span><strong>${escapeHTML(petugas.nama_lengkap || '-')}</strong></div>
+                <div><span>NIP</span><strong>${escapeHTML(petugas.nip || '-')}</strong></div>
+                <div><span>Email</span><strong>${escapeHTML(petugas.email || '-')}</strong></div>
+                <div><span>Status</span><strong>${petugas.is_active ? 'Aktif' : 'Nonaktif'}</strong></div>
+            `;
+            document.getElementById('delete-petugas-confirm').value = '';
+            document.getElementById('delete-petugas-error').style.display = 'none';
+            document.getElementById('btn-confirm-delete-petugas').disabled = true;
+            const btn = document.getElementById('btn-confirm-delete-petugas');
+            btn.innerHTML = 'Hapus Petugas';
+            delete btn.dataset.originalHtml;
+            setAdminButtonLoading(btn, false);
+            document.getElementById('modal-hapus-petugas').classList.add('show');
+        }
+
+        function validateDeletePetugasConfirm() {
+            const value = document.getElementById('delete-petugas-confirm').value;
+            document.getElementById('btn-confirm-delete-petugas').disabled = value !== 'HAPUS';
+        }
+
+        async function submitHapusPetugas() {
+            const errEl = document.getElementById('delete-petugas-error');
+            const btn = document.getElementById('btn-confirm-delete-petugas');
+            const confirmation = document.getElementById('delete-petugas-confirm').value;
+
+            errEl.style.display = 'none';
+            if (!selectedDeletePetugas || confirmation !== 'HAPUS') {
+                errEl.textContent = 'Ketik HAPUS dengan huruf besar untuk menghapus petugas.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            setAdminButtonLoading(btn, true, 'Menghapus...');
+            try {
+                const res = await apiFetch(`/api/admin/petugas/${selectedDeletePetugas.id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (!res.ok) {
+                    errEl.textContent = data.message || 'Gagal menghapus petugas';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                closeModal('modal-hapus-petugas');
+                selectedDeletePetugas = null;
+                await loadPetugas();
+            } catch {
+                errEl.textContent = 'Terjadi kesalahan saat menghapus petugas';
+                errEl.style.display = 'block';
+            } finally {
+                setAdminButtonLoading(btn, false);
+                validateDeletePetugasConfirm();
             }
         }
 
@@ -1178,6 +1396,11 @@
                 wilayahData.kecamatan.forEach(k => {
                     selFilterKec.innerHTML += `<option value="${k.id}">${k.nama_kecamatan}</option>`;
                 });
+                const selLihatKec = document.getElementById('kel-lihat-kec');
+                selLihatKec.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
+                wilayahData.kecamatan.forEach(k => {
+                    selLihatKec.innerHTML += `<option value="${k.id}">${k.nama_kecamatan}</option>`;
+                });
 
                 // Isi dropdown kelurahan (semua)
                 filterKelurahanKuota();
@@ -1190,9 +1413,16 @@
                 });
 
                 const today = new Date().toISOString().split('T')[0];
+                document.getElementById('kec-tanggal').value = today;
+                document.getElementById('kec-tanggal-selesai').value = today;
+                document.getElementById('kel-tanggal').value = today;
+                document.getElementById('kel-tanggal-selesai').value = today;
+                document.getElementById('pet-tanggal').value = today;
+                document.getElementById('pet-tanggal-selesai').value = today;
                 document.getElementById('kec-lihat-tanggal').value = today;
                 document.getElementById('kel-lihat-tanggal').value = today;
                 document.getElementById('pet-lihat-tanggal').value = today;
+                ['kecamatan', 'kelurahan', 'petugas'].forEach(toggleKuotaMode);
 
                 // Auto load kuota hari ini untuk tab yang aktif
                 lihatKuota('kecamatan');
@@ -1205,6 +1435,7 @@
         function filterKelurahanKuota() {
             const kecId = document.getElementById('kel-filter-kec').value;
             const sel = document.getElementById('kel-target');
+            const lihatKec = document.getElementById('kel-lihat-kec');
             sel.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
             const filtered = kecId
                 ? wilayahData.kelurahan.filter(k => k.kecamatan_id == kecId)
@@ -1212,6 +1443,9 @@
             filtered.forEach(k => {
                 sel.innerHTML += `<option value="${k.id}">${k.nama_kelurahan}</option>`;
             });
+            if (lihatKec && kecId) {
+                lihatKec.value = kecId;
+            }
         }
 
         function switchKuotaTab(tab) {
@@ -1221,15 +1455,43 @@
             });
         }
 
-        async function simpanKuota(tipe) {
+        function getKuotaPrefix(tipe) {
+            return { kecamatan: 'kec', kelurahan: 'kel', petugas: 'pet' }[tipe];
+        }
+
+        function toggleKuotaMode(tipe) {
+            const prefix = getKuotaPrefix(tipe);
+            const modeEl = document.getElementById(prefix + '-mode');
+            const rangeEl = document.getElementById(prefix + '-range-fields');
+            if (!modeEl || !rangeEl) return;
+
+            const isDaily = modeEl.value === 'daily';
+            rangeEl.style.display = isDaily ? 'none' : 'grid';
+        }
+
+        function syncKuotaEndDate(tipe) {
+            const prefix = getKuotaPrefix(tipe);
+            const startEl = document.getElementById(prefix + '-tanggal');
+            const endEl = document.getElementById(prefix + '-tanggal-selesai');
+            if (!startEl || !endEl) return;
+
+            endEl.min = startEl.value || '';
+            if (startEl.value && (!endEl.value || endEl.value < startEl.value)) {
+                endEl.value = startEl.value;
+            }
+        }
+
+        async function simpanKuota(tipe, button) {
             const map = {
-                kecamatan: { id: 'kec-target', tgl: 'kec-tanggal', max: 'kec-max', unl: 'kec-unlimited', err: 'kec-error', suc: 'kec-success' },
-                kelurahan: { id: 'kel-target', tgl: 'kel-tanggal', max: 'kel-max', unl: 'kel-unlimited', err: 'kel-error', suc: 'kel-success' },
-                petugas: { id: 'pet-target', tgl: 'pet-tanggal', max: 'pet-max', unl: null, err: 'pet-kq-error', suc: 'pet-kq-success' },
+                kecamatan: { id: 'kec-target', mode: 'kec-mode', tgl: 'kec-tanggal', tglEnd: 'kec-tanggal-selesai', max: 'kec-max', unl: 'kec-unlimited', err: 'kec-error', suc: 'kec-success' },
+                kelurahan: { id: 'kel-target', mode: 'kel-mode', tgl: 'kel-tanggal', tglEnd: 'kel-tanggal-selesai', max: 'kel-max', unl: 'kel-unlimited', err: 'kel-error', suc: 'kel-success' },
+                petugas: { id: 'pet-target', mode: 'pet-mode', tgl: 'pet-tanggal', tglEnd: 'pet-tanggal-selesai', max: 'pet-max', unl: null, err: 'pet-kq-error', suc: 'pet-kq-success' },
             };
             const m = map[tipe];
             const id = document.getElementById(m.id).value;
-            const tanggal = document.getElementById(m.tgl).value;
+            const mode = document.getElementById(m.mode).value;
+            const tanggal_mulai = document.getElementById(m.tgl).value;
+            const tanggal_selesai = document.getElementById(m.tglEnd).value || tanggal_mulai;
             const kuota_max = parseInt(document.getElementById(m.max).value);
             const is_unlimited = m.unl ? (document.getElementById(m.unl).checked ? 1 : 0) : 0;
             const errEl = document.getElementById(m.err);
@@ -1237,15 +1499,24 @@
             errEl.style.display = 'none';
             sucEl.style.display = 'none';
 
-            if (!id || !tanggal) {
-                errEl.textContent = 'Pilih target dan tanggal terlebih dahulu';
+            if (!id || (mode !== 'daily' && (!tanggal_mulai || !tanggal_selesai))) {
+                errEl.textContent = mode === 'daily'
+                    ? 'Pilih target terlebih dahulu'
+                    : 'Pilih target, tanggal mulai, dan tanggal selesai terlebih dahulu';
                 errEl.style.display = 'block';
                 return;
             }
+
+            if (mode !== 'daily' && tanggal_selesai < tanggal_mulai) {
+                errEl.textContent = 'Tanggal selesai tidak boleh sebelum tanggal mulai';
+                errEl.style.display = 'block';
+                return;
+            }
+            setAdminButtonLoading(button || document.getElementById(`btn-kuota-${tipe}`), true, 'Menyimpan...');
             try {
                 const res = await apiFetch('/api/admin/kuota', {
                     method: 'POST',
-                    body: JSON.stringify({ tipe, id, tanggal, kuota_max, is_unlimited })
+                    body: JSON.stringify({ tipe, id, mode, tanggal_mulai, tanggal_selesai, kuota_max, is_unlimited })
                 });
                 const data = await res.json();
                 if (!res.ok) {
@@ -1253,13 +1524,15 @@
                     errEl.style.display = 'block';
                     return;
                 }
-                sucEl.textContent = 'Kuota berhasil disimpan';
+                sucEl.textContent = data.message || 'Kuota berhasil disimpan';
                 sucEl.style.display = 'block';
                 // Auto refresh tampilan kuota aktif
-                lihatKuota(tipe);
+                await lihatKuota(tipe);
             } catch {
                 errEl.textContent = 'Terjadi kesalahan';
                 errEl.style.display = 'block';
+            } finally {
+                setAdminButtonLoading(button || document.getElementById(`btn-kuota-${tipe}`), false);
             }
         }
 
@@ -1286,14 +1559,25 @@
             const resMap = { kecamatan: 'kec-result', kelurahan: 'kel-result', petugas: 'pet-result' };
             const tanggal = document.getElementById(tglMap[tipe]).value;
             const el = document.getElementById(resMap[tipe]);
+            const kecamatanFilter = tipe === 'kelurahan'
+                ? document.getElementById('kel-lihat-kec')?.value
+                : '';
 
             if (!tanggal) {
                 el.innerHTML = '<p style="color:#888;font-size:13px">Pilih tanggal terlebih dahulu.</p>';
                 return;
             }
+            if (tipe === 'kelurahan' && !kecamatanFilter) {
+                el.innerHTML = '<p style="color:#888;font-size:13px">Pilih kecamatan untuk melihat kuota kelurahan.</p>';
+                return;
+            }
             el.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat...</div>';
             try {
-                const res = await apiFetch(`/api/admin/kuota?tanggal=${tanggal}`);
+                const params = new URLSearchParams({ tanggal });
+                if (tipe === 'kelurahan' && kecamatanFilter) {
+                    params.set('kecamatan_id', kecamatanFilter);
+                }
+                const res = await apiFetch(`/api/admin/kuota?${params.toString()}`);
                 const data = await res.json();
 
                 let items = [];
@@ -1302,16 +1586,9 @@
                 else if (tipe === 'petugas') items = data.petugas;
 
                 if (items.length === 0) {
-                    const tglEl = { kecamatan: 'kec-lihat-tanggal', kelurahan: 'kel-lihat-tanggal', petugas: 'pet-lihat-tanggal' };
-                    const tgl = document.getElementById(tglEl[tipe]).value;
-                    const isToday = tgl === new Date().toISOString().split('T')[0];
                     el.innerHTML = `<div class="empty-state">
         ${adminIcon('checkCircle', 'empty-icon empty-icon-svg')}
-        <p style="font-size:13px">
-            ${isToday
-                            ? 'Tidak ada pengaturan kuota khusus hari ini.<br>Kuota default <strong>10 slot</strong> berlaku untuk semua ' + tipe + '.'
-                            : 'Belum ada kuota diset untuk tanggal ini.<br>Default: <strong>10 slot</strong> per ' + tipe + '.'}
-        </p>
+        <p style="font-size:13px">Tidak ada data untuk ditampilkan.</p>
     </div>`;
                     return;
                 }
@@ -1319,13 +1596,14 @@
                 el.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">` +
                     items.map(item => {
                         const nama = item.nama_kecamatan || item.nama_kelurahan || item.nama_lengkap;
-                        const unlimited = item.is_unlimited;
-                        const terisi = item.terisi;
-                        const max = item.kuota_max;
-                        const pct = unlimited ? 0 : Math.round((terisi / max) * 100);
+                        const unlimited = Boolean(item.is_unlimited);
+                        const terisi = Number(item.terisi || 0);
+                        const max = Number(item.kuota_max || 0);
+                        const pct = !unlimited && max > 0 ? Math.round((terisi / max) * 100) : 0;
                         const barColor = unlimited ? '#10B981' : pct >= 100 ? '#EF4444' : pct >= 70 ? '#F59E0B' : '#10B981';
                         const textColor = unlimited ? '#059669' : pct >= 100 ? '#DC2626' : pct >= 70 ? '#D97706' : '#059669';
                         const sub = tipe === 'kelurahan' ? `<span style="font-size:11px;color:#888">${item.nama_kecamatan || ''}</span>` : '';
+                        const statusText = unlimited ? 'Unlimited' : `${terisi}/${max}`;
 
                         return `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
@@ -1334,7 +1612,7 @@
                             ${sub}
                         </div>
                         <span style="font-size:12px;font-weight:600;color:${textColor};background:${barColor}20;padding:2px 8px;border-radius:99px">
-                            ${unlimited ? 'Unlimited' : `${terisi}/${max}`}
+                            ${statusText}
                         </span>
                     </div>
                     ${!unlimited ? `

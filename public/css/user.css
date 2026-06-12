@@ -387,6 +387,74 @@ body {
     background: #FEF2F2;
 }
 
+.button-spinner {
+    width: 15px;
+    height: 15px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 999px;
+    display: inline-block;
+    flex: 0 0 auto;
+    animation: buttonSpin 0.75s linear infinite;
+}
+
+button.is-loading,
+button:disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+body.is-processing {
+    cursor: wait;
+}
+
+.page-interaction-lock {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: transparent;
+    cursor: wait;
+    touch-action: none;
+}
+
+.page-interaction-lock[hidden] {
+    display: none !important;
+}
+
+.btn-primary-gradient.is-loading,
+.modal-footer .btn.is-loading,
+.dropdown-item.is-loading {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary-gradient:disabled,
+.modal-footer .btn:disabled,
+.berkas-action-row:disabled,
+.dropdown-item:disabled {
+    opacity: 0.72;
+    transform: none;
+    box-shadow: none;
+}
+
+.berkas-action-row.is-loading {
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-content: center;
+}
+
+.berkas-action-row.is-loading .button-spinner {
+    align-self: center;
+    justify-self: center;
+}
+
+@keyframes buttonSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .welcome-text h1 {
     font-family: 'Public Sans', sans-serif;
     font-size: 18px;
