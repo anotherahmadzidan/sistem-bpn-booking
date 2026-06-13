@@ -563,6 +563,7 @@
 
         let wilayahData = { kecamatan: [], kelurahan: [] };
         let selectedBookingId = null;
+        let riwayatBookings = [];
         let kuotaTimeout = null;
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('tanggal_diminta').min = today;
@@ -1248,6 +1249,7 @@
             try {
                 const res = await apiFetch('/api/booking/my');
                 const data = await res.json();
+                riwayatBookings = data;
 
                 if (data.length === 0) {
                     list.innerHTML = '<div class="empty-state">' + userIcon('emptyFile', 'empty-icon empty-icon-svg') + '<p>Belum ada riwayat pengajuan agenda.</p></div>';
@@ -1391,6 +1393,12 @@
                 errEl.textContent = 'Tanggal pengajuan baru wajib diisi.';
                 errEl.style.display = 'block'; return;
             }
+            const booking = riwayatBookings.find(b => b.id === selectedBookingId);
+            if (booking && dateOnly(booking.tanggal_diminta) === tanggal_baru) {
+                errEl.textContent = 'Tanggal baru harus berbeda dari jadwal yang sedang berlaku.';
+                errEl.style.display = 'block';
+                return;
+            }
             setButtonLoading(btn, true, 'Mengajukan...');
             try {
                 const res = await apiFetch(`/api/booking/reschedule/${selectedBookingId}`, {
@@ -1420,6 +1428,25 @@
         function formatDate(d) {
             if (!d) return '-';
             return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+        function dateOnly(d) {
+            if (!d) return '';
+            const raw = String(d);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+            const parsed = d instanceof Date ? d : new Date(d);
+            if (Number.isNaN(parsed.getTime())) {
+                const match = raw.match(/^\d{4}-\d{2}-\d{2}/);
+                return match ? match[0] : '';
+            }
+
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Makassar',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(parsed);
         }
 
         function badgeLabel(status) {

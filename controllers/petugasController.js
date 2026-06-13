@@ -16,6 +16,24 @@ const escapeHTML = (value) => String(value || '')
 
 const isDateOnly = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
 
+const toDateOnly = (value) => {
+    if (!value) return '';
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+    const parsed = value instanceof Date ? value : new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+        return new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Makassar',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(parsed);
+    }
+
+    const match = String(value).match(/^\d{4}-\d{2}-\d{2}/);
+    return match ? match[0] : '';
+};
+
 const todayWita = () => new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Makassar',
     year: 'numeric',
@@ -125,6 +143,13 @@ const tolakJadwal = async (req, res) => {
         if (!['pending', 'rescheduled_by_user'].includes(booking.status)) {
             await conn.rollback();
             return res.status(403).json({ message: 'Status tidak memungkinkan perubahan jadwal' });
+        }
+
+        if (toDateOnly(booking.tanggal_diminta) === tanggal_baru) {
+            await conn.rollback();
+            return res.status(400).json({
+                message: 'Tanggal baru harus berbeda dari jadwal yang sedang berlaku'
+            });
         }
 
         const kuota = await reserveKuotaAktif(conn, booking, tanggal_baru);

@@ -65,7 +65,7 @@
             </button>
         </nav>
         <div class="sidebar-footer">
-            <button class="btn btn-secondary btn-block petugas-logout" onclick="logout()">
+            <button class="btn btn-secondary btn-block petugas-logout" id="btn-petugas-logout" onclick="logout(this)">
                 <span class="logout-symbol">-&gt;</span>
                 Keluar
             </button>
@@ -189,7 +189,7 @@
                     <div id="hasil-error" class="alert alert-error" style="display:none"></div>
                     <div id="hasil-success" class="alert alert-success" style="display:none"></div>
                     <div style="display:flex;gap:10px;margin-top:8px">
-                        <button class="btn btn-primary" onclick="submitHasil()">
+                        <button class="btn btn-primary" id="btn-submit-hasil" onclick="submitHasil()">
                             <span class="btn-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M5 3h12l2 2v16H5Z"></path>
@@ -225,7 +225,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('modal-konfirmasi')">Batal</button>
-                <button class="btn btn-success" onclick="submitKonfirmasi()">
+                <button class="btn btn-success" id="btn-submit-konfirmasi" onclick="submitKonfirmasi()">
                     <span class="btn-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="9"></circle>
@@ -263,7 +263,7 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('modal-tolak')">Batal</button>
-                <button class="btn btn-danger" onclick="submitTolak()">Tetapkan Jadwal Baru</button>
+                <button class="btn btn-danger" id="btn-submit-tolak" onclick="submitTolak()">Tetapkan Jadwal Baru</button>
             </div>
         </div>
     </div>
@@ -299,10 +299,12 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal('modal-tolak-berkas')">Batal</button>
-                <button class="btn btn-danger" onclick="submitTolakBerkas()">Tolak Berkas</button>
+                <button class="btn btn-danger" id="btn-submit-tolak-berkas" onclick="submitTolakBerkas()">Tolak Berkas</button>
             </div>
         </div>
     </div>
+
+    <div class="petugas-action-lock" id="petugas-action-lock" aria-hidden="true"></div>
 
     <script>
         const token = localStorage.getItem('token');
@@ -327,7 +329,37 @@
         let selectedBookingId = null;
         let currentFilter = 'semua';
         let notifOpen = false;
+        let isPetugasProcessing = false;
         const today = new Date().toISOString().split('T')[0];
+
+        function setPetugasButtonLoading(button, isLoading, label = 'Memproses...') {
+            if (!button) return;
+
+            if (isLoading) {
+                if (!button.dataset.originalHtml) {
+                    button.dataset.originalHtml = button.innerHTML;
+                }
+                button.disabled = true;
+                button.setAttribute('aria-busy', 'true');
+                button.classList.add('is-loading');
+                button.innerHTML = `<span class="button-spinner" aria-hidden="true"></span><span>${label}</span>`;
+                return;
+            }
+
+            button.disabled = false;
+            button.removeAttribute('aria-busy');
+            button.classList.remove('is-loading');
+            if (button.dataset.originalHtml) {
+                button.innerHTML = button.dataset.originalHtml;
+                delete button.dataset.originalHtml;
+            }
+        }
+
+        function setPetugasScreenLocked(isLocked) {
+            isPetugasProcessing = isLocked;
+            document.body.classList.toggle('petugas-ui-locked', isLocked);
+            document.getElementById('petugas-action-lock').classList.toggle('show', isLocked);
+        }
 
         function showPage(page) {
             document.getElementById('page-tugas').style.display = page === 'tugas' ? 'block' : 'none';
@@ -566,18 +598,24 @@
 
         async function submitKonfirmasi() {
             const errEl = document.getElementById('konfirmasi-error');
+            const btn = document.getElementById('btn-submit-konfirmasi');
             errEl.style.display = 'none';
+            setPetugasButtonLoading(btn, true, 'Mengonfirmasi...');
+            setPetugasScreenLocked(true);
             try {
                 const res = await apiFetch('/api/petugas/konfirmasi/' + selectedBookingId, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }
                 });
                 const data = await res.json();
                 if (!res.ok) { errEl.textContent = data.message; errEl.style.display = 'block'; return; }
-                closeModal('modal-konfirmasi');
-                loadTugas();
+                closeModal('modal-konfirmasi', true);
+                await loadTugas();
             } catch {
                 errEl.textContent = 'Terjadi kesalahan, coba lagi';
                 errEl.style.display = 'block';
+            } finally {
+                setPetugasButtonLoading(btn, false);
+                setPetugasScreenLocked(false);
             }
         }
 
@@ -594,9 +632,18 @@
             const tanggal_baru = document.getElementById('tolak-tanggal').value;
             const alasan = document.getElementById('tolak-alasan').value.trim();
             const errEl = document.getElementById('tolak-error');
+            const btn = document.getElementById('btn-submit-tolak');
             errEl.style.display = 'none';
             if (!tanggal_baru) { errEl.textContent = 'Tanggal baru wajib diisi'; errEl.style.display = 'block'; return; }
             if (!alasan) { errEl.textContent = 'Alasan penggantian jadwal wajib diisi'; errEl.style.display = 'block'; return; }
+            const booking = allTugas.find(x => x.id === selectedBookingId);
+            if (booking && dateOnly(booking.tanggal_diminta) === tanggal_baru) {
+                errEl.textContent = 'Tanggal baru harus berbeda dari jadwal yang sedang berlaku';
+                errEl.style.display = 'block';
+                return;
+            }
+            setPetugasButtonLoading(btn, true, 'Menyimpan...');
+            setPetugasScreenLocked(true);
             try {
                 const res = await apiFetch('/api/petugas/tolak/' + selectedBookingId, {
                     method: 'POST',
@@ -605,11 +652,14 @@
                 });
                 const data = await res.json();
                 if (!res.ok) { errEl.textContent = data.message; errEl.style.display = 'block'; return; }
-                closeModal('modal-tolak');
-                loadTugas();
+                closeModal('modal-tolak', true);
+                await loadTugas();
             } catch {
                 errEl.textContent = 'Terjadi kesalahan, coba lagi';
                 errEl.style.display = 'block';
+            } finally {
+                setPetugasButtonLoading(btn, false);
+                setPetugasScreenLocked(false);
             }
         }
 
@@ -631,6 +681,7 @@
             async function submitTolakBerkas() {
                 const alasan = document.getElementById('tolak-berkas-alasan').value.trim();
                 const errEl = document.getElementById('tolak-berkas-error');
+                const btn = document.getElementById('btn-submit-tolak-berkas');
                 errEl.style.display = 'none';
 
                 if (!alasan) {
@@ -638,6 +689,8 @@
                     errEl.style.display = 'block';
                     return;
                 }
+                setPetugasButtonLoading(btn, true, 'Menolak...');
+                setPetugasScreenLocked(true);
                 try {
                     const res = await apiFetch('/api/petugas/tolak-berkas/' + selectedBookingId, {
                         method: 'POST',
@@ -650,11 +703,14 @@
                         errEl.style.display = 'block';
                         return;
                     }
-                    closeModal('modal-tolak-berkas');
-                    loadTugas();
+                    closeModal('modal-tolak-berkas', true);
+                    await loadTugas();
                 } catch {
                     errEl.textContent = 'Terjadi kesalahan, coba lagi';
                     errEl.style.display = 'block';
+                } finally {
+                    setPetugasButtonLoading(btn, false);
+                    setPetugasScreenLocked(false);
                 }
             }
 
@@ -701,6 +757,7 @@
             const bookingId = document.getElementById('hasil-berkas-select').value;
             const errEl = document.getElementById('hasil-error');
             const sucEl = document.getElementById('hasil-success');
+            const btn = document.getElementById('btn-submit-hasil');
             errEl.style.display = 'none';
             sucEl.style.display = 'none';
             if (!bookingId) { errEl.textContent = 'Pilih berkas terlebih dahulu'; errEl.style.display = 'block'; return; }
@@ -710,6 +767,8 @@
             if (fotoLokasi) formData.append('foto_lokasi', fotoLokasi);
             if (fotoRisalah) formData.append('foto_risalah', fotoRisalah);
             formData.append('catatan_lapangan', document.getElementById('catatan_lapangan').value);
+            setPetugasButtonLoading(btn, true, 'Menyimpan...');
+            setPetugasScreenLocked(true);
             try {
                 const res = await fetch('/api/petugas/hasil/' + bookingId, {
                     method: 'POST',
@@ -725,6 +784,9 @@
             } catch {
                 errEl.textContent = 'Terjadi kesalahan, coba lagi';
                 errEl.style.display = 'block';
+            } finally {
+                setPetugasButtonLoading(btn, false);
+                setPetugasScreenLocked(false);
             }
         }
 
@@ -737,11 +799,39 @@
             document.getElementById('hasil-error').style.display = 'none';
         }
 
-        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-        function logout() { localStorage.clear(); window.location.href = '/login-petugas'; }
+        function closeModal(id, force = false) {
+            if (isPetugasProcessing && !force) return;
+            document.getElementById(id).classList.remove('show');
+        }
+        function logout(button) {
+            const btn = button || document.getElementById('btn-petugas-logout');
+            setPetugasButtonLoading(btn, true, 'Keluar...');
+            setPetugasScreenLocked(true);
+            localStorage.clear();
+            window.location.href = '/login-petugas';
+        }
         function formatDate(d) {
             if (!d) return '-';
             return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+        function dateOnly(d) {
+            if (!d) return '';
+            const raw = String(d);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+            const parsed = d instanceof Date ? d : new Date(d);
+            if (Number.isNaN(parsed.getTime())) {
+                const match = raw.match(/^\d{4}-\d{2}-\d{2}/);
+                return match ? match[0] : '';
+            }
+
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Makassar',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(parsed);
         }
 
         function formatWaktu(d) {

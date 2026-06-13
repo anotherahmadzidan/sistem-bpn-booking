@@ -420,6 +420,50 @@ textarea:focus {
     stroke-linejoin: round;
 }
 
+.button-spinner {
+    width: 14px;
+    height: 14px;
+    display: inline-block;
+    flex: 0 0 auto;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 999px;
+    animation: spin 0.75s linear infinite;
+}
+
+.btn.is-loading {
+    cursor: wait;
+    pointer-events: none;
+    opacity: 0.82;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+    transform: none !important;
+}
+
+.petugas-action-lock {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: transparent;
+    cursor: wait;
+}
+
+.petugas-action-lock.show {
+    display: block;
+}
+
+body.petugas-ui-locked {
+    cursor: wait;
+    user-select: none;
+    overflow: hidden;
+}
+
 /* ============================================================
    7. BADGES & UTILITIES
    ============================================================ */
