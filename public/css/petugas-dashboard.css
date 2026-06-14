@@ -998,3 +998,1246 @@
         border-left: 0;
     }
 }
+
+/* ============================================================
+   RESPONSIVE CONSOLIDATION
+   Desktop-first fallback untuk tablet dan mobile.
+   ============================================================ */
+@media (max-width: 1180px) {
+    .petugas-dashboard .main-content {
+        padding: 24px;
+    }
+
+    .petugas-dashboard .tugas-card-modern {
+        grid-template-columns: 140px minmax(0, 1fr) minmax(220px, 0.9fr);
+        gap: 18px;
+    }
+
+    .petugas-dashboard .tugas-action-panel {
+        grid-column: 2 / -1;
+        padding: 16px 0 0;
+        border-left: 0;
+        border-top: 1px solid #dce6f5;
+    }
+
+    .petugas-dashboard .tugas-action-panel .action-panel-title {
+        margin-bottom: 10px;
+    }
+
+    .petugas-dashboard .tugas-action-panel {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(170px, 1fr));
+        gap: 10px;
+    }
+
+    .petugas-dashboard .tugas-action-panel .action-panel-title,
+    .petugas-dashboard .tugas-action-panel .action-note {
+        grid-column: 1 / -1;
+    }
+
+    .petugas-dashboard .action-row {
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 980px) {
+    body.petugas-dashboard {
+        flex-direction: column;
+    }
+
+    .petugas-dashboard {
+        background-attachment: scroll;
+    }
+
+    .petugas-dashboard .sidebar {
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        position: relative;
+        padding: 16px;
+    }
+
+    .petugas-dashboard .sidebar-header {
+        padding: 0 4px 14px;
+    }
+
+    .petugas-dashboard .brand-mark {
+        gap: 10px;
+    }
+
+    .petugas-dashboard .brand-mark img {
+        width: 44px;
+        height: 44px;
+    }
+
+    .petugas-dashboard .brand-mark h2 {
+        font-size: 18px;
+    }
+
+    .petugas-dashboard .brand-mark p {
+        font-size: 10.5px;
+    }
+
+    .petugas-dashboard .sidebar-user {
+        width: 100%;
+        margin: 0 0 14px;
+        min-height: 64px;
+        padding: 12px 14px;
+        border-radius: 12px;
+    }
+
+    .petugas-dashboard .sidebar-user-shield {
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+    }
+
+    .petugas-dashboard .sidebar-nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        padding: 0 0 2px;
+        scrollbar-width: none;
+    }
+
+    .petugas-dashboard .sidebar-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .petugas-dashboard .nav-section-label {
+        display: none;
+    }
+
+    .petugas-dashboard .nav-item {
+        width: auto;
+        min-width: 148px;
+        height: 44px;
+        margin: 0;
+        padding: 0 14px;
+        border-radius: 10px;
+        justify-content: center;
+        white-space: nowrap;
+    }
+
+    .petugas-dashboard .nav-item .icon {
+        margin-right: 8px;
+    }
+
+    .petugas-dashboard .sidebar-footer {
+        display: none;
+    }
+
+    .petugas-dashboard .main-content {
+        margin-left: 0;
+        max-width: 100%;
+        width: 100%;
+        padding: 18px;
+    }
+
+    .petugas-dashboard .petugas-welcome-header {
+        min-height: 0;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .petugas-dashboard .petugas-header-actions {
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .petugas-dashboard .petugas-date-pill {
+        flex: 1 1 auto;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    .petugas-dashboard .role-notif-dropdown {
+        position: fixed;
+        top: 82px;
+        left: 14px;
+        right: 14px;
+        width: auto;
+        max-width: none;
+    }
+
+    .petugas-dashboard .petugas-filter-shell {
+        padding: 8px;
+        margin-bottom: 10px;
+    }
+
+    .petugas-dashboard .tugas-card-modern {
+        grid-template-columns: 132px minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .petugas-dashboard .tugas-info-box,
+    .petugas-dashboard .tugas-action-panel {
+        grid-column: 2;
+    }
+
+    .petugas-dashboard .tugas-action-panel {
+        grid-template-columns: repeat(2, minmax(170px, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .petugas-dashboard .sidebar {
+        padding: 14px;
+    }
+
+    .petugas-dashboard .sidebar-user {
+        display: none;
+    }
+
+    .petugas-dashboard .main-content {
+        padding: 14px 12px 28px;
+    }
+
+    .petugas-dashboard .petugas-welcome-copy h1,
+    .petugas-dashboard .page-header h1 {
+        font-size: 22px;
+        line-height: 1.2;
+    }
+
+    .petugas-dashboard .petugas-welcome-copy p,
+    .petugas-dashboard .page-header p {
+        font-size: 12.5px;
+    }
+
+    .petugas-dashboard .petugas-header-actions {
+        align-items: center;
+    }
+
+    .petugas-dashboard .petugas-date-pill {
+        min-height: 42px;
+        padding: 0 12px;
+        font-size: 12px;
+    }
+
+    .petugas-dashboard .petugas-notification-button {
+        width: 42px;
+        height: 42px;
+    }
+
+    .petugas-dashboard .petugas-filter-tabs {
+        gap: 6px;
+    }
+
+    .petugas-dashboard .petugas-filter-tab {
+        min-height: 34px;
+        padding: 0 10px;
+        font-size: 10.5px;
+    }
+
+    .petugas-dashboard .tugas-card-modern {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px 14px 16px 18px;
+        border-radius: 12px;
+    }
+
+    .petugas-dashboard .tugas-card-modern::before {
+        top: 12px;
+        bottom: 12px;
+    }
+
+    .petugas-dashboard .tugas-identity {
+        padding: 0;
+        gap: 10px;
+    }
+
+    .petugas-dashboard .tugas-nomor {
+        font-size: 22px;
+    }
+
+    .petugas-dashboard .tugas-detail-panel,
+    .petugas-dashboard .tugas-info-box,
+    .petugas-dashboard .tugas-action-panel {
+        grid-column: auto;
+        padding-left: 0;
+        border-left: 0;
+    }
+
+    .petugas-dashboard .tugas-detail-panel {
+        padding-top: 12px;
+        border-top: 1px dashed #dce6f5;
+    }
+
+    .petugas-dashboard .tugas-detail-row,
+    .petugas-dashboard .tugas-info-box div {
+        grid-template-columns: 88px 8px minmax(0, 1fr);
+        gap: 5px;
+        font-size: 12px;
+    }
+
+    .petugas-dashboard .tugas-detail-row span,
+    .petugas-dashboard .tugas-info-box span {
+        font-size: 12px;
+    }
+
+    .petugas-dashboard .tugas-detail-panel .tugas-actions-primary,
+    .petugas-dashboard .tugas-action-panel {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .petugas-dashboard .tugas-action-panel {
+        padding-top: 12px;
+        border-top: 1px dashed #dce6f5;
+    }
+
+    .petugas-dashboard .action-row {
+        min-height: 48px;
+        padding: 9px 10px;
+    }
+
+    .petugas-dashboard .card-body {
+        padding: 16px;
+    }
+
+    .petugas-dashboard .modal {
+        width: calc(100vw - 24px);
+        max-width: calc(100vw - 24px);
+        max-height: calc(100dvh - 24px);
+        border-radius: 16px;
+    }
+
+    .petugas-dashboard .modal-body {
+        padding: 16px;
+        overflow-y: auto;
+    }
+
+    .petugas-dashboard .modal-footer {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .petugas-dashboard .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 390px) {
+    .petugas-dashboard .brand-mark img {
+        width: 38px;
+        height: 38px;
+    }
+
+    .petugas-dashboard .brand-mark h2 {
+        font-size: 16px;
+    }
+
+    .petugas-dashboard .nav-item {
+        min-width: 132px;
+        font-size: 12.5px;
+        padding: 0 12px;
+    }
+
+    .petugas-dashboard .tugas-detail-row,
+    .petugas-dashboard .tugas-info-box div {
+        grid-template-columns: 76px 6px minmax(0, 1fr);
+    }
+}
+
+/* ============================================================
+   MOBILE BLUE HEADER REFINEMENT
+   Dashboard petugas tetap memakai identitas biru BPN di layar kecil.
+   ============================================================ */
+@media (max-width: 640px) {
+    body.petugas-dashboard {
+        display: block;
+        min-height: 100dvh;
+        background:
+            linear-gradient(180deg, #06265d 0 178px, #eef5ff 178px 100%),
+            #eef5ff;
+    }
+
+    body.petugas-dashboard .sidebar {
+        position: relative;
+        width: 100%;
+        min-height: 168px;
+        padding: 18px 14px;
+        overflow: hidden;
+        isolation: isolate;
+        background:
+            linear-gradient(135deg, rgba(2, 22, 63, 0.96), rgba(4, 67, 150, 0.9)),
+            radial-gradient(circle at 12% 8%, rgba(255, 255, 255, 0.16), transparent 30%),
+            url("/img/blue-background.svg") left center / cover no-repeat;
+        border-radius: 0 0 20px 20px;
+        box-shadow: 0 14px 30px rgba(8, 36, 91, 0.24);
+    }
+
+    body.petugas-dashboard .sidebar::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(circle at 18% 10%, rgba(255, 255, 255, 0.12), transparent 34%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 68%);
+    }
+
+    body.petugas-dashboard .sidebar-header,
+    body.petugas-dashboard .sidebar-nav {
+        position: relative;
+        z-index: 1;
+    }
+
+    body.petugas-dashboard .sidebar-user,
+    body.petugas-dashboard .sidebar-footer {
+        display: none;
+    }
+
+    body.petugas-dashboard .sidebar-header {
+        padding: 0 0 16px;
+    }
+
+    body.petugas-dashboard .brand-mark {
+        gap: 10px;
+    }
+
+    body.petugas-dashboard .brand-mark img {
+        width: 44px;
+        height: 44px;
+        filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.22));
+    }
+
+    body.petugas-dashboard .brand-mark h2 {
+        color: #fff;
+        font-size: 18px;
+        letter-spacing: 0;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.24);
+    }
+
+    body.petugas-dashboard .brand-mark p {
+        margin-top: 4px;
+        color: rgba(255, 255, 255, 0.84);
+        font-size: 10px;
+    }
+
+    body.petugas-dashboard .sidebar-nav {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        overflow: visible;
+        padding: 0;
+    }
+
+    body.petugas-dashboard .nav-item {
+        width: 100%;
+        min-width: 0;
+        height: 42px;
+        margin: 0;
+        justify-content: center;
+        gap: 7px;
+        padding: 0 10px;
+        color: rgba(255, 255, 255, 0.86);
+        border-color: rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        font-size: 11.5px;
+        box-shadow: none;
+    }
+
+    body.petugas-dashboard .nav-item.active {
+        background: linear-gradient(135deg, #0b65d8, #063d91);
+        border-color: rgba(255, 255, 255, 0.24);
+        color: #fff;
+        box-shadow:
+            0 10px 20px rgba(1, 20, 60, 0.28),
+            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    body.petugas-dashboard .nav-item .icon {
+        width: 17px;
+        height: 17px;
+        margin-right: 0;
+    }
+
+    body.petugas-dashboard .nav-item svg {
+        width: 17px;
+        height: 17px;
+        stroke-width: 2.2;
+    }
+
+    body.petugas-dashboard .main-content {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+        padding: 18px 12px 30px;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(238, 245, 255, 0.94)),
+            url("/img/admin-bg.svg") center top / cover no-repeat;
+    }
+
+    body.petugas-dashboard .petugas-welcome-header {
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    body.petugas-dashboard .petugas-welcome-copy h1 {
+        font-size: 21px;
+        line-height: 1.18;
+    }
+
+    body.petugas-dashboard .petugas-welcome-copy p {
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    body.petugas-dashboard .petugas-header-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 42px;
+        gap: 10px;
+    }
+
+    body.petugas-dashboard .petugas-date-pill,
+    body.petugas-dashboard .petugas-notification-button {
+        border-radius: 8px;
+        box-shadow: 0 10px 22px rgba(8, 36, 91, 0.1);
+    }
+
+    body.petugas-dashboard .petugas-date-pill {
+        min-height: 42px;
+        padding: 0 10px;
+        justify-content: center;
+    }
+
+    body.petugas-dashboard .petugas-date-pill strong {
+        font-size: 11.5px;
+        white-space: nowrap;
+    }
+
+    body.petugas-dashboard .petugas-filter-shell {
+        padding: 7px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+
+    body.petugas-dashboard .petugas-filter-tabs {
+        gap: 6px;
+        padding-bottom: 0;
+    }
+
+    body.petugas-dashboard .petugas-filter-tab {
+        min-height: 33px;
+        padding: 0 9px;
+        font-size: 10px;
+        border-radius: 8px;
+    }
+
+    body.petugas-dashboard .petugas-filter-tab .tab-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    body.petugas-dashboard .tugas-card-modern {
+        border-radius: 12px;
+        box-shadow: 0 10px 24px rgba(8, 36, 91, 0.08);
+    }
+}
+
+@media (max-width: 380px) {
+    body.petugas-dashboard .sidebar {
+        min-height: 160px;
+        padding: 16px 10px 14px;
+        border-radius: 0 0 18px 18px;
+    }
+
+    body.petugas-dashboard .brand-mark img {
+        width: 40px;
+        height: 40px;
+    }
+
+    body.petugas-dashboard .brand-mark h2 {
+        font-size: 16px;
+    }
+
+    body.petugas-dashboard .brand-mark p {
+        font-size: 9px;
+    }
+
+    body.petugas-dashboard .nav-item {
+        height: 40px;
+        padding: 0 8px;
+        font-size: 10.8px;
+    }
+
+    body.petugas-dashboard .main-content {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+}
+
+.petugas-mobile-topbar,
+.petugas-sidebar-toggle,
+.petugas-sidebar-backdrop {
+    display: none;
+}
+
+/* ============================================================
+   MOBILE DRAWER LAYOUT
+   Sidebar kembali menjadi drawer kiri; topbar biru hanya memuat logo.
+   ============================================================ */
+@media (max-width: 640px) {
+    body.petugas-dashboard {
+        display: block;
+        min-height: 100dvh;
+        padding-top: 68px;
+        overflow-x: hidden;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(238, 245, 255, 0.96)),
+            url("/img/admin-bg.svg") center top / cover no-repeat,
+            #eef5ff;
+    }
+
+    body.petugas-dashboard .petugas-mobile-topbar {
+        position: fixed;
+        inset: 0 0 auto;
+        z-index: 1200;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        padding: 10px 12px 10px 62px;
+        overflow: hidden;
+        background:
+            linear-gradient(135deg, rgba(2, 22, 63, 0.98), rgba(4, 67, 150, 0.92)),
+            url("/img/blue-background.svg") left center / cover no-repeat;
+        box-shadow: 0 12px 26px rgba(8, 36, 91, 0.24);
+    }
+
+    body.petugas-dashboard .petugas-mobile-brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+        color: #fff;
+    }
+
+    body.petugas-dashboard .petugas-mobile-brand img {
+        width: 38px;
+        height: 38px;
+        object-fit: contain;
+        filter: drop-shadow(0 7px 14px rgba(0, 0, 0, 0.24));
+    }
+
+    body.petugas-dashboard .petugas-mobile-brand strong,
+    body.petugas-dashboard .petugas-mobile-brand span {
+        display: block;
+        line-height: 1.05;
+        white-space: nowrap;
+    }
+
+    body.petugas-dashboard .petugas-mobile-brand strong {
+        font-size: 15px;
+        font-weight: 900;
+    }
+
+    body.petugas-dashboard .petugas-mobile-brand span {
+        margin-top: 4px;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.84);
+    }
+
+    body.petugas-dashboard .petugas-sidebar-toggle {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        z-index: 1400;
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        border: 1px solid rgba(255, 255, 255, 0.24);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(1, 20, 60, 0.18);
+        cursor: pointer;
+    }
+
+    body.petugas-dashboard .petugas-sidebar-toggle svg {
+        width: 22px;
+        height: 22px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    body.petugas-dashboard .petugas-sidebar-toggle path {
+        transform-box: fill-box;
+        transform-origin: center;
+        transition: transform 0.22s ease, opacity 0.18s ease;
+    }
+
+    body.petugas-sidebar-open .petugas-sidebar-toggle {
+        background: rgba(255, 255, 255, 0.95);
+        color: #07377f;
+        border-color: rgba(220, 230, 245, 0.95);
+    }
+
+    body.petugas-sidebar-open .petugas-menu-line-1 {
+        transform: translateY(5px) rotate(45deg);
+    }
+
+    body.petugas-sidebar-open .petugas-menu-line-2 {
+        opacity: 0;
+    }
+
+    body.petugas-sidebar-open .petugas-menu-line-3 {
+        transform: translateY(-5px) rotate(-45deg);
+    }
+
+    body.petugas-dashboard .petugas-sidebar-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1240;
+        display: block;
+        pointer-events: none;
+        opacity: 0;
+        background: rgba(3, 15, 38, 0.5);
+        transition: opacity 0.22s ease;
+    }
+
+    body.petugas-sidebar-open .petugas-sidebar-backdrop {
+        pointer-events: auto;
+        opacity: 1;
+    }
+
+    body.petugas-dashboard .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1300;
+        width: min(286px, 86vw);
+        height: 100dvh;
+        min-height: 100dvh;
+        padding: 74px 18px 18px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        transform: translateX(calc(-100% - 12px));
+        transition: transform 0.24s ease;
+        border-radius: 0 20px 20px 0;
+        background:
+            linear-gradient(160deg, rgba(2, 22, 63, 0.98), rgba(4, 67, 150, 0.94)),
+            url("/img/blue-background.svg") left center / cover no-repeat;
+        box-shadow: 18px 0 42px rgba(3, 15, 38, 0.3);
+    }
+
+    body.petugas-sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    body.petugas-dashboard .sidebar-header {
+        display: block;
+        padding: 0 8px 18px;
+    }
+
+    body.petugas-dashboard .brand-mark img {
+        width: 46px;
+        height: 46px;
+    }
+
+    body.petugas-dashboard .brand-mark h2 {
+        font-size: 18px;
+        color: #fff;
+    }
+
+    body.petugas-dashboard .brand-mark p {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    body.petugas-dashboard .sidebar-user {
+        width: 100%;
+        min-height: 68px;
+        display: flex;
+        margin: 0 0 18px;
+        padding: 13px 14px;
+    }
+
+    body.petugas-dashboard .sidebar-footer {
+        display: block;
+        margin-top: 18px;
+    }
+
+    body.petugas-dashboard .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0;
+        overflow: visible;
+    }
+
+    body.petugas-dashboard .nav-section-label {
+        display: block;
+        padding: 0 4px;
+        margin: 2px 0 4px;
+    }
+
+    body.petugas-dashboard .nav-item {
+        width: 100%;
+        min-width: 0;
+        height: 46px;
+        justify-content: flex-start;
+        gap: 10px;
+        margin: 0;
+        padding: 0 14px;
+        border-radius: 10px;
+        color: rgba(255, 255, 255, 0.86);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.15);
+        font-size: 13px;
+        box-shadow: none;
+    }
+
+    body.petugas-dashboard .nav-item.active {
+        color: #fff;
+        background: linear-gradient(135deg, #0b65d8, #063d91);
+        border-color: rgba(255, 255, 255, 0.24);
+        box-shadow: 0 12px 24px rgba(1, 20, 60, 0.26);
+    }
+
+    body.petugas-dashboard .nav-item .icon,
+    body.petugas-dashboard .nav-item svg {
+        width: 18px;
+        height: 18px;
+        margin-right: 0;
+    }
+
+    body.petugas-dashboard .main-content {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+        padding: 12px 10px 30px;
+        background: transparent;
+    }
+
+    body.petugas-dashboard .petugas-welcome-header {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    body.petugas-dashboard .petugas-header-actions {
+        order: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 42px;
+        gap: 9px;
+    }
+
+    body.petugas-dashboard .petugas-welcome-copy {
+        order: 2;
+    }
+
+    body.petugas-dashboard .petugas-welcome-copy h1 {
+        font-size: 19px;
+        line-height: 1.18;
+    }
+
+    body.petugas-dashboard .petugas-welcome-copy p {
+        margin-top: 5px;
+        font-size: 11.5px;
+        line-height: 1.45;
+    }
+
+    body.petugas-dashboard .petugas-date-pill,
+    body.petugas-dashboard .petugas-notification-button {
+        min-height: 42px;
+        border-radius: 9px;
+    }
+
+    body.petugas-dashboard .petugas-date-pill {
+        padding: 0 10px;
+        justify-content: center;
+    }
+
+    body.petugas-dashboard .petugas-date-pill strong {
+        font-size: 11.2px;
+        white-space: nowrap;
+    }
+
+    body.petugas-dashboard .petugas-notification-button {
+        width: 42px;
+        height: 42px;
+    }
+
+    body.petugas-dashboard .role-notif-dropdown {
+        position: fixed;
+        top: 118px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-width: none;
+        max-height: calc(100dvh - 136px);
+    }
+
+    body.petugas-dashboard .petugas-filter-shell {
+        padding: 7px;
+        margin-bottom: 10px;
+        border-radius: 12px;
+    }
+
+    body.petugas-dashboard .petugas-filter-tabs {
+        gap: 6px;
+        padding-bottom: 0;
+    }
+
+    body.petugas-dashboard .petugas-filter-tab {
+        min-height: 33px;
+        padding: 0 9px;
+        font-size: 10px;
+        border-radius: 8px;
+    }
+
+    body.petugas-dashboard #tugas-list {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+        padding-bottom: 10px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(8, 44, 102, 0.28) transparent;
+    }
+
+    body.petugas-dashboard #tugas-list::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    body.petugas-dashboard #tugas-list::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: rgba(8, 44, 102, 0.26);
+    }
+
+    body.petugas-dashboard .tugas-card-modern {
+        width: 760px;
+        max-width: none;
+        min-width: 760px;
+        grid-template-columns: 138px 214px 210px 212px;
+        gap: 14px;
+        align-items: stretch;
+        padding: 14px 14px 14px 18px;
+        margin-bottom: 12px;
+        overflow: hidden;
+        border-radius: 12px;
+    }
+
+    body.petugas-dashboard .tugas-card-modern::before {
+        top: 12px;
+        bottom: 12px;
+    }
+
+    body.petugas-dashboard .tugas-identity {
+        gap: 10px;
+        padding: 4px 0 4px 4px;
+    }
+
+    body.petugas-dashboard .tugas-nomor {
+        font-size: 20px;
+    }
+
+    body.petugas-dashboard .tugas-detail-panel,
+    body.petugas-dashboard .tugas-info-box,
+    body.petugas-dashboard .tugas-action-panel {
+        grid-column: auto;
+    }
+
+    body.petugas-dashboard .tugas-detail-panel {
+        padding: 2px 0 0 14px;
+        border-top: 0;
+        border-left: 1px solid #dce6f5;
+    }
+
+    body.petugas-dashboard .tugas-info-box {
+        padding: 13px 14px;
+    }
+
+    body.petugas-dashboard .tugas-action-panel {
+        display: block;
+        padding: 2px 0 0 14px;
+        border-top: 0;
+        border-left: 1px solid #dce6f5;
+    }
+
+    body.petugas-dashboard .tugas-detail-row,
+    body.petugas-dashboard .tugas-info-box div {
+        grid-template-columns: 74px 6px minmax(0, 1fr);
+        gap: 5px;
+        margin-bottom: 8px;
+        font-size: 11.5px;
+    }
+
+    body.petugas-dashboard .tugas-detail-row span,
+    body.petugas-dashboard .tugas-info-box span {
+        font-size: 11.5px;
+    }
+
+    body.petugas-dashboard .tugas-info-box h4,
+    body.petugas-dashboard .action-panel-title {
+        margin-bottom: 10px;
+        font-size: 12px;
+    }
+
+    body.petugas-dashboard .action-row {
+        min-height: 46px;
+        grid-template-columns: 28px 1fr;
+        gap: 1px 8px;
+        margin-bottom: 8px;
+        padding: 8px 9px;
+    }
+
+    body.petugas-dashboard .action-row .action-icon {
+        width: 25px;
+        height: 25px;
+    }
+
+    body.petugas-dashboard .action-row strong {
+        font-size: 12px;
+    }
+
+    body.petugas-dashboard .action-row small,
+    body.petugas-dashboard .action-note {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 380px) {
+    body.petugas-dashboard .petugas-mobile-topbar {
+        height: 60px;
+        padding-left: 58px;
+    }
+
+    body.petugas-dashboard {
+        padding-top: 64px;
+    }
+
+    body.petugas-dashboard .petugas-sidebar-toggle {
+        top: 10px;
+        left: 10px;
+    }
+
+    body.petugas-dashboard .petugas-mobile-brand img {
+        width: 34px;
+        height: 34px;
+    }
+
+    body.petugas-dashboard .petugas-mobile-brand strong {
+        font-size: 14px;
+    }
+
+    body.petugas-dashboard .petugas-mobile-brand span {
+        font-size: 8.5px;
+    }
+
+    body.petugas-dashboard .petugas-welcome-copy h1 {
+        font-size: 18px;
+    }
+}
+
+.petugas-dashboard .petugas-search-shell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 42px;
+    padding: 0 44px 0 42px;
+    margin: 0 0 10px;
+    border: 1px solid rgba(220, 230, 245, 0.95);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 14px 34px rgba(8, 36, 91, 0.08);
+    backdrop-filter: blur(12px);
+}
+
+.petugas-dashboard .petugas-search-icon,
+.petugas-dashboard .petugas-search-clear {
+    position: absolute;
+    display: inline-grid;
+    place-items: center;
+    color: #516895;
+}
+
+.petugas-dashboard .petugas-search-icon {
+    left: 14px;
+    width: 18px;
+    height: 18px;
+    pointer-events: none;
+}
+
+.petugas-dashboard .petugas-search-clear {
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.petugas-dashboard .petugas-search-clear:hover {
+    background: #eef5ff;
+    color: var(--petugas-ink);
+}
+
+.petugas-dashboard .petugas-search-icon svg,
+.petugas-dashboard .petugas-search-clear svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.petugas-dashboard #petugas-search {
+    width: 100%;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--petugas-ink);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    outline: 0;
+}
+
+.petugas-dashboard #petugas-search::placeholder {
+    color: #8aa0c1;
+    font-weight: 500;
+}
+
+/* Kartu tugas mobile kembali vertikal agar tidak perlu scroll kanan-kiri. */
+@media (max-width: 640px) {
+    body.petugas-dashboard .petugas-search-shell {
+        min-height: 40px;
+        padding-left: 38px;
+        padding-right: 38px;
+        margin-bottom: 8px;
+        border-radius: 11px;
+    }
+
+    body.petugas-dashboard #petugas-search {
+        height: 38px;
+        font-size: 12px;
+    }
+
+    body.petugas-dashboard .petugas-search-icon {
+        left: 12px;
+        width: 16px;
+        height: 16px;
+    }
+
+    body.petugas-dashboard .petugas-search-clear {
+        right: 6px;
+        width: 28px;
+        height: 28px;
+    }
+
+    body.petugas-dashboard #tugas-list {
+        width: 100%;
+        overflow-x: visible;
+        overflow-y: visible;
+        padding-bottom: 0;
+    }
+
+    body.petugas-dashboard #tugas-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    body.petugas-dashboard .tugas-card-modern {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px 14px 16px 18px;
+        margin-bottom: 12px;
+        overflow: hidden;
+        border-radius: 12px;
+    }
+
+    body.petugas-dashboard .tugas-card-modern::before {
+        top: 12px;
+        bottom: 12px;
+    }
+
+    body.petugas-dashboard .tugas-identity {
+        gap: 10px;
+        padding: 0;
+    }
+
+    body.petugas-dashboard .tugas-nomor {
+        font-size: 22px;
+    }
+
+    body.petugas-dashboard .tugas-detail-panel,
+    body.petugas-dashboard .tugas-info-box,
+    body.petugas-dashboard .tugas-action-panel {
+        grid-column: auto;
+        padding-left: 0;
+        border-left: 0;
+    }
+
+    body.petugas-dashboard .tugas-detail-panel,
+    body.petugas-dashboard .tugas-action-panel {
+        padding-top: 12px;
+        border-top: 1px dashed #dce6f5;
+    }
+
+    body.petugas-dashboard .tugas-info-box {
+        padding: 13px 14px;
+    }
+
+    body.petugas-dashboard .tugas-detail-row,
+    body.petugas-dashboard .tugas-info-box div {
+        grid-template-columns: 86px 7px minmax(0, 1fr);
+        gap: 5px;
+        margin-bottom: 8px;
+        font-size: 12px;
+    }
+
+    body.petugas-dashboard .tugas-detail-row span,
+    body.petugas-dashboard .tugas-info-box span {
+        font-size: 12px;
+    }
+
+    body.petugas-dashboard .tugas-action-panel {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    body.petugas-dashboard .action-row {
+        min-height: 48px;
+        grid-template-columns: 30px 1fr;
+        gap: 2px 9px;
+        margin-bottom: 0;
+        padding: 9px 10px;
+    }
+}
+
+@media (max-width: 380px) {
+    body.petugas-dashboard .tugas-detail-row,
+    body.petugas-dashboard .tugas-info-box div {
+        grid-template-columns: 76px 6px minmax(0, 1fr);
+    }
+}

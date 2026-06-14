@@ -1966,7 +1966,7 @@ body.is-processing {
     }
 
     .hero-header {
-        padding: 18px 14px 72px;
+        padding: 18px 14px clamp(52px, 10vw, 64px);
         background-size: cover;
         background-position: left top;
     }
@@ -2081,11 +2081,13 @@ body.is-processing {
         max-width: 260px;
         font-size: 20px;
         line-height: 1.18;
+        margin-bottom: 5px;
     }
 
     .welcome-text p {
         max-width: 310px;
         font-size: 12px;
+        line-height: 1.32;
     }
 
     .app-layout-wrapper {
@@ -2101,7 +2103,7 @@ body.is-processing {
 
     .main-content-panel {
         width: calc(100% - 24px);
-        margin: -52px auto 0;
+        margin: -30px auto 0;
         padding: 0;
         border-radius: 18px 18px 0 0;
         background: transparent;
@@ -2321,5 +2323,272 @@ body.is-processing {
 
     .modal-body {
         padding: 16px;
+    }
+}
+
+/* ============================================================
+   MOBILE-FIRST REFINEMENT
+   Menjaga halaman pemohon rapi di variasi lebar HP kecil-besar.
+   ============================================================ */
+@media (max-width: 560px) {
+    body {
+        padding-bottom: 18px;
+    }
+
+    .hero-header {
+        padding-inline: 12px;
+        padding-bottom: clamp(46px, 12vw, 54px);
+    }
+
+    .brand-group {
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .brand-text h3,
+    .brand-text p {
+        max-width: 145px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .brand-group > .header-actions {
+        gap: 6px;
+    }
+
+    .profile-trigger {
+        max-width: 124px;
+        min-width: 0;
+    }
+
+    .profile-text-info {
+        min-width: 0;
+    }
+
+    .role-badge {
+        max-width: 62px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .welcome-text h1 {
+        max-width: 290px;
+        font-size: 18px;
+        line-height: 1.16;
+        margin-bottom: 4px;
+    }
+
+    .welcome-text p {
+        max-width: 280px;
+        font-size: 11.5px;
+        line-height: 1.28;
+    }
+
+    .main-content-panel {
+        width: calc(100% - 16px);
+        margin-top: -30px;
+    }
+
+    .menu-dock,
+    .dock-container.desktop-integrated .menu-dock {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .dock-btn {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .premium-card,
+    .main-content-panel .premium-card {
+        padding: 14px;
+    }
+
+    .input-icon-wrapper input,
+    .input-icon-wrapper select,
+    .input-icon-wrapper textarea {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .map-input-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    #map-picker {
+        height: 190px;
+    }
+
+    .user-profile-container {
+        display: grid;
+        grid-template-columns: 48px minmax(0, 1fr);
+    }
+
+    .berkas-card {
+        margin-bottom: 10px;
+    }
+
+    .berkas-info-box {
+        padding: 12px;
+    }
+
+    .berkas-action-title {
+        font-size: 12.5px;
+    }
+
+    .berkas-reason {
+        padding: 10px;
+    }
+
+    .berkas-action-row {
+        width: 100%;
+        min-width: 0;
+        grid-template-columns: 26px minmax(0, 1fr);
+    }
+
+    .notif-dropdown {
+        top: 58px;
+        left: 8px;
+        right: 8px;
+    }
+}
+
+@media (max-width: 400px) {
+    .hero-header {
+        padding: 14px 10px clamp(42px, 12vw, 48px);
+    }
+
+    .brand-text h3,
+    .brand-text p {
+        max-width: 118px;
+    }
+
+    .hero-logo {
+        width: 26px;
+        height: 26px;
+    }
+
+    .brand-group {
+        margin-bottom: 12px;
+    }
+
+    .welcome-text h1 {
+        max-width: 255px;
+        font-size: 17px;
+        line-height: 1.14;
+        margin-bottom: 4px;
+    }
+
+    .welcome-text p {
+        max-width: 250px;
+        font-size: 10.8px;
+        line-height: 1.25;
+    }
+
+    .notification-badge,
+    .profile-trigger {
+        height: 32px;
+    }
+
+    .notification-badge {
+        width: 32px;
+    }
+
+    .profile-trigger {
+        max-width: 104px;
+        padding-right: 7px;
+        gap: 5px;
+    }
+
+    .profile-avatar-box {
+        width: 24px;
+        height: 24px;
+        font-size: 10px;
+    }
+
+    .role-badge {
+        max-width: 48px;
+        font-size: 7.5px;
+    }
+
+    .chevron-icon {
+        width: 11px;
+        height: 11px;
+    }
+
+    .main-content-panel {
+        width: calc(100% - 12px);
+        margin-top: -26px;
+    }
+
+    .menu-dock,
+    .dock-container.desktop-integrated .menu-dock {
+        padding: 6px;
+        gap: 5px;
+        border-radius: 14px;
+    }
+
+    .dock-btn {
+        min-height: 40px;
+        padding: 8px 6px;
+    }
+
+    .dock-btn span {
+        font-size: 10.5px;
+    }
+
+    .premium-card,
+    .main-content-panel .premium-card {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .card-section-title {
+        font-size: 9.5px;
+    }
+
+    .input-icon-wrapper input,
+    .input-icon-wrapper select,
+    .input-icon-wrapper textarea {
+        min-height: 42px;
+        padding-left: 38px;
+        font-size: 12px;
+    }
+
+    #map-picker {
+        height: 176px;
+    }
+
+    .berkas-card {
+        padding: 14px 12px 14px 16px;
+    }
+
+    .berkas-nomor {
+        font-size: 18px;
+    }
+
+    .berkas-row,
+    .berkas-info-box div {
+        grid-template-columns: 72px 6px minmax(0, 1fr);
+        font-size: 11.5px;
+    }
+
+    .berkas-row span:first-child,
+    .berkas-info-box span {
+        font-size: 11.5px;
+    }
+
+    .berkas-action-row strong {
+        font-size: 12px;
+    }
+
+    .berkas-action-row small {
+        font-size: 10px;
     }
 }

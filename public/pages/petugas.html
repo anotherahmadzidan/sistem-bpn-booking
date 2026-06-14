@@ -17,7 +17,29 @@
 
 <body class="dashboard petugas-dashboard">
 
-        <aside class="sidebar">
+    <header class="petugas-mobile-topbar" aria-label="Header petugas mobile">
+        <button class="petugas-sidebar-toggle" id="petugas-sidebar-toggle" type="button"
+            aria-label="Buka menu petugas" aria-controls="petugas-sidebar" aria-expanded="false"
+            onclick="togglePetugasSidebar()">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path class="petugas-menu-line-1" d="M4 7h16"></path>
+                <path class="petugas-menu-line-2" d="M4 12h16"></path>
+                <path class="petugas-menu-line-3" d="M4 17h16"></path>
+            </svg>
+        </button>
+        <div class="petugas-mobile-brand">
+            <img src="/img/logo-bpn.svg" alt="ATR BPN">
+            <div>
+                <strong>ATR BPN</strong>
+                <span>Kab. Luwu Timur</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="petugas-sidebar-backdrop" id="petugas-sidebar-backdrop" onclick="closePetugasSidebar()"
+        aria-hidden="true"></div>
+
+    <aside class="sidebar" id="petugas-sidebar">
         <div class="sidebar-header">
             <div class="brand-mark">
                 <img src="/img/logo-bpn.svg" alt="ATR BPN">
@@ -116,6 +138,24 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="petugas-search-shell">
+                <span class="petugas-search-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m16.5 16.5 4 4"></path>
+                    </svg>
+                </span>
+                <input type="search" id="petugas-search" placeholder="Cari nomor berkas atau pemohon..."
+                    autocomplete="off" oninput="handlePetugasSearch(this.value)">
+                <button class="petugas-search-clear" id="petugas-search-clear" type="button"
+                    onclick="clearPetugasSearch()" aria-label="Hapus pencarian" style="display:none">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
             </div>
 
             <div class="petugas-filter-shell">
@@ -328,6 +368,7 @@
         let allTugas = [];
         let selectedBookingId = null;
         let currentFilter = 'semua';
+        let currentSearchQuery = '';
         let notifOpen = false;
         let isPetugasProcessing = false;
         const today = new Date().toISOString().split('T')[0];
@@ -361,11 +402,30 @@
             document.getElementById('petugas-action-lock').classList.toggle('show', isLocked);
         }
 
+        function setPetugasSidebarOpen(isOpen) {
+            document.body.classList.toggle('petugas-sidebar-open', isOpen);
+            const toggle = document.getElementById('petugas-sidebar-toggle');
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', String(isOpen));
+                toggle.setAttribute('aria-label', isOpen ? 'Tutup menu petugas' : 'Buka menu petugas');
+            }
+        }
+
+        function togglePetugasSidebar() {
+            if (isPetugasProcessing) return;
+            setPetugasSidebarOpen(!document.body.classList.contains('petugas-sidebar-open'));
+        }
+
+        function closePetugasSidebar() {
+            setPetugasSidebarOpen(false);
+        }
+
         function showPage(page) {
             document.getElementById('page-tugas').style.display = page === 'tugas' ? 'block' : 'none';
             document.getElementById('page-hasil').style.display = page === 'hasil' ? 'block' : 'none';
             document.getElementById('nav-tugas').classList.toggle('active', page === 'tugas');
             document.getElementById('nav-hasil').classList.toggle('active', page === 'hasil');
+            if (window.matchMedia('(max-width: 640px)').matches) closePetugasSidebar();
             if (page === 'tugas') loadTugas();
             if (page === 'hasil') loadBerkasDropdown();
         }
@@ -437,6 +497,10 @@
             }
         });
 
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closePetugasSidebar();
+        });
+
         async function loadTugas() {
             const list = document.getElementById('tugas-list');
             list.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat tugas...</div>';
@@ -451,8 +515,17 @@
         }
 
         function getFiltered(filter) {
-            if (filter === 'semua') return allTugas;
-            return allTugas.filter(b => b.status === filter);
+            const byStatus = filter === 'semua'
+                ? allTugas
+                : allTugas.filter(b => b.status === filter);
+            const query = currentSearchQuery.trim().toLowerCase();
+            if (!query) return byStatus;
+
+            return byStatus.filter(b => {
+                const nomor = String(b.nomor_berkas || '').toLowerCase();
+                const pemohon = String(b.nama_pemohon || '').toLowerCase();
+                return nomor.includes(query) || pemohon.includes(query);
+            });
         }
 
         function filterTugas(filter) {
@@ -462,6 +535,24 @@
                 btn.classList.toggle('active', btn.dataset.filter === filter);
             });
             renderTugas(getFiltered(filter));
+        }
+
+        function handlePetugasSearch(value) {
+            currentSearchQuery = value || '';
+            const clearBtn = document.getElementById('petugas-search-clear');
+            if (clearBtn) {
+                clearBtn.style.display = currentSearchQuery.trim() ? 'inline-grid' : 'none';
+            }
+            renderTugas(getFiltered(currentFilter));
+        }
+
+        function clearPetugasSearch() {
+            const input = document.getElementById('petugas-search');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+            handlePetugasSearch('');
         }
 
         function updateFilterCounts() {
@@ -489,6 +580,9 @@
         function renderTugas(data) {
             const list = document.getElementById('tugas-list');
             if (data.length === 0) {
+                const emptyMessage = currentSearchQuery.trim()
+                    ? 'Tidak ada tugas yang cocok dengan pencarian'
+                    : 'Tidak ada tugas untuk filter ini';
                 list.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon empty-icon-svg" aria-hidden="true">
@@ -499,7 +593,7 @@
                                 <path d="M9 16h4"></path>
                             </svg>
                         </div>
-                        <p>Tidak ada tugas untuk filter ini</p>
+                        <p>${emptyMessage}</p>
                     </div>`;
                 return;
             }

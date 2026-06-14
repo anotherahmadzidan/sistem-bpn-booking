@@ -640,3 +640,284 @@
         /* Sedikit mengecilkan ukuran teks agar proporsional dengan tinggi kotak baru */
     }
 }
+
+/* ============================================================
+   RESPONSIVE CONSOLIDATION
+   Login pemohon tetap mobile-first, dengan fallback tablet/desktop.
+   ============================================================ */
+html,
+body {
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.mobile-body {
+    min-height: 100dvh;
+}
+
+.mobile-viewport-container,
+.mobile-viewport,
+.target-card,
+.form-fields input {
+    min-width: 0;
+}
+
+@media (max-width: 767px) {
+    .mobile-viewport {
+        justify-content: flex-start;
+        padding-top: clamp(18px, 3.2dvh, 28px);
+        padding-bottom: max(28px, env(safe-area-inset-bottom));
+    }
+
+    .header-area {
+        min-height: clamp(268px, 39dvh, 322px);
+        margin-bottom: 20px;
+    }
+
+    .target-card {
+        width: 100%;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 420px) {
+    .mobile-viewport {
+        padding: clamp(18px, 3dvh, 24px) 16px max(26px, env(safe-area-inset-bottom));
+    }
+
+    .header-area {
+        min-height: clamp(260px, 38dvh, 304px);
+        margin-bottom: 22px;
+    }
+
+    .target-logo {
+        width: clamp(38px, 12vw, 48px);
+        margin-bottom: 10px;
+    }
+
+    .target-title {
+        font-size: clamp(17px, 6vw, 22px);
+        line-height: 1.22;
+    }
+
+    .title-line {
+        width: 52px;
+        margin-top: 10px;
+    }
+
+    .target-subtitle {
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    .target-card {
+        border-radius: 18px;
+        padding-bottom: 20px;
+    }
+
+    .card-accent-corner {
+        width: 118px;
+        height: 118px;
+    }
+
+    .card-header-new {
+        padding: 26px 20px 14px 24px;
+    }
+
+    .avatar-icon {
+        width: 48px;
+        height: 48px;
+        margin-right: 12px;
+    }
+
+    .header-text h2 {
+        font-size: 18px;
+    }
+
+    .header-text p {
+        font-size: 12px;
+    }
+
+    .form-fields,
+    .button-group {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+
+    #login-error {
+        margin: 0 24px 14px !important;
+    }
+
+    .form-fields label {
+        font-size: 12.5px;
+        margin-bottom: 6px;
+    }
+
+    .input-wrapper {
+        margin-bottom: 14px;
+    }
+
+    .form-fields input {
+        min-height: 44px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+        font-size: 13px;
+    }
+
+    .button-group button {
+        min-height: 44px;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    .separator {
+        margin-bottom: 12px;
+    }
+}
+
+@media (max-width: 360px) {
+    .mobile-viewport {
+        padding-inline: 12px;
+    }
+
+    .header-area {
+        min-height: clamp(250px, 37dvh, 286px);
+    }
+
+    .target-card {
+        border-radius: 16px;
+    }
+
+    .card-header-new {
+        padding: 24px 18px 12px 20px;
+    }
+
+    .avatar-icon {
+        width: 42px;
+        height: 42px;
+    }
+
+    .form-fields,
+    .button-group {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    #login-error {
+        margin-left: 20px !important;
+        margin-right: 20px !important;
+    }
+
+    .form-fields input {
+        padding-left: 40px;
+    }
+
+    #reg-nama,
+    #reg-email,
+    #reg-hp {
+        padding-left: 14px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+    .mobile-viewport-container {
+        max-width: 100%;
+    }
+
+    .mobile-viewport {
+        padding: 32px 28px;
+        gap: 36px;
+    }
+
+    .header-area {
+        margin-left: 0;
+        min-width: 0;
+    }
+
+    .target-logo {
+        width: 58px;
+        margin-bottom: 18px;
+    }
+
+    .target-title {
+        font-size: 29px;
+    }
+
+    .target-subtitle {
+        font-size: 13.5px;
+        max-width: 360px;
+    }
+
+    .info-card {
+        max-width: 360px;
+        margin-top: 24px;
+    }
+
+    .target-card {
+        flex: 0 1 390px;
+        max-width: 390px;
+    }
+
+    .card-header-new {
+        padding-top: 28px;
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+    .mobile-viewport {
+        padding: 36px 52px;
+        gap: 64px;
+    }
+
+    .header-area {
+        margin-left: 0;
+    }
+
+    .target-title {
+        font-size: 34px;
+    }
+
+    .target-card {
+        flex-basis: 420px;
+    }
+}
+
+@media (min-width: 768px) and (max-height: 740px) {
+    .mobile-viewport {
+        padding-top: 24px;
+        padding-bottom: 24px;
+    }
+
+    .target-logo {
+        width: 56px;
+        margin-bottom: 14px;
+    }
+
+    .target-title {
+        font-size: 30px;
+    }
+
+    .target-subtitle {
+        margin-top: 10px;
+        font-size: 13px;
+    }
+
+    .info-card {
+        margin-top: 22px;
+    }
+
+    .card-header-new {
+        padding-top: 24px;
+    }
+
+    .form-fields input {
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    .button-group button {
+        padding-top: 11px;
+        padding-bottom: 11px;
+    }
+}

@@ -564,6 +564,9 @@
         let wilayahData = { kecamatan: [], kelurahan: [] };
         let selectedBookingId = null;
         let riwayatBookings = [];
+        let profilLoaded = false;
+        let riwayatLoaded = false;
+        let profilLoadPromise = null;
         let kuotaTimeout = null;
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('tanggal_diminta').min = today;
@@ -1216,6 +1219,7 @@
                 sucEl.textContent = 'Pengajuan booking berhasil masuk! Menunggu Konfirmasi.';
                 sucEl.style.display = 'block';
                 resetForm();
+                invalidateProfilCache();
                 setTimeout(() => showPage('profil'), 2000);
             } catch (e) {
                 errEl.textContent = 'Terjadi kesalahan koneksi jaringan, coba kembali.';
@@ -1234,81 +1238,112 @@
             document.getElementById('info-kuota').style.display = 'none';
         }
 
-        async function loadProfil() {
-            try {
-                const res = await apiFetch('/api/auth/profile');
-                const user = await res.json();
-                document.getElementById('profil-nama').textContent = user.nama_lengkap;
-                document.getElementById('profil-email').innerHTML = userIcon('mail') + '<span>' + escapeHTML(user.email) + '</span>';
-                document.getElementById('profil-hp').innerHTML = userIcon('phone') + '<span>' + escapeHTML(user.no_hp) + '</span>';
-                document.getElementById('profil-avatar').textContent = user.nama_lengkap[0].toUpperCase();
-            } catch (err) { console.error(err); }
+        function invalidateProfilCache() {
+            riwayatLoaded = false;
+        }
 
+        function renderRiwayat(data) {
             const list = document.getElementById('riwayat-list');
-            list.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat daftar berkas...</div>';
-            try {
-                const res = await apiFetch('/api/booking/my');
-                const data = await res.json();
-                riwayatBookings = data;
+            if (data.length === 0) {
+                list.innerHTML = '<div class="empty-state">' + userIcon('emptyFile', 'empty-icon empty-icon-svg') + '<p>Belum ada riwayat pengajuan agenda.</p></div>';
+                return;
+            }
 
-                if (data.length === 0) {
-                    list.innerHTML = '<div class="empty-state">' + userIcon('emptyFile', 'empty-icon empty-icon-svg') + '<p>Belum ada riwayat pengajuan agenda.</p></div>';
+            list.innerHTML = data.map(function (b) {
+                const alasanPetugas = b.status === 'rescheduled_by_petugas' && b.last_reschedule_by === 'petugas'
+                    ? (b.last_reschedule_alasan || 'Petugas mengusulkan perubahan jadwal tanpa catatan tambahan.')
+                    : null;
+                const bisaAjukanJadwal = ['jadwal_fix', 'rescheduled_by_petugas'].includes(b.status) && b.reschedule_count < 1;
+                return `<article class="berkas-card status-${b.status}">
+                    <section class="berkas-top">
+                        <div class="berkas-nomor">#${escapeHTML(b.nomor_berkas)}</div>
+                        ${badgeStatus(b.status)}
+                        <div class="berkas-date-block">
+                            <span class="date-icon"></span>
+                            <strong>${formatDate(b.tanggal_fix || b.tanggal_diminta)}</strong>
+                            <small>Tgl Pemeriksaan</small>
+                        </div>
+                    </section>
+                    <section class="berkas-detail">
+                        <div class="berkas-row"><span>Pemohon</span><b>:</b><strong>${escapeHTML(b.nama_pemohon)}</strong></div>
+                        <div class="berkas-row"><span>Wilayah</span><b>:</b><strong>${escapeHTML(b.nama_kecamatan)}, ${escapeHTML(b.nama_kelurahan)}</strong></div>
+                        <div class="berkas-row"><span>Petugas</span><b>:</b><strong>${escapeHTML(b.nama_petugas || '-')}</strong></div>
+                        <div class="berkas-row"><span>Alamat</span><b>:</b><strong>${escapeHTML(b.alamat_lokasi || '-')}</strong></div>
+                        <div class="berkas-row"><span>Catatan</span><b>:</b><strong>${escapeHTML(b.catatan_lapangan || '-')}</strong></div>
+                    </section>
+                    <section class="berkas-info-box">
+                        <h4>Info Berkas</h4>
+                        <div><span>Nomor Berkas</span><b>:</b><strong>${escapeHTML(b.nomor_berkas)}</strong></div>
+                        <div><span>Tanggal Berkas</span><b>:</b><strong>${formatDate(b.tanggal_berkas || b.created_at)}</strong></div>
+                        <div><span>Status Berkas</span><b>:</b><strong>${badgeLabel(b.status)}</strong></div>
+                        <div><span>Jadwal Ditetapkan</span><b>:</b><strong>${b.tanggal_fix ? formatDate(b.tanggal_fix) : '-'}</strong></div>
+                    </section>
+                    <section class="berkas-action-panel">
+                        <div class="berkas-action-title">Tindak Lanjut Berkas</div>
+                        ${alasanPetugas ? `
+                        <div class="berkas-reason">
+                            <span>Alasan Petugas</span>
+                            <p>${escapeHTML(alasanPetugas)}</p>
+                        </div>` : ''}
+                        ${b.status === 'rescheduled_by_petugas' ? `
+                        <button class="berkas-action-row action-confirm" onclick="approvePetugasSchedule(${b.id}, this)">
+                            ${riwayatActionIcon('confirm')}<strong>Setujui Jadwal</strong><small>Gunakan jadwal dari petugas</small>
+                        </button>
+                        ${bisaAjukanJadwal ? `<button class="berkas-action-row action-reschedule" onclick="openReschedule(${b.id})">${riwayatActionIcon('reschedule')}<strong>Ajukan Jadwal Lain</strong><small>Ajukan perubahan satu kali</small></button>` : ''}
+                        <button class="berkas-action-row action-cancel" onclick="openCancelBooking(${b.id})">
+                            ${riwayatActionIcon('cancel')}<strong>Batalkan Permohonan</strong><small>Jika jadwal tidak bisa disepakati</small>
+                        </button>` : ''}
+                        ${b.status !== 'rescheduled_by_petugas' && bisaAjukanJadwal ? `
+                        <button class="berkas-action-row action-reschedule" onclick="openReschedule(${b.id})">
+                            ${riwayatActionIcon('reschedule')}<strong>Ajukan Reschedule</strong><small>Ajukan perubahan satu kali</small>
+                        </button>` : ''}
+                        ${!bisaAjukanJadwal && b.status !== 'rescheduled_by_petugas' ? `<p class="berkas-action-note">${riwayatStatusNote(b.status)}</p>` : ''}
+                    </section>
+                </article>`;
+            }).join('');
+        }
+
+        async function loadProfil(options = {}) {
+            const forceRefresh = options.force === true;
+            if (!forceRefresh && profilLoaded && riwayatLoaded) return;
+            if (!forceRefresh && profilLoadPromise) return profilLoadPromise;
+
+            profilLoadPromise = (async () => {
+                try {
+                    if (forceRefresh || !profilLoaded) {
+                        const res = await apiFetch('/api/auth/profile');
+                        const user = await res.json();
+                        document.getElementById('profil-nama').textContent = user.nama_lengkap;
+                        document.getElementById('profil-email').innerHTML = userIcon('mail') + '<span>' + escapeHTML(user.email) + '</span>';
+                        document.getElementById('profil-hp').innerHTML = userIcon('phone') + '<span>' + escapeHTML(user.no_hp) + '</span>';
+                        document.getElementById('profil-avatar').textContent = user.nama_lengkap[0].toUpperCase();
+                        profilLoaded = true;
+                    }
+                } catch (err) { console.error(err); }
+
+                const list = document.getElementById('riwayat-list');
+                if (!forceRefresh && riwayatLoaded) {
+                    renderRiwayat(riwayatBookings);
                     return;
                 }
 
-                list.innerHTML = data.map(function (b) {
-                    const alasanPetugas = b.status === 'rescheduled_by_petugas' && b.last_reschedule_by === 'petugas'
-                        ? (b.last_reschedule_alasan || 'Petugas mengusulkan perubahan jadwal tanpa catatan tambahan.')
-                        : null;
-                    const bisaAjukanJadwal = ['jadwal_fix', 'rescheduled_by_petugas'].includes(b.status) && b.reschedule_count < 1;
-                    return `<article class="berkas-card status-${b.status}">
-                        <section class="berkas-top">
-                            <div class="berkas-nomor">#${escapeHTML(b.nomor_berkas)}</div>
-                            ${badgeStatus(b.status)}
-                            <div class="berkas-date-block">
-                                <span class="date-icon"></span>
-                                <strong>${formatDate(b.tanggal_fix || b.tanggal_diminta)}</strong>
-                                <small>Tgl Pemeriksaan</small>
-                            </div>
-                        </section>
-                        <section class="berkas-detail">
-                            <div class="berkas-row"><span>Pemohon</span><b>:</b><strong>${escapeHTML(b.nama_pemohon)}</strong></div>
-                            <div class="berkas-row"><span>Wilayah</span><b>:</b><strong>${escapeHTML(b.nama_kecamatan)}, ${escapeHTML(b.nama_kelurahan)}</strong></div>
-                            <div class="berkas-row"><span>Petugas</span><b>:</b><strong>${escapeHTML(b.nama_petugas || '-')}</strong></div>
-                            <div class="berkas-row"><span>Alamat</span><b>:</b><strong>${escapeHTML(b.alamat_lokasi || '-')}</strong></div>
-                            <div class="berkas-row"><span>Catatan</span><b>:</b><strong>${escapeHTML(b.catatan_lapangan || '-')}</strong></div>
-                        </section>
-                        <section class="berkas-info-box">
-                            <h4>Info Berkas</h4>
-                            <div><span>Nomor Berkas</span><b>:</b><strong>${escapeHTML(b.nomor_berkas)}</strong></div>
-                            <div><span>Tanggal Berkas</span><b>:</b><strong>${formatDate(b.tanggal_berkas || b.created_at)}</strong></div>
-                            <div><span>Status Berkas</span><b>:</b><strong>${badgeLabel(b.status)}</strong></div>
-                            <div><span>Jadwal Ditetapkan</span><b>:</b><strong>${b.tanggal_fix ? formatDate(b.tanggal_fix) : '-'}</strong></div>
-                        </section>
-                        <section class="berkas-action-panel">
-                            <div class="berkas-action-title">Tindak Lanjut Berkas</div>
-                            ${alasanPetugas ? `
-                            <div class="berkas-reason">
-                                <span>Alasan Petugas</span>
-                                <p>${escapeHTML(alasanPetugas)}</p>
-                            </div>` : ''}
-                            ${b.status === 'rescheduled_by_petugas' ? `
-                            <button class="berkas-action-row action-confirm" onclick="approvePetugasSchedule(${b.id}, this)">
-                                ${riwayatActionIcon('confirm')}<strong>Setujui Jadwal</strong><small>Gunakan jadwal dari petugas</small>
-                            </button>
-                            ${bisaAjukanJadwal ? `<button class="berkas-action-row action-reschedule" onclick="openReschedule(${b.id})">${riwayatActionIcon('reschedule')}<strong>Ajukan Jadwal Lain</strong><small>Ajukan perubahan satu kali</small></button>` : ''}
-                            <button class="berkas-action-row action-cancel" onclick="openCancelBooking(${b.id})">
-                                ${riwayatActionIcon('cancel')}<strong>Batalkan Permohonan</strong><small>Jika jadwal tidak bisa disepakati</small>
-                            </button>` : ''}
-                            ${b.status !== 'rescheduled_by_petugas' && bisaAjukanJadwal ? `
-                            <button class="berkas-action-row action-reschedule" onclick="openReschedule(${b.id})">
-                                ${riwayatActionIcon('reschedule')}<strong>Ajukan Reschedule</strong><small>Ajukan perubahan satu kali</small>
-                            </button>` : ''}
-                            ${!bisaAjukanJadwal && b.status !== 'rescheduled_by_petugas' ? `<p class="berkas-action-note">${riwayatStatusNote(b.status)}</p>` : ''}
-                        </section>
-                    </article>`;
-                }).join('');
-            } catch (e) { list.innerHTML = '<div class="alert alert-error">Gagal memuat agenda.</div>'; }
+                list.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat daftar berkas...</div>';
+                try {
+                    const res = await apiFetch('/api/booking/my');
+                    const data = await res.json();
+                    riwayatBookings = data;
+                    riwayatLoaded = true;
+                    renderRiwayat(data);
+                } catch (e) {
+                    list.innerHTML = '<div class="alert alert-error">Gagal memuat agenda.</div>';
+                }
+            })();
+
+            try {
+                await profilLoadPromise;
+            } finally {
+                profilLoadPromise = null;
+            }
         }
 
         async function approvePetugasSchedule(id, button) {
@@ -1322,7 +1357,7 @@
                     alert(data.message || 'Gagal menyetujui jadwal.');
                     return;
                 }
-                await loadProfil();
+                await loadProfil({ force: true });
                 await loadNotifikasi();
             } catch (e) {
                 alert('Gagal menyetujui jadwal.');
@@ -1363,7 +1398,7 @@
                     return;
                 }
                 closeModal('modal-cancel-booking');
-                await loadProfil();
+                await loadProfil({ force: true });
                 await loadNotifikasi();
             } catch (e) {
                 errEl.textContent = 'Gagal membatalkan permohonan.';
@@ -1407,7 +1442,7 @@
                 });
                 if (!res.ok) { const d = await res.json(); errEl.textContent = d.message; errEl.style.display = 'block'; return; }
                 closeModal('modal-reschedule');
-                await loadProfil();
+                await loadProfil({ force: true });
                 await loadNotifikasi();
             } catch (e) {
                 errEl.textContent = 'Gagal menyimpan perubahan.';

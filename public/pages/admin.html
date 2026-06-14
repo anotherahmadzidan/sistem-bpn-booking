@@ -11,8 +11,30 @@
 
 <body class="dashboard admin-dashboard">
 
+    <header class="admin-mobile-topbar" aria-label="Header admin mobile">
+        <button class="admin-sidebar-toggle" id="admin-sidebar-toggle" type="button"
+            aria-label="Buka menu admin" aria-controls="admin-sidebar" aria-expanded="false"
+            onclick="toggleAdminSidebar()">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path class="admin-menu-line-1" d="M4 7h16"></path>
+                <path class="admin-menu-line-2" d="M4 12h16"></path>
+                <path class="admin-menu-line-3" d="M4 17h16"></path>
+            </svg>
+        </button>
+        <div class="admin-mobile-brand">
+            <img src="/img/logo-bpn.svg" alt="ATR BPN">
+            <div>
+                <strong>ATR BPN</strong>
+                <span>Kab. Luwu Timur</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-sidebar-backdrop" id="admin-sidebar-backdrop" onclick="closeAdminSidebar()"
+        aria-hidden="true"></div>
+
     <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="admin-sidebar">
         <div class="sidebar-header">
             <div class="brand-mark">
                 <img src="/img/logo-bpn.svg" alt="ATR BPN">
@@ -789,11 +811,31 @@
             }
         }
 
+        function setAdminSidebarOpen(isOpen) {
+            document.body.classList.toggle('admin-sidebar-open', isOpen);
+            const toggle = document.getElementById('admin-sidebar-toggle');
+            if (toggle) {
+                toggle.setAttribute('aria-expanded', String(isOpen));
+                toggle.setAttribute('aria-label', isOpen ? 'Tutup menu admin' : 'Buka menu admin');
+            }
+        }
+
+        function toggleAdminSidebar() {
+            setAdminSidebarOpen(!document.body.classList.contains('admin-sidebar-open'));
+        }
+
+        function closeAdminSidebar() {
+            setAdminSidebarOpen(false);
+        }
+
         // ============================================================
         // NAVIGASI
         // ============================================================
         function showPage(page) {
-            if (activeAdminPage === page && loadedAdminPages[page]) return;
+            if (activeAdminPage === page && loadedAdminPages[page]) {
+                if (window.matchMedia('(max-width: 720px)').matches) closeAdminSidebar();
+                return;
+            }
             activeAdminPage = page;
 
             ['dashboard', 'berkas', 'petugas', 'kuota'].forEach(p => {
@@ -802,11 +844,16 @@
             document.querySelectorAll('.nav-item').forEach((el, i) => {
                 el.classList.toggle('active', i === ['dashboard', 'berkas', 'petugas', 'kuota'].indexOf(page));
             });
+            if (window.matchMedia('(max-width: 720px)').matches) closeAdminSidebar();
             if (page === 'dashboard') loadDashboard();
             if (page === 'berkas') loadBerkas();
             if (page === 'petugas') loadPetugas();
             if (page === 'kuota') loadWilayahKuota();
         }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAdminSidebar();
+        });
 
         // ============================================================
         // API HELPER
