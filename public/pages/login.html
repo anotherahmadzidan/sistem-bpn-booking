@@ -91,9 +91,13 @@
             </svg>
           </div>
         </div>
+        <div class="auth-help-row">
+          <button type="button" class="auth-link-button" onclick="showForgotPassword()">Lupa kata sandi?</button>
+        </div>
+        <div id="login-success" class="alert alert-success" style="display:none; margin: 0 30px 16px 30px;"></div>
         <div id="login-error" class="alert alert-error" style="display:none; margin: 0 30px 16px 30px;"></div>
         <div class="button-group">
-          <button class="btn-masuk" onclick="login()">
+          <button class="btn-masuk" onclick="login(this)">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"></path>
@@ -167,7 +171,127 @@
         </div>
 
         <div class="button-group">
-          <button class="btn-daftar" onclick="register()">Daftar</button>
+          <button class="btn-daftar" onclick="register(this)">Daftar</button>
+        </div>
+      </div>
+
+      <div id="form-verify" class="target-card" style="display:none;">
+        <div class="card-accent-corner"></div>
+
+        <div class="card-header-new">
+          <button class="btn-back-small" onclick="showLogin()" title="Kembali ke Login">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div class="header-text">
+            <h2>Verifikasi Email</h2>
+            <p>Masukkan kode OTP yang dikirim ke email Anda.</p>
+          </div>
+        </div>
+
+        <div class="form-fields">
+          <label>Email <span style="color: #E74C3C;">*</span></label>
+          <div class="input-wrapper">
+            <input type="email" id="verify-email" placeholder="Email terdaftar">
+          </div>
+
+          <label>Kode OTP <span style="color: #E74C3C;">*</span></label>
+          <div class="input-wrapper">
+            <input type="text" id="verify-otp" inputmode="numeric" maxlength="6" placeholder="6 digit kode OTP">
+          </div>
+
+          <div id="verify-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
+          <div id="verify-success" class="alert alert-success" style="display:none; margin-bottom: 16px;"></div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-masuk" onclick="verifyEmailOtp(this)">Verifikasi Email</button>
+          <button class="btn-buat-akun" onclick="resendVerificationOtp(this)">Kirim ulang OTP</button>
+        </div>
+      </div>
+
+      <div id="form-forgot" class="target-card" style="display:none;">
+        <div class="card-accent-corner"></div>
+
+        <div class="card-header-new">
+          <button class="btn-back-small" onclick="showLogin()" title="Kembali ke Login">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div class="header-text">
+            <h2>Lupa Sandi</h2>
+            <p>Kami akan mengirim kode OTP reset sandi ke email Anda.</p>
+          </div>
+        </div>
+
+        <div class="form-fields">
+          <label>Email <span style="color: #E74C3C;">*</span></label>
+          <div class="input-wrapper">
+            <input type="email" id="forgot-email" placeholder="Email terdaftar">
+          </div>
+
+          <div id="forgot-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
+          <div id="forgot-success" class="alert alert-success" style="display:none; margin-bottom: 16px;"></div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-masuk" onclick="requestPasswordReset(this)">Kirim OTP Reset</button>
+        </div>
+      </div>
+
+      <div id="form-reset" class="target-card" style="display:none;">
+        <div class="card-accent-corner"></div>
+
+        <div class="card-header-new">
+          <button class="btn-back-small" onclick="showForgotPassword()" title="Kembali">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div class="header-text">
+            <h2>Reset Sandi</h2>
+            <p>Masukkan OTP dan kata sandi baru.</p>
+          </div>
+        </div>
+
+        <div class="form-fields">
+          <label>Email <span style="color: #E74C3C;">*</span></label>
+          <div class="input-wrapper">
+            <input type="email" id="reset-email" placeholder="Email terdaftar">
+          </div>
+
+          <label>Kode OTP <span style="color: #E74C3C;">*</span></label>
+          <div class="input-wrapper">
+            <input type="text" id="reset-otp" inputmode="numeric" maxlength="6" placeholder="6 digit kode OTP">
+          </div>
+
+          <label>Kata sandi baru <span style="color: #E74C3C;">*</span></label>
+          <div class="input-wrapper">
+            <input type="password" id="reset-password" placeholder="Minimal 6 karakter">
+            <svg class="icon-right" onclick="togglePassword('reset-password')" width="18" height="18"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+              stroke-linejoin="round" style="cursor: pointer;">
+              <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+              </path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          </div>
+
+          <div id="reset-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
+          <div id="reset-success" class="alert alert-success" style="display:none; margin-bottom: 16px;"></div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-daftar" onclick="submitPasswordReset(this)">Simpan Sandi Baru</button>
         </div>
       </div>
 
@@ -180,13 +304,83 @@
       window.location.href = '/user';
     }
 
-    function showRegister() {
-      document.getElementById('form-login').style.display = 'none';
-      document.getElementById('form-register').style.display = 'block';
+    const authForms = ['form-login', 'form-register', 'form-verify', 'form-forgot', 'form-reset'];
+
+    function showAuthForm(formId) {
+      authForms.forEach(id => {
+        document.getElementById(id).style.display = id === formId ? 'block' : 'none';
+      });
     }
+
+    function hideAlerts(...ids) {
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.textContent = '';
+          el.style.display = 'none';
+        }
+      });
+    }
+
+    function showAlert(id, message) {
+      const el = document.getElementById(id);
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+
+    function setButtonBusy(button, busy, text) {
+      if (!button) return;
+      if (busy) {
+        button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = text;
+      } else {
+        button.disabled = false;
+        if (button.dataset.originalHtml) {
+          button.innerHTML = button.dataset.originalHtml;
+          delete button.dataset.originalHtml;
+        }
+      }
+    }
+
+    function normalizeOtpInput(inputId) {
+      const input = document.getElementById(inputId);
+      input.value = input.value.replace(/\D/g, '').slice(0, 6);
+      return input.value;
+    }
+
+    function showRegister() {
+      hideAlerts('login-error', 'login-success', 'register-error', 'register-success');
+      showAuthForm('form-register');
+    }
+
     function showLogin() {
-      document.getElementById('form-register').style.display = 'none';
-      document.getElementById('form-login').style.display = 'block';
+      hideAlerts('register-error', 'register-success', 'verify-error', 'verify-success', 'forgot-error', 'forgot-success', 'reset-error', 'reset-success');
+      showAuthForm('form-login');
+    }
+
+    function showVerify(email) {
+      hideAlerts('login-error', 'login-success', 'register-error', 'register-success', 'verify-error', 'verify-success');
+      if (email) document.getElementById('verify-email').value = email;
+      document.getElementById('verify-otp').value = '';
+      showAuthForm('form-verify');
+    }
+
+    function showForgotPassword() {
+      hideAlerts('login-error', 'login-success', 'forgot-error', 'forgot-success');
+      const identifier = document.getElementById('identifier').value.trim();
+      if (identifier.includes('@')) {
+        document.getElementById('forgot-email').value = identifier;
+      }
+      showAuthForm('form-forgot');
+    }
+
+    function showResetPassword(email) {
+      hideAlerts('forgot-error', 'forgot-success', 'reset-error', 'reset-success');
+      if (email) document.getElementById('reset-email').value = email;
+      document.getElementById('reset-otp').value = '';
+      document.getElementById('reset-password').value = '';
+      showAuthForm('form-reset');
     }
 
     // Fungsi tambahan untuk toggle mata password
@@ -199,17 +393,16 @@
       }
     }
 
-    async function login() {
+    async function login(button) {
       const identifier = document.getElementById('identifier').value.trim();
       const password = document.getElementById('password').value;
-      const errEl = document.getElementById('login-error');
-      errEl.style.display = 'none';
+      hideAlerts('login-error', 'login-success');
 
       if (!identifier || !password) {
-        errEl.textContent = 'Email dan kata sandi wajib diisi';
-        errEl.style.display = 'block';
+        showAlert('login-error', 'Email dan kata sandi wajib diisi');
         return;
       }
+      setButtonBusy(button, true, 'Memproses...');
       try {
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -218,8 +411,12 @@
         });
         const data = await res.json();
         if (!res.ok) {
-          errEl.textContent = data.message;
-          errEl.style.display = 'block';
+          if (res.status === 403 && data.code === 'EMAIL_NOT_VERIFIED') {
+            showVerify(data.email || identifier);
+            showAlert('verify-error', data.message || 'Email belum diverifikasi.');
+            return;
+          }
+          showAlert('login-error', data.message);
           return;
         }
         localStorage.setItem('token', data.token);
@@ -227,26 +424,24 @@
         localStorage.setItem('role', data.role);
         window.location.href = '/user';
       } catch {
-        errEl.textContent = 'Terjadi kesalahan, coba lagi';
-        errEl.style.display = 'block';
+        showAlert('login-error', 'Terjadi kesalahan, coba lagi');
+      } finally {
+        setButtonBusy(button, false);
       }
     }
 
-    async function register() {
+    async function register(button) {
       const nama_lengkap = document.getElementById('reg-nama').value.trim();
       const email = document.getElementById('reg-email').value.trim();
       const no_hp = document.getElementById('reg-hp').value.trim();
       const password = document.getElementById('reg-password').value;
-      const errEl = document.getElementById('register-error');
-      const sucEl = document.getElementById('register-success');
-      errEl.style.display = 'none';
-      sucEl.style.display = 'none';
+      hideAlerts('register-error', 'register-success');
 
       if (!nama_lengkap || !email || !no_hp || !password) {
-        errEl.textContent = 'Semua field wajib diisi';
-        errEl.style.display = 'block';
+        showAlert('register-error', 'Semua field wajib diisi');
         return;
       }
+      setButtonBusy(button, true, 'Mendaftarkan...');
       try {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
@@ -255,23 +450,150 @@
         });
         const data = await res.json();
         if (!res.ok) {
-          errEl.textContent = data.message;
-          errEl.style.display = 'block';
+          showAlert('register-error', data.message);
           return;
         }
-        sucEl.textContent = 'Registrasi berhasil! Silakan login.';
-        sucEl.style.display = 'block';
-        setTimeout(showLogin, 2000);
+        showVerify(email);
+        showAlert('verify-success', data.message || 'Registrasi berhasil. Masukkan kode OTP dari email Anda.');
       } catch {
-        errEl.textContent = 'Terjadi kesalahan, coba lagi';
-        errEl.style.display = 'block';
+        showAlert('register-error', 'Terjadi kesalahan, coba lagi');
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    async function verifyEmailOtp(button) {
+      const email = document.getElementById('verify-email').value.trim();
+      const otp = normalizeOtpInput('verify-otp');
+      hideAlerts('verify-error', 'verify-success');
+
+      if (!email || !otp) {
+        showAlert('verify-error', 'Email dan kode OTP wajib diisi');
+        return;
+      }
+
+      setButtonBusy(button, true, 'Memverifikasi...');
+      try {
+        const res = await fetch('/api/auth/verify-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert('verify-error', data.message || 'Verifikasi gagal');
+          return;
+        }
+        showLogin();
+        showAlert('login-success', data.message || 'Email berhasil diverifikasi. Silakan login.');
+      } catch {
+        showAlert('verify-error', 'Terjadi kesalahan, coba lagi');
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    async function resendVerificationOtp(button) {
+      const email = document.getElementById('verify-email').value.trim();
+      hideAlerts('verify-error', 'verify-success');
+
+      if (!email) {
+        showAlert('verify-error', 'Email wajib diisi untuk mengirim ulang OTP');
+        return;
+      }
+
+      setButtonBusy(button, true, 'Mengirim...');
+      try {
+        const res = await fetch('/api/auth/resend-verification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert('verify-error', data.message || 'Gagal mengirim OTP');
+          return;
+        }
+        showAlert('verify-success', data.message || 'Kode OTP baru telah dikirim.');
+      } catch {
+        showAlert('verify-error', 'Terjadi kesalahan, coba lagi');
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    async function requestPasswordReset(button) {
+      const email = document.getElementById('forgot-email').value.trim();
+      hideAlerts('forgot-error', 'forgot-success');
+
+      if (!email) {
+        showAlert('forgot-error', 'Email wajib diisi');
+        return;
+      }
+
+      setButtonBusy(button, true, 'Mengirim OTP...');
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert('forgot-error', data.message || 'Gagal mengirim OTP reset');
+          return;
+        }
+        showResetPassword(email);
+        showAlert('reset-success', data.message || 'Kode OTP reset telah dikirim ke email.');
+      } catch {
+        showAlert('forgot-error', 'Terjadi kesalahan, coba lagi');
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    async function submitPasswordReset(button) {
+      const email = document.getElementById('reset-email').value.trim();
+      const otp = normalizeOtpInput('reset-otp');
+      const password = document.getElementById('reset-password').value;
+      hideAlerts('reset-error', 'reset-success');
+
+      if (!email || !otp || !password) {
+        showAlert('reset-error', 'Email, OTP, dan kata sandi baru wajib diisi');
+        return;
+      }
+
+      setButtonBusy(button, true, 'Menyimpan...');
+      try {
+        const res = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, otp, password })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert('reset-error', data.message || 'Gagal mengubah kata sandi');
+          return;
+        }
+        document.getElementById('password').value = '';
+        document.getElementById('identifier').value = email;
+        showLogin();
+        showAlert('login-success', data.message || 'Kata sandi berhasil diubah. Silakan login.');
+      } catch {
+        showAlert('reset-error', 'Terjadi kesalahan, coba lagi');
+      } finally {
+        setButtonBusy(button, false);
       }
     }
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
-        if (document.getElementById('form-login').style.display !== 'none') login();
-        else register();
+        const visibleForm = authForms.find(id => document.getElementById(id).style.display !== 'none');
+        if (visibleForm === 'form-login') login(document.querySelector('#form-login .btn-masuk'));
+        if (visibleForm === 'form-register') register(document.querySelector('#form-register .btn-daftar'));
+        if (visibleForm === 'form-verify') verifyEmailOtp(document.querySelector('#form-verify .btn-masuk'));
+        if (visibleForm === 'form-forgot') requestPasswordReset(document.querySelector('#form-forgot .btn-masuk'));
+        if (visibleForm === 'form-reset') submitPasswordReset(document.querySelector('#form-reset .btn-daftar'));
       }
     });
   </script>

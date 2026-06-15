@@ -5,6 +5,7 @@ const path = require('path');
 require('dotenv').config();
 const { ensureNotificationSchema, verifyEmailTransport } = require('./utils/notifikasi');
 const { ensureQuotaSchema } = require('./utils/kuota');
+const { ensureOtpSchema } = require('./utils/otp');
 const pool = require('./config/db');
 
 const app = express();
@@ -119,6 +120,9 @@ app.listen(PORT, () => {
     });
     ensureQuotaSchema().catch(err => {
         console.error('Gagal menyiapkan schema kuota:', err.message);
+    });
+    ensureOtpSchema().catch(err => {
+        console.error('Gagal menyiapkan schema OTP:', err.message);
     });
     verifyEmailTransport().catch(err => {
         console.error('Gagal memeriksa SMTP email:', err.message);
