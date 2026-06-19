@@ -84,11 +84,8 @@ const registerUser = async (req, res) => {
             });
         } catch (otpErr) {
             await pool.query('DELETE FROM pending_registrations WHERE id = ?', [pending.insertId]);
-            console.error('[OTP Register]', otpErr.message);
-            return res.status(400).json({
-                message: 'Kode OTP tidak bisa dikirim ke email tersebut. Pastikan alamat email benar.',
-                code: otpErr.code || 'OTP_EMAIL_FAILED'
-            });
+            console.error('[OTP Register]', otpErr.code || 'OTP_EMAIL_FAILED', otpErr.message);
+            return authError(res, otpErr);
         }
 
         res.status(201).json({

@@ -36,6 +36,53 @@ function otpError(status, message, code) {
     return err;
 }
 
+function emailDeliveryError(result) {
+    switch (result?.code) {
+        case 'EMAIL_NOT_CONFIGURED':
+            return otpError(
+                503,
+                'Layanan email belum dikonfigurasi. Hubungi administrator sistem.',
+                'OTP_EMAIL_NOT_CONFIGURED'
+            );
+        case 'EMAIL_AUTH_FAILED':
+            return otpError(
+                503,
+                'Autentikasi layanan email gagal. Hubungi administrator sistem.',
+                'OTP_EMAIL_AUTH_FAILED'
+            );
+        case 'EMAIL_SENDER_NOT_VERIFIED':
+            return otpError(
+                503,
+                'Domain pengirim email belum diverifikasi. Hubungi administrator sistem.',
+                'OTP_EMAIL_SENDER_NOT_VERIFIED'
+            );
+        case 'EMAIL_RATE_LIMITED':
+            return otpError(
+                429,
+                'Pengiriman email sedang dibatasi. Tunggu beberapa saat lalu coba lagi.',
+                'OTP_EMAIL_RATE_LIMITED'
+            );
+        case 'EMAIL_RECIPIENT_REJECTED':
+            return otpError(
+                400,
+                'Alamat email ditolak oleh layanan email. Periksa kembali alamat yang digunakan.',
+                'OTP_EMAIL_RECIPIENT_REJECTED'
+            );
+        case 'EMAIL_TRANSPORT_UNAVAILABLE':
+            return otpError(
+                503,
+                'Layanan email sedang tidak dapat dijangkau. Silakan coba lagi beberapa saat.',
+                'OTP_EMAIL_UNAVAILABLE'
+            );
+        default:
+            return otpError(
+                502,
+                'Kode OTP belum berhasil dikirim. Silakan coba lagi.',
+                'OTP_EMAIL_FAILED'
+            );
+    }
+}
+
 function assertPurpose(purpose) {
     if (!OTP_PURPOSES.has(purpose)) {
         throw otpError(400, 'Jenis OTP tidak valid', 'INVALID_OTP_PURPOSE');
@@ -196,7 +243,7 @@ async function sendOtp({ userId = null, pendingRegistrationId = null, email, pur
 
     if (!emailResult.sent) {
         await pool.query('UPDATE otp_tokens SET used_at = NOW() WHERE id = ?', [result.insertId]);
-        throw otpError(500, 'Gagal mengirim kode OTP ke email. Silakan coba lagi.', 'OTP_EMAIL_FAILED');
+        throw emailDeliveryError(emailResult);
     }
 
     return {

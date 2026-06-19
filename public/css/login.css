@@ -2279,3 +2279,41 @@ body.mobile-body .target-card {
         margin-bottom: 7px !important;
     }
 }
+
+/* Desktop harus tetap diam saat tinggi form login berubah. */
+@media (min-width: 900px) and (orientation: landscape) {
+    html,
+    body.mobile-body {
+        height: 100%;
+        overflow: hidden !important;
+    }
+
+    body.mobile-body .mobile-viewport-container {
+        height: 100vh;
+        height: 100svh;
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body.mobile-body .mobile-viewport {
+        height: 100vh;
+        height: 100svh;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        padding-top: clamp(24px, 5svh, 64px) !important;
+        padding-bottom: clamp(24px, 5svh, 64px) !important;
+    }
+
+    body.mobile-body .header-area {
+        align-self: center;
+    }
+
+    body.mobile-body .target-card {
+        max-height: calc(100svh - clamp(48px, 10svh, 128px));
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        scrollbar-width: thin;
+    }
+}
