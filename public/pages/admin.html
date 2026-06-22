@@ -319,7 +319,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>NIP</label>
-                            <input type="text" id="new-nip" placeholder="Nomor Induk Pegawai">
+                            <input type="text" id="new-nip" inputmode="numeric" maxlength="18"
+                                autocomplete="off" placeholder="18 digit NIP">
+                            <small id="new-nip-feedback" class="petugas-validation-message">
+                                NIP harus terdiri dari 18 digit angka.
+                            </small>
                         </div>
                         <div class="form-group">
                             <label>Nama Lengkap</label>
@@ -329,7 +333,11 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Email</label>
-                            <input type="email" id="new-email" placeholder="Email petugas">
+                            <input type="email" id="new-email" autocomplete="email"
+                                placeholder="nama@contoh.com">
+                            <small id="new-email-feedback" class="petugas-validation-message">
+                                Masukkan alamat email aktif.
+                            </small>
                         </div>
                         <div class="form-group">
                             <label>No. HP</label>
@@ -680,12 +688,24 @@
             <div class="modal-body">
                 <input type="hidden" id="edit-id">
                 <div class="form-group">
+                    <label>NIP</label>
+                    <input type="text" id="edit-nip" inputmode="numeric" maxlength="18"
+                        autocomplete="off" placeholder="18 digit NIP">
+                    <small id="edit-nip-feedback" class="petugas-validation-message">
+                        NIP harus terdiri dari 18 digit angka.
+                    </small>
+                </div>
+                <div class="form-group">
                     <label>Nama Lengkap</label>
                     <input type="text" id="edit-nama">
                 </div>
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" id="edit-email">
+                    <input type="email" id="edit-email" autocomplete="email"
+                        placeholder="nama@contoh.com">
+                    <small id="edit-email-feedback" class="petugas-validation-message">
+                        Masukkan alamat email aktif.
+                    </small>
                 </div>
                 <div class="form-group">
                     <label>No. HP</label>
@@ -696,7 +716,27 @@
                 <div class="form-group">
                     <label>Password Baru <span style="color:#888;font-size:12px">(kosongkan jika tidak
                             diubah)</span></label>
-                    <input type="password" id="edit-password" placeholder="Password baru">
+                    <div class="petugas-password-field">
+                        <input type="password" id="edit-password" autocomplete="new-password"
+                            placeholder="Password baru">
+                        <button type="button" class="petugas-password-toggle"
+                            title="Tampilkan password" aria-label="Tampilkan password"
+                            aria-pressed="false"
+                            onclick="togglePetugasPassword('edit-password', this)">
+                            <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
+                                <circle cx="12" cy="12" r="2.5"></circle>
+                            </svg>
+                            <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="m3 3 18 18"></path>
+                                <path d="M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-2.1 2.8"></path>
+                                <path d="M6.2 6.3C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6a10 10 0 0 0 3.3-.6"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <small class="petugas-validation-message">
+                        Password lama terlindungi dan tidak dapat ditampilkan.
+                    </small>
                 </div>
                 <div id="edit-error" class="alert alert-error" style="display:none"></div>
             </div>
@@ -1212,6 +1252,104 @@
         // ============================================================
         // KELOLA PETUGAS
         // ============================================================
+        function setPetugasValidationState(input, feedback, state, message) {
+            input.classList.toggle('petugas-input-invalid', state === 'error');
+            input.classList.toggle('petugas-input-valid', state === 'valid');
+            feedback.classList.toggle('is-error', state === 'error');
+            feedback.classList.toggle('is-valid', state === 'valid');
+            feedback.textContent = message;
+        }
+
+        function validatePetugasNip(inputId, feedbackId, showEmpty = false) {
+            const input = document.getElementById(inputId);
+            const feedback = document.getElementById(feedbackId);
+            const value = input.value.replace(/\D/g, '').slice(0, 18);
+            input.value = value;
+
+            if (!value) {
+                const message = showEmpty
+                    ? 'NIP wajib diisi.'
+                    : 'NIP harus terdiri dari 18 digit angka.';
+                setPetugasValidationState(input, feedback, showEmpty ? 'error' : 'neutral', message);
+                return { valid: false, value, message };
+            }
+
+            if (value.length !== 18) {
+                const message = `NIP masih ${value.length} digit. NIP wajib tepat 18 digit.`;
+                setPetugasValidationState(input, feedback, 'error', message);
+                return { valid: false, value, message };
+            }
+
+            const message = 'Format NIP valid.';
+            setPetugasValidationState(input, feedback, 'valid', message);
+            return { valid: true, value, message };
+        }
+
+        function validatePetugasEmail(inputId, feedbackId, showEmpty = false) {
+            const input = document.getElementById(inputId);
+            const feedback = document.getElementById(feedbackId);
+            const value = input.value.trim().toLowerCase();
+            const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(value);
+
+            if (!value) {
+                const message = showEmpty ? 'Email wajib diisi.' : 'Masukkan alamat email aktif.';
+                setPetugasValidationState(input, feedback, showEmpty ? 'error' : 'neutral', message);
+                return { valid: false, value, message };
+            }
+
+            if (!valid) {
+                const message = 'Format email belum valid. Contoh: nama@contoh.com';
+                setPetugasValidationState(input, feedback, 'error', message);
+                return { valid: false, value, message };
+            }
+
+            input.value = value;
+            const message = 'Format email valid.';
+            setPetugasValidationState(input, feedback, 'valid', message);
+            return { valid: true, value, message };
+        }
+
+        function bindPetugasIdentityValidation() {
+            [
+                ['new-nip', 'new-nip-feedback'],
+                ['edit-nip', 'edit-nip-feedback']
+            ].forEach(([inputId, feedbackId]) => {
+                document.getElementById(inputId)?.addEventListener('input', () => {
+                    validatePetugasNip(inputId, feedbackId);
+                });
+            });
+
+            [
+                ['new-email', 'new-email-feedback'],
+                ['edit-email', 'edit-email-feedback']
+            ].forEach(([inputId, feedbackId]) => {
+                document.getElementById(inputId)?.addEventListener('input', () => {
+                    validatePetugasEmail(inputId, feedbackId);
+                });
+            });
+        }
+
+        function togglePetugasPassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const visible = input.type === 'password';
+            input.type = visible ? 'text' : 'password';
+            button.classList.toggle('is-visible', visible);
+            button.setAttribute('aria-pressed', String(visible));
+            button.setAttribute('aria-label', visible ? 'Sembunyikan password' : 'Tampilkan password');
+            button.title = visible ? 'Sembunyikan password' : 'Tampilkan password';
+        }
+
+        function resetPetugasPasswordVisibility() {
+            const input = document.getElementById('edit-password');
+            const button = document.querySelector('.petugas-password-toggle');
+            if (!input || !button) return;
+            input.type = 'password';
+            button.classList.remove('is-visible');
+            button.setAttribute('aria-pressed', 'false');
+            button.setAttribute('aria-label', 'Tampilkan password');
+            button.title = 'Tampilkan password';
+        }
+
         function renderPetugas() {
             const tbody = document.getElementById('tabel-petugas');
             return AppAsync.renderList(tbody, allPetugas, p => `
@@ -1225,17 +1363,26 @@
                             ${p.is_active ? 'Aktif' : 'Nonaktif'}
                         </span>
                     </td>
-                    <td style="display:flex;gap:6px;flex-wrap:wrap">
-                        <button class="btn btn-secondary btn-sm" onclick="openEditPetugas(${p.id})">Edit</button>
-                        <button class="btn btn-sm ${p.is_active ? 'btn-danger' : 'btn-success'}"
+                    <td class="petugas-action-cell">
+                        <div class="petugas-action-row">
+                        <button type="button" class="petugas-icon-button petugas-icon-edit"
+                            title="Edit Petugas" aria-label="Edit Petugas"
+                            onclick="openEditPetugas(${p.id})">
+                            ${adminIcon('pencil', 'petugas-action-icon')}
+                        </button>
+                        <button type="button"
+                            class="petugas-icon-button ${p.is_active ? 'petugas-icon-disable' : 'petugas-icon-enable'}"
+                            title="${p.is_active ? 'Nonaktifkan Petugas' : 'Aktifkan Petugas'}"
+                            aria-label="${p.is_active ? 'Nonaktifkan Petugas' : 'Aktifkan Petugas'}"
                             onclick="openTogglePetugas(${p.id}, ${p.is_active ? 1 : 0})">
-                            ${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                            ${adminIcon('forbidden', 'petugas-action-icon')}
                         </button>
-                        <button class="btn btn-sm"
-                            style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5"
+                        <button type="button" class="petugas-icon-button petugas-icon-delete"
+                            title="Hapus Petugas" aria-label="Hapus Petugas"
                             onclick="openHapusPetugas(${p.id})">
-                            ${adminIcon('trash', 'btn-icon')} Hapus
+                            ${adminIcon('trash', 'petugas-action-icon')}
                         </button>
+                        </div>
                     </td>
                 </tr>`, {
                 chunkSize: 40,
@@ -1263,9 +1410,11 @@
         }
 
         async function tambahPetugas() {
-            const nip = document.getElementById('new-nip').value.trim();
+            const nipResult = validatePetugasNip('new-nip', 'new-nip-feedback', true);
+            const emailResult = validatePetugasEmail('new-email', 'new-email-feedback', true);
+            const nip = nipResult.value;
             const nama_lengkap = document.getElementById('new-nama').value.trim();
-            const email = document.getElementById('new-email').value.trim();
+            const email = emailResult.value;
             const phoneResult = PhoneValidation.validateInput(
                 'new-hp',
                 'new-hp-feedback',
@@ -1280,6 +1429,16 @@
 
             if (!nip || !nama_lengkap || !email || !document.getElementById('new-hp').value.trim() || !password) {
                 errEl.textContent = 'Semua field wajib diisi';
+                errEl.style.display = 'block';
+                return;
+            }
+            if (!nipResult.valid) {
+                errEl.textContent = nipResult.message;
+                errEl.style.display = 'block';
+                return;
+            }
+            if (!emailResult.valid) {
+                errEl.textContent = emailResult.message;
                 errEl.style.display = 'block';
                 return;
             }
@@ -1329,19 +1488,26 @@
             const p = allPetugas.find(x => x.id === id);
             if (!p) return;
             document.getElementById('edit-id').value = p.id;
+            document.getElementById('edit-nip').value = p.nip || '';
             document.getElementById('edit-nama').value = p.nama_lengkap;
             document.getElementById('edit-email').value = p.email;
             document.getElementById('edit-hp').value = p.no_hp;
+            validatePetugasNip('edit-nip', 'edit-nip-feedback');
+            validatePetugasEmail('edit-email', 'edit-email-feedback');
             PhoneValidation.validateInput('edit-hp', 'edit-hp-feedback');
             document.getElementById('edit-password').value = '';
+            resetPetugasPasswordVisibility();
             document.getElementById('edit-error').style.display = 'none';
             document.getElementById('modal-edit-petugas').classList.add('show');
         }
 
         async function submitEditPetugas() {
             const id = document.getElementById('edit-id').value;
+            const nipResult = validatePetugasNip('edit-nip', 'edit-nip-feedback', true);
+            const emailResult = validatePetugasEmail('edit-email', 'edit-email-feedback', true);
+            const nip = nipResult.value;
             const nama_lengkap = document.getElementById('edit-nama').value.trim();
-            const email = document.getElementById('edit-email').value.trim();
+            const email = emailResult.value;
             const phoneResult = PhoneValidation.validateInput(
                 'edit-hp',
                 'edit-hp-feedback',
@@ -1352,6 +1518,16 @@
             const btn = document.getElementById('btn-edit-petugas');
             errEl.style.display = 'none';
 
+            if (!nipResult.valid) {
+                errEl.textContent = nipResult.message;
+                errEl.style.display = 'block';
+                return;
+            }
+            if (!emailResult.valid) {
+                errEl.textContent = emailResult.message;
+                errEl.style.display = 'block';
+                return;
+            }
             if (!phoneResult.valid) {
                 errEl.textContent = phoneResult.message;
                 errEl.style.display = 'block';
@@ -1362,6 +1538,7 @@
                 const res = await apiFetch(`/api/admin/petugas/${id}`, {
                     method: 'PUT',
                     body: JSON.stringify({
+                        nip,
                         nama_lengkap,
                         email,
                         no_hp: phoneResult.normalized,
@@ -1379,6 +1556,7 @@
                 if (index >= 0) {
                     allPetugas[index] = {
                         ...allPetugas[index],
+                        nip: data.petugas?.nip || nip,
                         nama_lengkap,
                         email,
                         no_hp: data.petugas?.no_hp || phoneResult.normalized
@@ -1395,6 +1573,7 @@
 
         PhoneValidation.bind('new-hp', 'new-hp-feedback');
         PhoneValidation.bind('edit-hp', 'edit-hp-feedback');
+        bindPetugasIdentityValidation();
 
         function openTogglePetugas(id, isActive) {
             const petugas = allPetugas.find(p => p.id === id);
@@ -1838,6 +2017,8 @@
                 image: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"></rect><circle cx="8.5" cy="10" r="1.5"></circle><path d="m21 15-4.5-4.5L9 18"></path></svg>',
                 document: '<svg viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6Z"></path><path d="M15 3v4h4"></path><path d="M9 13h6"></path><path d="M9 17h5"></path></svg>',
                 users: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"></circle><path d="M3.5 20a5.5 5.5 0 0 1 11 0"></path><path d="M17 11.5a3 3 0 0 0 0-6"></path><path d="M18.5 20a4.5 4.5 0 0 0-3-4.25"></path></svg>',
+                pencil: '<svg viewBox="0 0 24 24"><path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Z"></path><path d="m13.5 6.5 4 4"></path></svg>',
+                forbidden: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m5.6 5.6 12.8 12.8"></path></svg>',
                 trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M6 7l1 14h10l1-14"></path><path d="M9 7V4h6v3"></path></svg>',
                 checkCircle: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>'
             };

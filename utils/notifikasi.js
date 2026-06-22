@@ -259,7 +259,7 @@ function buildEmailHtml({ judul, pesan, nomor_berkas }) {
     `;
 }
 
-async function sendWithResend({ email_user, judul, html }) {
+async function sendWithResend({ email_user, judul, html, idempotency_key }) {
     const controller = new AbortController();
     const timeoutId = setTimeout(
         () => controller.abort(new Error('Resend request timeout')),
@@ -271,7 +271,8 @@ async function sendWithResend({ email_user, judul, html }) {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${emailConfig.apiKey}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(idempotency_key ? { 'Idempotency-Key': idempotency_key } : {})
             },
             body: JSON.stringify({
                 from: emailConfig.from,
@@ -332,7 +333,7 @@ async function verifyEmailTransport() {
     }
 }
 
-async function kirimEmail({ email_user, judul, pesan, nomor_berkas }) {
+async function kirimEmail({ email_user, judul, pesan, nomor_berkas, idempotency_key }) {
     if (!email_user) return { sent: false, skipped: 'recipient_empty' };
 
     if (!emailConfig.enabled) {
@@ -351,7 +352,7 @@ async function kirimEmail({ email_user, judul, pesan, nomor_berkas }) {
     try {
         const html = buildEmailHtml({ judul, pesan, nomor_berkas });
         const info = emailConfig.provider === 'resend'
-            ? await sendWithResend({ email_user, judul, html })
+            ? await sendWithResend({ email_user, judul, html, idempotency_key })
             : await transporter.sendMail({
                 from: emailConfig.from,
                 to: email_user,

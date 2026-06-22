@@ -7,6 +7,10 @@ const { ensureNotificationSchema, verifyEmailTransport } = require('./utils/noti
 const { ensureQuotaSchema } = require('./utils/kuota');
 const { ensureOtpSchema } = require('./utils/otp');
 const { ensurePhoneSchema } = require('./utils/phone');
+const {
+    ensurePetugasReminderSchema,
+    startPetugasReminderScheduler
+} = require('./utils/petugasReminder');
 const pool = require('./config/db');
 const { serverError } = require('./utils/http');
 
@@ -131,6 +135,11 @@ app.listen(PORT, () => {
     }).catch(err => {
         console.error('Gagal menyiapkan schema nomor HP:', err.message);
     });
+    ensurePetugasReminderSchema()
+        .catch(err => {
+            console.error('Gagal menyiapkan reminder petugas:', err.message);
+        })
+        .finally(() => startPetugasReminderScheduler());
     verifyEmailTransport().catch(err => {
         console.error('Gagal memeriksa SMTP email:', err.message);
     });

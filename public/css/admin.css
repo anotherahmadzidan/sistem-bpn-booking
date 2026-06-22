@@ -3,6 +3,7 @@
    ============================================================ */
 
 .admin-dashboard {
+    --admin-sidebar-width: clamp(232px, 20vw, 286px);
     --admin-navy: #082c66;
     --admin-navy-2: #063a82;
     --admin-ink: #08245b;
@@ -20,10 +21,14 @@
 }
 
 .admin-dashboard .sidebar {
-    width: 286px;
+    width: var(--admin-sidebar-width);
     padding: 24px 18px;
-    background: transparent;
-    box-shadow: none;
+    overflow-x: hidden;
+    background:
+        linear-gradient(180deg, rgba(2, 27, 72, 0.22), rgba(3, 55, 126, 0.18)),
+        url("/img/blue-background.svg") left center / cover no-repeat,
+        #052d70;
+    box-shadow: 8px 0 26px rgba(5, 35, 82, 0.12);
 }
 
 .admin-dashboard .sidebar::after {
@@ -39,6 +44,11 @@
     display: flex;
     align-items: center;
     gap: 14px;
+    min-width: 0;
+}
+
+.brand-mark > div {
+    min-width: 0;
 }
 
 .brand-mark img {
@@ -53,6 +63,7 @@
     font-size: 21px;
     line-height: 1;
     letter-spacing: -0.01em;
+    white-space: nowrap;
 }
 
 .brand-mark p {
@@ -61,6 +72,7 @@
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.02em;
+    white-space: nowrap;
 }
 
 .admin-dashboard .sidebar-user {
@@ -76,6 +88,12 @@
     border-radius: 14px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
     box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.admin-dashboard .sidebar-user > div:first-child {
+    min-width: 0;
 }
 
 .admin-dashboard .sidebar-user span {
@@ -88,6 +106,9 @@
     display: block;
     color: #fff;
     font-size: 15px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .sidebar-user-shield {
@@ -144,6 +165,9 @@
     position: relative;
     border: 1px solid transparent;
     box-sizing: border-box;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 .admin-dashboard .nav-item .icon {
@@ -297,10 +321,12 @@
 }
 
 .admin-dashboard .main-content {
-    margin-left: 286px;
-    max-width: calc(100vw - 286px);
+    width: calc(100% - var(--admin-sidebar-width));
+    margin-left: var(--admin-sidebar-width);
+    max-width: calc(100vw - var(--admin-sidebar-width));
     padding: 28px 28px 40px;
     position: relative;
+    min-height: 100vh;
 }
 
 .admin-topbar {
@@ -1208,6 +1234,185 @@
     box-shadow: none;
 }
 
+.admin-dashboard .petugas-action-cell {
+    width: 148px;
+    min-width: 148px;
+    white-space: nowrap;
+    text-align: center;
+}
+
+.admin-dashboard .petugas-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.admin-dashboard .petugas-icon-button {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid #d7e1ef;
+    border-radius: 8px;
+    background: #fff;
+    color: #173a6d;
+    cursor: pointer;
+    transition: background-color 0.16s ease, border-color 0.16s ease,
+        color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.admin-dashboard .petugas-icon-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 15px rgba(8, 44, 102, 0.12);
+}
+
+.admin-dashboard .petugas-icon-button:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.22);
+    outline-offset: 2px;
+}
+
+.admin-dashboard .petugas-icon-edit:hover {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.admin-dashboard .petugas-icon-disable {
+    border-color: #fecaca;
+    background: #fff1f2;
+    color: #dc2626;
+}
+
+.admin-dashboard .petugas-icon-disable:hover {
+    border-color: #f87171;
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.admin-dashboard .petugas-icon-enable {
+    border-color: #a7f3d0;
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.admin-dashboard .petugas-icon-enable:hover {
+    border-color: #34d399;
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.admin-dashboard .petugas-icon-delete {
+    border-color: #fecaca;
+    background: #fff;
+    color: #dc2626;
+}
+
+.admin-dashboard .petugas-icon-delete:hover {
+    border-color: #f87171;
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.admin-dashboard .petugas-action-icon,
+.admin-dashboard .petugas-action-icon svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+.admin-dashboard .petugas-action-icon svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.admin-dashboard #page-petugas table th:nth-child(6) {
+    text-align: center;
+}
+
+.admin-dashboard .petugas-validation-message {
+    display: block;
+    min-height: 18px;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.admin-dashboard .petugas-validation-message.is-error {
+    color: #b91c1c;
+}
+
+.admin-dashboard .petugas-validation-message.is-valid {
+    color: #047857;
+}
+
+.admin-dashboard input.petugas-input-invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+.admin-dashboard input.petugas-input-valid {
+    border-color: #10b981 !important;
+}
+
+.admin-dashboard .petugas-password-field {
+    position: relative;
+}
+
+.admin-dashboard .petugas-password-field input {
+    width: 100%;
+    padding-right: 48px;
+}
+
+.admin-dashboard .petugas-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #7890ae;
+    cursor: pointer;
+    transform: translateY(-50%);
+}
+
+.admin-dashboard .petugas-password-toggle:hover,
+.admin-dashboard .petugas-password-toggle:focus-visible {
+    background: #eaf2ff;
+    color: #124c96;
+}
+
+.admin-dashboard .petugas-password-toggle svg {
+    width: 19px;
+    height: 19px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.admin-dashboard .petugas-password-toggle .eye-closed,
+.admin-dashboard .petugas-password-toggle.is-visible .eye-open {
+    display: none;
+}
+
+.admin-dashboard .petugas-password-toggle.is-visible .eye-closed {
+    display: block;
+}
+
 .modal-helper-text {
     margin: 0 0 14px;
     color: #536b93;
@@ -1411,44 +1616,114 @@
     }
 }
 
-@media (max-width: 900px) {
+@media (min-width: 981px) and (max-width: 1180px) {
+    .admin-dashboard {
+        --admin-sidebar-width: 232px;
+    }
+
     .admin-dashboard .sidebar {
-        width: 100%;
-        height: auto;
-        position: relative;
+        padding: 20px 14px;
+    }
+
+    .admin-dashboard .sidebar-header {
+        padding: 0 6px 22px;
+    }
+
+    .admin-dashboard .brand-mark {
+        gap: 10px;
+    }
+
+    .admin-dashboard .brand-mark img {
+        width: 46px;
+        height: 46px;
+    }
+
+    .admin-dashboard .brand-mark h2 {
+        font-size: 18px;
+    }
+
+    .admin-dashboard .brand-mark p {
+        margin-top: 5px;
+        font-size: 10px;
+    }
+
+    .admin-dashboard .sidebar-user {
+        width: calc(100% - 12px);
+        min-height: 68px;
+        margin: 2px 6px 18px;
+        padding: 12px;
+    }
+
+    .admin-dashboard .sidebar-user span {
+        font-size: 11px;
+    }
+
+    .admin-dashboard .sidebar-user strong {
+        margin-top: 6px;
+        font-size: 13px;
+    }
+
+    .admin-dashboard .sidebar-user-shield {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+    }
+
+    .admin-dashboard .sidebar-nav,
+    .admin-dashboard .sidebar-footer {
+        padding-inline: 6px;
+    }
+
+    .admin-dashboard .nav-item {
+        height: 46px;
+        padding-inline: 12px;
+        font-size: 13px;
+    }
+
+    .admin-dashboard .nav-item .icon {
+        width: 19px;
+        height: 19px;
+        margin-right: 10px;
+    }
+
+    .admin-dashboard .nav-item .menu-icon svg {
+        width: 19px;
+        height: 19px;
     }
 
     .admin-dashboard .main-content {
-        margin-left: 0;
-        max-width: 100%;
-        padding: 18px;
+        padding-inline: 22px;
+    }
+}
+
+@media (min-width: 981px) and (max-height: 680px) {
+    .admin-dashboard .sidebar {
+        padding-top: 12px;
+        padding-bottom: 10px;
     }
 
-    .admin-topbar {
-        flex-direction: column;
-        align-items: stretch;
+    .admin-dashboard .sidebar-header {
+        padding-bottom: 12px;
     }
 
-    .admin-search {
-        width: 100%;
+    .admin-dashboard .sidebar-user {
+        min-height: 58px;
+        margin-bottom: 8px;
+        padding-block: 9px;
     }
 
-    .topbar-meta {
-        justify-content: space-between;
-        flex-wrap: wrap;
+    .admin-dashboard .nav-section-label {
+        margin: 4px 0 7px;
+        font-size: 10px;
     }
 
-    .admin-dashboard .stats-grid {
-        grid-template-columns: 1fr;
+    .admin-dashboard .nav-item {
+        height: 42px;
+        margin-bottom: 4px;
     }
 
-    .admin-dashboard .quota-active-controls-2,
-    .admin-dashboard .quota-active-controls-3 {
-        grid-template-columns: 1fr;
-    }
-
-    .admin-dashboard .quota-active-button {
-        width: 100%;
+    .admin-dashboard .admin-logout {
+        height: 42px;
     }
 }
 
@@ -1485,98 +1760,8 @@
 }
 
 @media (max-width: 980px) {
-    body.admin-dashboard {
-        flex-direction: column;
-    }
-
     .admin-dashboard {
         background-attachment: scroll;
-    }
-
-    .admin-dashboard .sidebar {
-        width: 100%;
-        height: auto;
-        min-height: 0;
-        position: relative;
-        padding: 16px;
-    }
-
-    .admin-dashboard .sidebar-header {
-        padding: 0 4px 14px;
-    }
-
-    .admin-dashboard .brand-mark {
-        gap: 10px;
-    }
-
-    .admin-dashboard .brand-mark img {
-        width: 44px;
-        height: 44px;
-    }
-
-    .admin-dashboard .brand-mark h2 {
-        font-size: 18px;
-    }
-
-    .admin-dashboard .brand-mark p {
-        font-size: 10.5px;
-    }
-
-    .admin-dashboard .sidebar-user {
-        width: 100%;
-        min-height: 64px;
-        margin: 0 0 14px;
-        padding: 12px 14px;
-        border-radius: 12px;
-    }
-
-    .admin-dashboard .sidebar-user-shield {
-        width: 36px;
-        height: 36px;
-        border-radius: 11px;
-    }
-
-    .admin-dashboard .sidebar-nav {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        overscroll-behavior-x: contain;
-        padding: 0 0 2px;
-        scrollbar-width: none;
-    }
-
-    .admin-dashboard .sidebar-nav::-webkit-scrollbar {
-        display: none;
-    }
-
-    .admin-dashboard .nav-section-label {
-        display: none;
-    }
-
-    .admin-dashboard .nav-item {
-        width: auto;
-        min-width: 146px;
-        height: 44px;
-        margin: 0;
-        padding: 0 14px;
-        border-radius: 10px;
-        justify-content: center;
-        white-space: nowrap;
-    }
-
-    .admin-dashboard .nav-item .icon {
-        margin-right: 8px;
-    }
-
-    .admin-dashboard .sidebar-footer {
-        display: none;
-    }
-
-    .admin-dashboard .main-content {
-        width: 100%;
-        max-width: 100%;
-        margin-left: 0;
-        padding: 18px;
     }
 
     .admin-dashboard .page-header {
@@ -1934,7 +2119,7 @@
    ADMIN MOBILE DRAWER LAYOUT
    Mengikuti pola mobile petugas: topbar pendek + sidebar drawer kiri.
    ============================================================ */
-@media (max-width: 720px) {
+@media (max-width: 980px) {
     body.admin-dashboard {
         display: block;
         min-height: 100dvh;
@@ -2176,7 +2361,7 @@
         width: 100%;
         max-width: 100%;
         margin-left: 0;
-        padding: 12px 10px 30px;
+        padding: 20px 18px 34px;
         background: transparent;
     }
 
@@ -2291,5 +2476,35 @@
 
     body.admin-dashboard #page-dashboard .stat-value {
         font-size: 18px;
+    }
+}
+
+@media (max-width: 720px) {
+    body.admin-dashboard .main-content {
+        padding: 12px 10px 30px;
+    }
+
+    .admin-dashboard #tabel-petugas td.petugas-action-cell {
+        display: grid;
+        grid-template-columns: 1fr;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .admin-dashboard #tabel-petugas .petugas-action-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .admin-dashboard #tabel-petugas td:nth-child(6) button.petugas-icon-button {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        margin: 0;
+        padding: 0;
+        flex: 0 0 36px;
     }
 }

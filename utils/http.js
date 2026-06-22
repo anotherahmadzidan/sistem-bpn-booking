@@ -18,12 +18,22 @@ const classifyServerError = (err) => {
     }
 
     if (
-        ['ECONNRESET', 'ECONNREFUSED', 'EAI_AGAIN', 'ENOTFOUND', 'PROTOCOL_CONNECTION_LOST'].includes(code)
+        [
+            'ECONNRESET',
+            'ECONNREFUSED',
+            'EAI_AGAIN',
+            'ENOTFOUND',
+            'PROTOCOL_CONNECTION_LOST',
+            'ER_CON_COUNT_ERROR',
+            'ER_USER_LIMIT_REACHED'
+        ].includes(code)
+        || message.includes('max_user_connections')
+        || message.includes('too many connections')
     ) {
         return {
             status: 503,
             code: 'DATABASE_UNAVAILABLE',
-            message: 'Database sedang tidak dapat dijangkau. Silakan coba lagi.'
+            message: 'Database sedang sibuk atau tidak dapat dijangkau. Silakan coba lagi.'
         };
     }
 

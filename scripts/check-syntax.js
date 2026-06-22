@@ -5,10 +5,14 @@ const vm = require('vm');
 const root = path.join(__dirname, '..');
 const jsFiles = [
     'server.js',
+    'bootstrap.js',
+    'dbPool.js',
+    'adminPetugasOverrides.js',
     'config/db.js',
     'utils/http.js',
     'utils/kuota.js',
     'utils/notifikasi.js',
+    'utils/petugasReminder.js',
     'utils/otp.js',
     'utils/phone.js',
     'controllers/authController.js',
