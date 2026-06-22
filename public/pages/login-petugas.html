@@ -13,6 +13,7 @@
         rel="stylesheet">
 
     <link rel="stylesheet" href="/css/login-bpn.css">
+    <link rel="stylesheet" href="/css/app-async.css">
 </head>
 
 <body class="mobile-body">
@@ -72,7 +73,7 @@
                     </button>
                 </div>
 
-                <div id="form-petugas" style="display: block;">
+                <div id="form-petugas" data-app-form style="display: block;">
                     <div class="form-fields">
                         <label>Nomor Induk Pegawai (NIP) <span style="color: #E74C3C;">*</span></label>
                         <div class="input-wrapper">
@@ -108,7 +109,7 @@
 
                     <div class="button-group">
                         <div id="pet-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
-                        <button class="btn-masuk" onclick="loginPetugas()">
+                        <button class="btn-masuk" id="btn-login-petugas" type="button" onclick="loginPetugas(this)">
                             Masuk ke Portal
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -120,7 +121,7 @@
                     </div>
                 </div>
 
-                <div id="form-admin" style="display: none;">
+                <div id="form-admin" data-app-form style="display: none;">
                     <div class="form-fields">
                         <label>Username Administrator <span style="color: #E74C3C;">*</span></label>
                         <div class="input-wrapper">
@@ -153,7 +154,7 @@
 
                     <div class="button-group">
                         <div id="adm-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
-                        <button class="btn-masuk" onclick="loginAdmin()">
+                        <button class="btn-masuk" id="btn-login-admin" type="button" onclick="loginAdmin(this)">
                             Masuk ke Portal
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -170,6 +171,7 @@
         </div>
     </div>
 
+    <script src="/js/app-async.js"></script>
     <script>
         function switchTab(tab) {
             document.getElementById('form-petugas').style.display = tab === 'petugas' ? 'block' : 'none';
@@ -190,7 +192,7 @@
             else input.type = 'password';
         }
 
-        async function loginPetugas() {
+        async function loginPetugas(button) {
             const nip = document.getElementById('nip').value.trim();
             const password = document.getElementById('pet-password').value;
             const errEl = document.getElementById('pet-error');
@@ -201,8 +203,9 @@
                 errEl.style.display = 'flex';
                 return;
             }
+            if (!AppAsync.setButtonLoading(button, true, 'Memproses...')) return;
             try {
-                const res = await fetch('/api/auth/login-petugas', {
+                const res = await AppAsync.fetchWithTimeout('/api/auth/login-petugas', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nip, password })
@@ -218,12 +221,14 @@
                 localStorage.setItem('role', 'petugas');
                 window.location.href = '/petugas';
             } catch (err) {
-                errEl.textContent = 'Terjadi kesalahan server.';
+                errEl.textContent = AppAsync.errorMessage(err, 'Login petugas gagal.');
                 errEl.style.display = 'flex';
+            } finally {
+                AppAsync.setButtonLoading(button, false);
             }
         }
 
-        async function loginAdmin() {
+        async function loginAdmin(button) {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('adm-password').value;
             const errEl = document.getElementById('adm-error');
@@ -234,8 +239,9 @@
                 errEl.style.display = 'flex';
                 return;
             }
+            if (!AppAsync.setButtonLoading(button, true, 'Memproses...')) return;
             try {
-                const res = await fetch('/api/auth/login-admin', {
+                const res = await AppAsync.fetchWithTimeout('/api/auth/login-admin', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
@@ -251,8 +257,10 @@
                 localStorage.setItem('role', data.role);
                 window.location.href = '/admin';
             } catch (err) {
-                errEl.textContent = 'Terjadi kesalahan server.';
+                errEl.textContent = AppAsync.errorMessage(err, 'Login admin gagal.');
                 errEl.style.display = 'flex';
+            } finally {
+                AppAsync.setButtonLoading(button, false);
             }
         }
     </script>

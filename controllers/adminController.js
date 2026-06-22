@@ -5,6 +5,13 @@ const path = require('path');
 const { ensureNotificationSchema } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
 const {
+    requireIndonesianPhone,
+    assertPhoneAvailable,
+    acquirePhoneLock,
+    releasePhoneLock,
+    ensurePhoneSchema
+} = require('../utils/phone');
+const {
     ensureQuotaSchema,
     setKuotaHarian,
     setKuotaRentang,
@@ -46,49 +53,143 @@ const getAllPetugas = async (req, res) => {
 
 // TAMBAH PETUGAS
 const tambahPetugas = async (req, res) => {
-    const { nip, nama_lengkap, email, no_hp, password } = req.body;
-    if (!nip || !nama_lengkap || !email || !no_hp || !password)
+    const { nip, nama_lengkap, email, password } = req.body;
+    if (!nip || !nama_lengkap || !email || !req.body.no_hp || !password)
         return res.status(400).json({ message: 'Semua field wajib diisi' });
 
+    let no_hp;
     try {
-        const [exist] = await pool.query(
+        no_hp = requireIndonesianPhone(req.body.no_hp);
+    } catch (err) {
+        return res.status(err.status || 400).json({ message: err.message, code: err.code });
+    }
+
+    let connection;
+    let phoneLockName = null;
+    try {
+        await ensurePhoneSchema();
+        connection = await pool.getConnection();
+        phoneLockName = await acquirePhoneLock(connection, no_hp);
+        await connection.beginTransaction();
+
+        const [exist] = await connection.query(
             'SELECT id FROM petugas WHERE nip = ? OR email = ?', [nip, email]
         );
-        if (exist.length > 0)
+        if (exist.length > 0) {
+            await connection.rollback();
             return res.status(409).json({ message: 'NIP atau email sudah terdaftar' });
+        }
+        await assertPhoneAvailable(connection, no_hp);
 
         const hash = await bcrypt.hash(password, 10);
-        await pool.query(
+        const [result] = await connection.query(
             'INSERT INTO petugas (nip, nama_lengkap, email, no_hp, password) VALUES (?, ?, ?, ?, ?)',
             [nip, nama_lengkap, email, no_hp, hash]
         );
-        res.status(201).json({ message: 'Petugas berhasil ditambahkan' });
+        await connection.commit();
+        res.status(201).json({
+            message: 'Petugas berhasil ditambahkan',
+            petugas: {
+                id: result.insertId,
+                nip,
+                nama_lengkap,
+                email,
+                no_hp,
+                is_active: 1
+            }
+        });
     } catch (err) {
+        if (connection) {
+            try {
+                await connection.rollback();
+            } catch {}
+        }
+        if (err.status) {
+            return res.status(err.status).json({ message: err.message, code: err.code });
+        }
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({
+                message: 'NIP, email, atau nomor HP sudah terdaftar.',
+                code: 'ACCOUNT_DATA_ALREADY_REGISTERED'
+            });
+        }
         return serverError(res, err);
+    } finally {
+        await releasePhoneLock(connection, phoneLockName);
+        connection?.release();
     }
 };
 
 // EDIT PETUGAS
 const editPetugas = async (req, res) => {
     const { id } = req.params;
-    const { nama_lengkap, email, no_hp, password } = req.body;
+    const { nama_lengkap, email, password } = req.body;
 
+    if (!nama_lengkap || !email || !req.body.no_hp) {
+        return res.status(400).json({ message: 'Nama, email, dan nomor HP wajib diisi' });
+    }
+
+    let no_hp;
     try {
+        no_hp = requireIndonesianPhone(req.body.no_hp);
+    } catch (err) {
+        return res.status(err.status || 400).json({ message: err.message, code: err.code });
+    }
+
+    let connection;
+    let phoneLockName = null;
+    try {
+        await ensurePhoneSchema();
+        connection = await pool.getConnection();
+        phoneLockName = await acquirePhoneLock(connection, no_hp);
+        await connection.beginTransaction();
+
+        const [emailOwner] = await connection.query(
+            'SELECT id FROM petugas WHERE email = ? AND id <> ? LIMIT 1',
+            [email, id]
+        );
+        if (emailOwner.length > 0) {
+            await connection.rollback();
+            return res.status(409).json({ message: 'Email sudah digunakan petugas lain.' });
+        }
+        await assertPhoneAvailable(connection, no_hp, { excludePetugasId: id });
+
         if (password) {
             const hash = await bcrypt.hash(password, 10);
-            await pool.query(
+            await connection.query(
                 'UPDATE petugas SET nama_lengkap=?, email=?, no_hp=?, password=?, updated_at=NOW() WHERE id=?',
                 [nama_lengkap, email, no_hp, hash, id]
             );
         } else {
-            await pool.query(
+            await connection.query(
                 'UPDATE petugas SET nama_lengkap=?, email=?, no_hp=?, updated_at=NOW() WHERE id=?',
                 [nama_lengkap, email, no_hp, id]
             );
         }
-        res.json({ message: 'Data petugas berhasil diupdate' });
+        await connection.commit();
+        res.json({
+            message: 'Data petugas berhasil diupdate',
+            petugas: { id: Number(id), nama_lengkap, email, no_hp }
+        });
     } catch (err) {
+        if (connection) {
+            try {
+                await connection.rollback();
+            } catch {}
+        }
+        if (err.status) {
+            return res.status(err.status).json({ message: err.message, code: err.code });
+        }
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({
+                message: 'Email atau nomor HP sudah digunakan akun lain.',
+                code: 'ACCOUNT_DATA_ALREADY_REGISTERED'
+            });
+        }
         return serverError(res, err);
+    } finally {
+        await releasePhoneLock(connection, phoneLockName);
+        connection?.release();
     }
 };
 
@@ -99,7 +200,14 @@ const togglePetugas = async (req, res) => {
         await pool.query(
             'UPDATE petugas SET is_active = NOT is_active, updated_at = NOW() WHERE id = ?', [id]
         );
-        res.json({ message: 'Status petugas berhasil diubah' });
+        const [rows] = await pool.query(
+            'SELECT id, is_active FROM petugas WHERE id = ?',
+            [id]
+        );
+        res.json({
+            message: 'Status petugas berhasil diubah',
+            petugas: rows[0] || null
+        });
     } catch (err) {
         return serverError(res, err);
     }
@@ -143,70 +251,80 @@ const getKuota = async (req, res) => {
     try {
         await ensureQuotaSchema();
 
-        const [kecamatanTargets] = await pool.query(
-            `SELECT id AS kecamatan_id, nama_kecamatan
-             FROM kecamatan
-             ORDER BY nama_kecamatan`
-        );
-        const [kecTanggal] = await pool.query(
-            `SELECT kecamatan_id, kuota_max, terisi, is_unlimited, set_order
-             FROM kuota_kecamatan
-             WHERE tanggal = ?`,
-            [tanggal]
-        );
-        const [kecDefault] = await pool.query(
-            `SELECT target_id AS kecamatan_id, kuota_max, is_unlimited, set_order
-             FROM kuota_default
-             WHERE tipe = 'kecamatan'`
-        );
-
         const kelParams = [];
         let kelWhere = '';
         if (kecamatan_id) {
             kelWhere = 'WHERE k.kecamatan_id = ?';
             kelParams.push(kecamatan_id);
         }
-        const [kelurahanTargets] = await pool.query(
-            `SELECT
-                k.id AS kelurahan_id,
-                k.nama_kelurahan,
-                k.kecamatan_id,
-                kc.nama_kecamatan
-             FROM kelurahan k
-             JOIN kecamatan kc ON k.kecamatan_id = kc.id
-             ${kelWhere}
-             ORDER BY kc.nama_kecamatan, k.nama_kelurahan`,
-            kelParams
-        );
-        const [kelTanggal] = await pool.query(
-            `SELECT kelurahan_id, kuota_max, terisi, is_unlimited, set_order
-             FROM kuota_kelurahan
-             WHERE tanggal = ?`,
-            [tanggal]
-        );
-        const [kelDefault] = await pool.query(
-            `SELECT target_id AS kelurahan_id, kuota_max, is_unlimited, set_order
-             FROM kuota_default
-             WHERE tipe = 'kelurahan'`
-        );
-
-        const [petugasTargets] = await pool.query(
-            `SELECT id AS petugas_id, nip, nama_lengkap
-             FROM petugas
-             WHERE is_active = 1
-             ORDER BY nama_lengkap`
-        );
-        const [petTanggal] = await pool.query(
-            `SELECT petugas_id, kuota_max, terisi, 0 AS is_unlimited, set_order
-             FROM kuota_petugas
-             WHERE tanggal = ?`,
-            [tanggal]
-        );
-        const [petDefault] = await pool.query(
-            `SELECT target_id AS petugas_id, kuota_max, 0 AS is_unlimited, set_order
-             FROM kuota_default
-             WHERE tipe = 'petugas'`
-        );
+        const [
+            [kecamatanTargets],
+            [kecTanggal],
+            [kecDefault],
+            [kelurahanTargets],
+            [kelTanggal],
+            [kelDefault],
+            [petugasTargets],
+            [petTanggal],
+            [petDefault]
+        ] = await Promise.all([
+            pool.query(
+                `SELECT id AS kecamatan_id, nama_kecamatan
+                 FROM kecamatan
+                 ORDER BY nama_kecamatan`
+            ),
+            pool.query(
+                `SELECT kecamatan_id, kuota_max, terisi, is_unlimited, set_order
+                 FROM kuota_kecamatan
+                 WHERE tanggal = ?`,
+                [tanggal]
+            ),
+            pool.query(
+                `SELECT target_id AS kecamatan_id, kuota_max, is_unlimited, set_order
+                 FROM kuota_default
+                 WHERE tipe = 'kecamatan'`
+            ),
+            pool.query(
+                `SELECT
+                    k.id AS kelurahan_id,
+                    k.nama_kelurahan,
+                    k.kecamatan_id,
+                    kc.nama_kecamatan
+                 FROM kelurahan k
+                 JOIN kecamatan kc ON k.kecamatan_id = kc.id
+                 ${kelWhere}
+                 ORDER BY kc.nama_kecamatan, k.nama_kelurahan`,
+                kelParams
+            ),
+            pool.query(
+                `SELECT kelurahan_id, kuota_max, terisi, is_unlimited, set_order
+                 FROM kuota_kelurahan
+                 WHERE tanggal = ?`,
+                [tanggal]
+            ),
+            pool.query(
+                `SELECT target_id AS kelurahan_id, kuota_max, is_unlimited, set_order
+                 FROM kuota_default
+                 WHERE tipe = 'kelurahan'`
+            ),
+            pool.query(
+                `SELECT id AS petugas_id, nip, nama_lengkap
+                 FROM petugas
+                 WHERE is_active = 1
+                 ORDER BY nama_lengkap`
+            ),
+            pool.query(
+                `SELECT petugas_id, kuota_max, terisi, 0 AS is_unlimited, set_order
+                 FROM kuota_petugas
+                 WHERE tanggal = ?`,
+                [tanggal]
+            ),
+            pool.query(
+                `SELECT target_id AS petugas_id, kuota_max, 0 AS is_unlimited, set_order
+                 FROM kuota_default
+                 WHERE tipe = 'petugas'`
+            )
+        ]);
 
         const kecTanggalMap = mapRowsBy(kecTanggal, 'kecamatan_id');
         const kecDefaultMap = mapRowsBy(kecDefault, 'kecamatan_id');
@@ -292,10 +410,10 @@ const setKuota = async (req, res) => {
 // GET WILAYAH (untuk dropdown form booking)
 const getWilayah = async (req, res) => {
     try {
-        const [kecamatan] = await pool.query('SELECT * FROM kecamatan ORDER BY nama_kecamatan');
-        const [kelurahan] = await pool.query(
-            'SELECT * FROM kelurahan ORDER BY nama_kelurahan'
-        );
+        const [[kecamatan], [kelurahan]] = await Promise.all([
+            pool.query('SELECT * FROM kecamatan ORDER BY nama_kecamatan'),
+            pool.query('SELECT * FROM kelurahan ORDER BY nama_kelurahan')
+        ]);
         res.json({ kecamatan, kelurahan });
     } catch (err) {
         return serverError(res, err);
@@ -342,22 +460,18 @@ const getDetailBerkas = async (req, res) => {
         if (booking.length === 0)
             return res.status(404).json({ message: 'Berkas tidak ditemukan' });
 
-        // Riwayat reschedule
-        const [reschedule] = await pool.query(
-            `SELECT * FROM reschedule_log WHERE booking_id = ? ORDER BY created_at ASC`, [id]
-        );
-
-        // Hasil pemeriksaan kalau ada
-        const [hasil] = await pool.query(
-            `SELECT * FROM hasil_pemeriksaan WHERE booking_id = ?`, [id]
-        );
-
-        // Notifikasi yang dikirim untuk berkas ini
-        await ensureNotificationSchema();
-        const [notif] = await pool.query(
-            `SELECT judul, pesan, created_at FROM notifications 
-             WHERE booking_id = ? ORDER BY created_at ASC`, [id]
-        );
+        const [[reschedule], [hasil], [notif]] = await Promise.all([
+            pool.query(
+                'SELECT * FROM reschedule_log WHERE booking_id = ? ORDER BY created_at ASC',
+                [id]
+            ),
+            pool.query('SELECT * FROM hasil_pemeriksaan WHERE booking_id = ?', [id]),
+            ensureNotificationSchema().then(() => pool.query(
+                `SELECT judul, pesan, created_at FROM notifications
+                 WHERE booking_id = ? ORDER BY created_at ASC`,
+                [id]
+            ))
+        ]);
 
         res.json({
             booking: booking[0],

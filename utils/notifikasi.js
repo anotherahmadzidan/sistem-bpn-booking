@@ -22,6 +22,7 @@ function buildEmailConfig() {
     const service = (process.env.EMAIL_SERVICE || 'gmail').trim();
     const host = (process.env.SMTP_HOST || process.env.EMAIL_HOST || '').trim();
     const port = Number(process.env.SMTP_PORT || process.env.EMAIL_PORT || 0);
+    const timeoutMs = positiveNumber(process.env.EMAIL_TIMEOUT_MS, 8000);
     const isGmail = service.toLowerCase() === 'gmail' || host.toLowerCase().includes('gmail');
     const pass = isGmail ? rawPass.replace(/\s/g, '') : rawPass.trim();
     const useResend = requestedProvider === 'resend' || (!requestedProvider && Boolean(resendApiKey));
@@ -39,7 +40,8 @@ function buildEmailConfig() {
             enabled: true,
             provider: 'resend',
             apiKey: resendApiKey,
-            from: process.env.EMAIL_FROM || 'BPN Luwu Timur <onboarding@resend.dev>'
+            from: process.env.EMAIL_FROM || 'BPN Luwu Timur <onboarding@resend.dev>',
+            timeoutMs
         };
     }
 
@@ -57,16 +59,16 @@ function buildEmailConfig() {
             port: port || 587,
             secure: String(process.env.SMTP_SECURE || process.env.EMAIL_SECURE || '').toLowerCase() === 'true',
             auth: { user, pass },
-            connectionTimeout: 15000,
-            greetingTimeout: 15000,
-            socketTimeout: 20000
+            connectionTimeout: timeoutMs,
+            greetingTimeout: timeoutMs,
+            socketTimeout: timeoutMs
         }
         : {
             service,
             auth: { user, pass },
-            connectionTimeout: 15000,
-            greetingTimeout: 15000,
-            socketTimeout: 20000
+            connectionTimeout: timeoutMs,
+            greetingTimeout: timeoutMs,
+            socketTimeout: timeoutMs
         };
 
     return {
@@ -74,6 +76,7 @@ function buildEmailConfig() {
         provider: 'smtp',
         user,
         from: process.env.EMAIL_FROM || `"BPN Luwu Timur" <${user}>`,
+        timeoutMs,
         transport
     };
 }
@@ -257,19 +260,37 @@ function buildEmailHtml({ judul, pesan, nomor_berkas }) {
 }
 
 async function sendWithResend({ email_user, judul, html }) {
-    const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${emailConfig.apiKey}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            from: emailConfig.from,
-            to: [email_user],
-            subject: `[BPN Luwu Timur] ${judul}`,
-            html
-        })
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(
+        () => controller.abort(new Error('Resend request timeout')),
+        emailConfig.timeoutMs
+    );
+    let response;
+    try {
+        response = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${emailConfig.apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                from: emailConfig.from,
+                to: [email_user],
+                subject: `[BPN Luwu Timur] ${judul}`,
+                html
+            }),
+            signal: controller.signal
+        });
+    } catch (err) {
+        if (controller.signal.aborted) {
+            const timeoutError = new Error('Layanan email melewati batas waktu');
+            timeoutError.code = 'EMAIL_TIMEOUT';
+            throw timeoutError;
+        }
+        throw err;
+    } finally {
+        clearTimeout(timeoutId);
+    }
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {

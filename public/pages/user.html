@@ -11,6 +11,8 @@
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Public+Sans:wght@600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/css/user.css">
+    <link rel="stylesheet" href="/css/app-async.css">
+    <link rel="stylesheet" href="/css/phone-validation.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 
@@ -178,7 +180,7 @@
 
             <div class="content-wrap">
 
-                <div id="page-booking">
+                <div id="page-booking" data-app-form>
 
                     <div class="form-split-grid">
 
@@ -233,8 +235,10 @@
                                             d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
                                         </path>
                                     </svg>
-                                    <input type="text" id="no_telepon" placeholder="No. HP yang bisa dihubungi">
+                                    <input type="text" id="no_telepon" inputmode="tel" autocomplete="tel"
+                                        maxlength="24" placeholder="Contoh: 081234567890">
                                 </div>
+                                <small id="no-telepon-feedback" class="phone-validation-message">Contoh: 081234567890</small>
                             </div>
                         </div>
 
@@ -533,6 +537,8 @@
     </footer>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/app-async.js"></script>
+    <script src="/js/phone-validation.js"></script>
     <script>
         const token = localStorage.getItem('token');
         const nama = localStorage.getItem('nama');
@@ -567,76 +573,15 @@
         let profilLoaded = false;
         let riwayatLoaded = false;
         let profilLoadPromise = null;
+        let initialFormDataLoaded = false;
+        let initialFormDataPromise = null;
         let kuotaTimeout = null;
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('tanggal_diminta').min = today;
         document.getElementById('tanggal_berkas').max = today;
 
-        let pageInteractionLocks = 0;
-
-        function getPageInteractionLock() {
-            let lock = document.getElementById('page-interaction-lock');
-            if (!lock) {
-                lock = document.createElement('div');
-                lock.id = 'page-interaction-lock';
-                lock.className = 'page-interaction-lock';
-                lock.setAttribute('aria-hidden', 'true');
-                lock.hidden = true;
-                document.body.appendChild(lock);
-            }
-            return lock;
-        }
-
-        function setPageInteractionLocked(isLocked) {
-            pageInteractionLocks = isLocked
-                ? pageInteractionLocks + 1
-                : Math.max(0, pageInteractionLocks - 1);
-
-            const locked = pageInteractionLocks > 0;
-            document.body.classList.toggle('is-processing', locked);
-            getPageInteractionLock().hidden = !locked;
-        }
-
-        function blockInteractionWhileBusy(event) {
-            if (pageInteractionLocks <= 0) return;
-            event.preventDefault();
-            event.stopPropagation();
-        }
-
-        ['click', 'mousedown', 'mouseup', 'touchstart', 'touchmove', 'wheel'].forEach((eventName) => {
-            document.addEventListener(eventName, blockInteractionWhileBusy, true);
-        });
-
-        document.addEventListener('keydown', (event) => {
-            if (pageInteractionLocks <= 0) return;
-            if (['Tab', 'Enter', ' ', 'Escape'].includes(event.key)) {
-                blockInteractionWhileBusy(event);
-            }
-        }, true);
-
         function setButtonLoading(button, isLoading, label = 'Memproses...') {
-            if (!button) return;
-
-            if (isLoading) {
-                if (!button.dataset.originalHtml) {
-                    button.dataset.originalHtml = button.innerHTML;
-                }
-                button.disabled = true;
-                button.setAttribute('aria-busy', 'true');
-                button.classList.add('is-loading');
-                button.innerHTML = `<span class="button-spinner" aria-hidden="true"></span><span>${label}</span>`;
-                setPageInteractionLocked(true);
-                return;
-            }
-
-            button.disabled = false;
-            button.removeAttribute('aria-busy');
-            button.classList.remove('is-loading');
-            if (button.dataset.originalHtml) {
-                button.innerHTML = button.dataset.originalHtml;
-                delete button.dataset.originalHtml;
-            }
-            setPageInteractionLocked(false);
+            return AppAsync.setButtonLoading(button, isLoading, label);
         }
 
         let map = null;
@@ -666,7 +611,7 @@
         async function loadNotifikasi() {
             try {
                 const res = await apiFetch('/api/auth/notifications');
-                if (!res) return;
+                if (!res.ok) throw await AppAsync.responseError(res, 'Notifikasi gagal dimuat.');
                 const data = await res.json();
 
                 const badge = document.getElementById('notif-badge');
@@ -703,7 +648,10 @@
                     waktu: formatWaktu(n.created_at)
                 }));
             } catch (err) {
-                console.error('Gagal load notifikasi', err);
+                if (notifOpen) {
+                    document.getElementById('notif-list').innerHTML =
+                        `<div class="notif-empty">${escapeHTML(AppAsync.errorMessage(err, 'Notifikasi gagal dimuat.'))}</div>`;
+                }
             }
         }
 
@@ -728,7 +676,8 @@
 
         async function markAllRead() {
             try {
-                await apiFetch('/api/auth/notifications/read', { method: 'PATCH' });
+                const res = await apiFetch('/api/auth/notifications/read', { method: 'PATCH' });
+                if (!res.ok) throw await AppAsync.responseError(res, 'Notifikasi gagal ditandai dibaca.');
                 setTimeout(loadNotifikasi, 500);
             } catch (err) {
                 console.error('Gagal mark read', err);
@@ -895,7 +844,7 @@
                 const url = 'https://nominatim.openstreetmap.org/search?q='
                     + encodeURIComponent(query)
                     + '&format=json&limit=1&countrycodes=id';
-                const res = await fetch(url);
+                const res = await AppAsync.fetchWithTimeout(url);
                 const data = await res.json();
                 const found = data.length > 0
                     ? { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
@@ -964,7 +913,7 @@
             const query = parts.join(', ');
 
             try {
-                const res = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&limit=1');
+                const res = await AppAsync.fetchWithTimeout('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(query) + '&format=json&limit=1');
                 const data = await res.json();
                 if (data.length > 0) {
                     const lat = parseFloat(data[0].lat);
@@ -1090,7 +1039,7 @@
         }
 
         async function apiFetch(url, options = {}) {
-            const res = await fetch(url, {
+            const res = await AppAsync.fetchWithTimeout(url, {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
@@ -1098,31 +1047,60 @@
                     ...(options.headers || {})
                 }
             });
-            if (res.status === 401) { logout(); return null; }
+            if (res.status === 401) {
+                localStorage.clear();
+                window.location.href = '/';
+                throw new AppAsync.AppRequestError('Sesi Anda telah berakhir.', {
+                    code: 'UNAUTHORIZED',
+                    status: 401
+                });
+            }
             return res;
         }
 
         async function loadWilayahDanPetugas() {
-            try {
-                const res = await fetch('/api/admin/wilayah');
-                const data = await res.json();
-                wilayahData = data;
+            if (initialFormDataLoaded) return;
+            if (initialFormDataPromise) return initialFormDataPromise;
 
-                const selKec = document.getElementById('kecamatan_id');
-                if (selKec.options.length > 1) return;
-                data.kecamatan.forEach(k => {
-                    selKec.innerHTML += `<option value="${k.id}">${k.nama_kecamatan}</option>`;
-                });
+            const selKec = document.getElementById('kecamatan_id');
+            const selPet = document.getElementById('petugas_id');
+            selKec.disabled = true;
+            selPet.disabled = true;
+            selKec.innerHTML = '<option value="">Memuat kecamatan...</option>';
+            selPet.innerHTML = '<option value="">Memuat petugas...</option>';
+            const operationId = AppAsync.startOperation('Menyiapkan form booking...');
 
-                const resPet = await fetch('/api/auth/petugas-aktif');
-                const pets = await resPet.json();
-                const selPet = document.getElementById('petugas_id');
-                pets.forEach(p => {
-                    selPet.innerHTML += `<option value="${p.id}">${p.nama_lengkap} (${p.nip})</option>`;
-                });
-            } catch (err) {
-                console.error('Gagal load data awal', err);
-            }
+            initialFormDataPromise = (async () => {
+                try {
+                    const [resWilayah, resPetugas] = await Promise.all([
+                        AppAsync.fetchWithTimeout('/api/admin/wilayah'),
+                        AppAsync.fetchWithTimeout('/api/auth/petugas-aktif')
+                    ]);
+                    if (!resWilayah.ok) throw await AppAsync.responseError(resWilayah, 'Gagal memuat wilayah.');
+                    if (!resPetugas.ok) throw await AppAsync.responseError(resPetugas, 'Gagal memuat petugas.');
+
+                    const [data, pets] = await Promise.all([resWilayah.json(), resPetugas.json()]);
+                    wilayahData = data;
+                    selKec.innerHTML = '<option value="">-- Pilih Kecamatan --</option>'
+                        + data.kecamatan.map(k => `<option value="${k.id}">${k.nama_kecamatan}</option>`).join('');
+                    selPet.innerHTML = '<option value="">-- Pilih Petugas --</option>'
+                        + pets.map(p => `<option value="${p.id}">${p.nama_lengkap} (${p.nip})</option>`).join('');
+                    initialFormDataLoaded = true;
+                } catch (error) {
+                    const message = AppAsync.errorMessage(error, 'Data wilayah dan petugas gagal dimuat.');
+                    selKec.innerHTML = '<option value="">Gagal memuat kecamatan</option>';
+                    selPet.innerHTML = '<option value="">Gagal memuat petugas</option>';
+                    const errEl = document.getElementById('booking-error');
+                    errEl.textContent = message + ' Muat ulang halaman untuk mencoba kembali.';
+                    errEl.style.display = 'block';
+                } finally {
+                    selKec.disabled = false;
+                    selPet.disabled = false;
+                    initialFormDataPromise = null;
+                    AppAsync.finishOperation(operationId);
+                }
+            })();
+            return initialFormDataPromise;
         }
 
         function loadKelurahan() {
@@ -1164,6 +1142,7 @@
 
                 try {
                     const res = await apiFetch(`/api/booking/kuota?kecamatan_id=${kecId}&kelurahan_id=${kelId}&petugas_id=${petId}&tanggal=${tgl}`);
+                    if (!res.ok) throw await AppAsync.responseError(res, 'Gagal mengecek kuota.');
                     const data = await res.json();
                     if (data.tersedia) {
                         const sk = data.kecamatan.sisa !== null ? data.kecamatan.sisa + ' slot' : 'Unlimited';
@@ -1179,7 +1158,10 @@
                         if (!data.petugas.tersedia) msg += ' ' + (data.petugas.message || 'Kuota petugas penuh.');
                         el.innerHTML = `${userIcon('error')} <span>${escapeHTML(msg)}</span>`;
                     }
-                } catch (e) { el.style.display = 'none'; }
+                } catch (error) {
+                    el.className = 'kuota-info kuota-full';
+                    el.innerHTML = `${userIcon('error')} <span>${escapeHTML(AppAsync.errorMessage(error, 'Gagal mengecek kuota.'))}</span>`;
+                }
             }, 500);
         }
 
@@ -1188,6 +1170,11 @@
             const sucEl = document.getElementById('booking-success');
             errEl.style.display = 'none'; sucEl.style.display = 'none';
 
+            const phoneResult = PhoneValidation.validateInput(
+                'no_telepon',
+                'no-telepon-feedback',
+                { showEmpty: true }
+            );
             const body = {
                 nomor_berkas: document.getElementById('nomor_berkas').value.trim(),
                 tanggal_berkas: document.getElementById('tanggal_berkas').value,
@@ -1196,19 +1183,24 @@
                 kelurahan_id: document.getElementById('kelurahan_id').value,
                 alamat_lokasi: document.getElementById('alamat_lokasi').value.trim(),
                 koordinat_maps: document.getElementById('koordinat_maps').value.trim(),
-                no_telepon: document.getElementById('no_telepon').value.trim(),
+                no_telepon: phoneResult.normalized,
                 petugas_id: document.getElementById('petugas_id').value,
                 tanggal_diminta: document.getElementById('tanggal_diminta').value,
             };
 
             const required = ['nomor_berkas', 'tanggal_berkas', 'nama_pemohon', 'kecamatan_id', 'kelurahan_id', 'alamat_lokasi', 'no_telepon', 'petugas_id', 'tanggal_diminta'];
+            if (!phoneResult.valid) {
+                errEl.textContent = phoneResult.message;
+                errEl.style.display = 'block';
+                return;
+            }
             if (required.some(f => !body[f])) {
                 errEl.textContent = 'Seluruh field wajib Anda isi lengkap';
                 errEl.style.display = 'block'; return;
             }
 
             const btn = document.getElementById('btn-submit');
-            setButtonLoading(btn, true, 'Mengirim Booking...');
+            if (!setButtonLoading(btn, true, 'Mengirim Booking...')) return;
 
             try {
                 const res = await apiFetch('/api/booking', { method: 'POST', body: JSON.stringify(body) });
@@ -1221,8 +1213,8 @@
                 resetForm();
                 invalidateProfilCache();
                 setTimeout(() => showPage('profil'), 2000);
-            } catch (e) {
-                errEl.textContent = 'Terjadi kesalahan koneksi jaringan, coba kembali.';
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Booking gagal dikirim.');
                 errEl.style.display = 'block';
             } finally {
                 setButtonLoading(btn, false);
@@ -1236,20 +1228,26 @@
             document.getElementById('koordinat_lat').value = '';
             document.getElementById('koordinat_lng').value = '';
             document.getElementById('info-kuota').style.display = 'none';
+            PhoneValidation.validateInput('no_telepon', 'no-telepon-feedback');
         }
 
         function invalidateProfilCache() {
             riwayatLoaded = false;
         }
 
+        PhoneValidation.bind('no_telepon', 'no-telepon-feedback');
+
+        function updateLocalBooking(id, changes) {
+            const index = riwayatBookings.findIndex(item => item.id === Number(id));
+            if (index < 0) return false;
+            riwayatBookings[index] = { ...riwayatBookings[index], ...changes };
+            renderRiwayat(riwayatBookings);
+            return true;
+        }
+
         function renderRiwayat(data) {
             const list = document.getElementById('riwayat-list');
-            if (data.length === 0) {
-                list.innerHTML = '<div class="empty-state">' + userIcon('emptyFile', 'empty-icon empty-icon-svg') + '<p>Belum ada riwayat pengajuan agenda.</p></div>';
-                return;
-            }
-
-            list.innerHTML = data.map(function (b) {
+            return AppAsync.renderList(list, data, function (b) {
                 const alasanPetugas = b.status === 'rescheduled_by_petugas' && b.last_reschedule_by === 'petugas'
                     ? (b.last_reschedule_alasan || 'Petugas mengusulkan perubahan jadwal tanpa catatan tambahan.')
                     : null;
@@ -1300,18 +1298,23 @@
                         ${!bisaAjukanJadwal && b.status !== 'rescheduled_by_petugas' ? `<p class="berkas-action-note">${riwayatStatusNote(b.status)}</p>` : ''}
                     </section>
                 </article>`;
-            }).join('');
+            }, {
+                chunkSize: 30,
+                emptyHtml: '<div class="empty-state">' + userIcon('emptyFile', 'empty-icon empty-icon-svg') + '<p>Belum ada riwayat pengajuan agenda.</p></div>'
+            });
         }
 
         async function loadProfil(options = {}) {
             const forceRefresh = options.force === true;
             if (!forceRefresh && profilLoaded && riwayatLoaded) return;
             if (!forceRefresh && profilLoadPromise) return profilLoadPromise;
+            const operationId = AppAsync.startOperation('Memuat profil dan riwayat...');
 
             profilLoadPromise = (async () => {
                 try {
                     if (forceRefresh || !profilLoaded) {
                         const res = await apiFetch('/api/auth/profile');
+                        if (!res.ok) throw await AppAsync.responseError(res, 'Profil gagal dimuat.');
                         const user = await res.json();
                         document.getElementById('profil-nama').textContent = user.nama_lengkap;
                         document.getElementById('profil-email').innerHTML = userIcon('mail') + '<span>' + escapeHTML(user.email) + '</span>';
@@ -1330,12 +1333,13 @@
                 list.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat daftar berkas...</div>';
                 try {
                     const res = await apiFetch('/api/booking/my');
+                    if (!res.ok) throw await AppAsync.responseError(res, 'Riwayat gagal dimuat.');
                     const data = await res.json();
                     riwayatBookings = data;
                     riwayatLoaded = true;
                     renderRiwayat(data);
-                } catch (e) {
-                    list.innerHTML = '<div class="alert alert-error">Gagal memuat agenda.</div>';
+                } catch (error) {
+                    list.innerHTML = `<div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat agenda.'))}</div>`;
                 }
             })();
 
@@ -1343,11 +1347,12 @@
                 await profilLoadPromise;
             } finally {
                 profilLoadPromise = null;
+                AppAsync.finishOperation(operationId);
             }
         }
 
         async function approvePetugasSchedule(id, button) {
-            setButtonLoading(button, true, 'Menyetujui...');
+            if (!setButtonLoading(button, true, 'Menyetujui...')) return;
             try {
                 const res = await apiFetch(`/api/booking/approve-petugas-schedule/${id}`, {
                     method: 'POST'
@@ -1357,10 +1362,14 @@
                     alert(data.message || 'Gagal menyetujui jadwal.');
                     return;
                 }
-                await loadProfil({ force: true });
-                await loadNotifikasi();
-            } catch (e) {
-                alert('Gagal menyetujui jadwal.');
+                const booking = riwayatBookings.find(item => item.id === Number(id));
+                updateLocalBooking(id, {
+                    status: 'jadwal_fix',
+                    tanggal_fix: booking?.tanggal_diminta || null
+                });
+                loadNotifikasi();
+            } catch (error) {
+                alert(AppAsync.errorMessage(error, 'Gagal menyetujui jadwal.'));
             } finally {
                 setButtonLoading(button, false);
             }
@@ -1385,7 +1394,7 @@
                 return;
             }
 
-            setButtonLoading(btn, true, 'Membatalkan...');
+            if (!setButtonLoading(btn, true, 'Membatalkan...')) return;
             try {
                 const res = await apiFetch(`/api/booking/cancel/${selectedBookingId}`, {
                     method: 'POST',
@@ -1398,10 +1407,13 @@
                     return;
                 }
                 closeModal('modal-cancel-booking');
-                await loadProfil({ force: true });
-                await loadNotifikasi();
-            } catch (e) {
-                errEl.textContent = 'Gagal membatalkan permohonan.';
+                updateLocalBooking(selectedBookingId, {
+                    status: 'dibatalkan',
+                    tanggal_fix: null
+                });
+                loadNotifikasi();
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Gagal membatalkan permohonan.');
                 errEl.style.display = 'block';
             } finally {
                 setButtonLoading(btn, false);
@@ -1434,7 +1446,7 @@
                 errEl.style.display = 'block';
                 return;
             }
-            setButtonLoading(btn, true, 'Mengajukan...');
+            if (!setButtonLoading(btn, true, 'Mengajukan...')) return;
             try {
                 const res = await apiFetch(`/api/booking/reschedule/${selectedBookingId}`, {
                     method: 'POST',
@@ -1442,10 +1454,16 @@
                 });
                 if (!res.ok) { const d = await res.json(); errEl.textContent = d.message; errEl.style.display = 'block'; return; }
                 closeModal('modal-reschedule');
-                await loadProfil({ force: true });
-                await loadNotifikasi();
-            } catch (e) {
-                errEl.textContent = 'Gagal menyimpan perubahan.';
+                const booking = riwayatBookings.find(item => item.id === Number(selectedBookingId));
+                updateLocalBooking(selectedBookingId, {
+                    status: 'rescheduled_by_user',
+                    tanggal_diminta: tanggal_baru,
+                    tanggal_fix: null,
+                    reschedule_count: Number(booking?.reschedule_count || 0) + 1
+                });
+                loadNotifikasi();
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Gagal menyimpan perubahan.');
                 errEl.style.display = 'block';
             } finally {
                 setButtonLoading(btn, false);

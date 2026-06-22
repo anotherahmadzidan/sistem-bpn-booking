@@ -445,25 +445,6 @@ textarea:focus {
     transform: none !important;
 }
 
-.petugas-action-lock {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 2000;
-    background: transparent;
-    cursor: wait;
-}
-
-.petugas-action-lock.show {
-    display: block;
-}
-
-body.petugas-ui-locked {
-    cursor: wait;
-    user-select: none;
-    overflow: hidden;
-}
-
 /* ============================================================
    7. BADGES & UTILITIES
    ============================================================ */

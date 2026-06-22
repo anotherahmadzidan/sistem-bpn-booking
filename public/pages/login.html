@@ -13,6 +13,8 @@
     rel="stylesheet">
 
   <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/app-async.css">
+  <link rel="stylesheet" href="/css/phone-validation.css">
 </head>
 
 <body class="mobile-body">
@@ -122,7 +124,7 @@
 
       <div id="form-register" class="target-card" style="display:none;">
         <div class="card-accent-corner"></div>
-      
+
         <div class="card-header-new">
           <button class="btn-back-small" onclick="showLogin()" title="Kembali ke Login">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -133,25 +135,59 @@
           </button>
           <div class="header-text">
             <h2>Daftar Akun</h2>
-            <p>Lengkapi data diri Anda.</p>
+            <p>Verifikasi email Anda terlebih dahulu.</p>
           </div>
         </div>
 
         <div class="form-fields">
-          <label>Nama Lengkap <span style="color: #E74C3C;">*</span></label>
-          <div class="input-wrapper">
-            <input type="text" id="reg-nama" placeholder="Nama lengkap">
-          </div>
-
           <label>Email <span style="color: #E74C3C;">*</span></label>
           <div class="input-wrapper">
             <input type="email" id="reg-email" placeholder="Email aktif">
           </div>
 
+          <div id="register-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
+          <div id="register-success" class="alert alert-success" style="display:none; margin-bottom: 16px;"></div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn-daftar" onclick="register(this)">Kirim Kode OTP</button>
+        </div>
+      </div>
+
+      <div id="form-complete" class="target-card registration-details-card" style="display:none;">
+        <div class="card-accent-corner"></div>
+
+        <div class="card-header-new">
+          <button class="btn-back-small" onclick="showLogin()" title="Kembali ke Login">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+          </button>
+          <div class="header-text">
+            <h2>Lengkapi Data Diri</h2>
+            <p>Email sudah terverifikasi.</p>
+          </div>
+        </div>
+
+        <div class="form-fields">
+          <label>Email Terverifikasi</label>
+          <div class="input-wrapper">
+            <input type="email" id="complete-email" readonly>
+          </div>
+
+          <label>Nama Lengkap <span style="color: #E74C3C;">*</span></label>
+          <div class="input-wrapper">
+            <input type="text" id="reg-nama" placeholder="Nama lengkap">
+          </div>
+
           <label>No. HP <span style="color: #E74C3C;">*</span></label>
           <div class="input-wrapper">
-            <input type="text" id="reg-hp" placeholder="Contoh: 08123456789">
+            <input type="text" id="reg-hp" inputmode="tel" autocomplete="tel"
+              maxlength="24" placeholder="Contoh: 081234567890">
           </div>
+          <small id="reg-hp-feedback" class="phone-validation-message">Contoh: 081234567890</small>
 
           <label>Kata sandi <span style="color: #E74C3C;">*</span></label>
           <div class="input-wrapper">
@@ -166,12 +202,12 @@
             </svg>
           </div>
 
-          <div id="register-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
-          <div id="register-success" class="alert alert-success" style="display:none; margin-bottom: 16px;"></div>
+          <div id="complete-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
+          <div id="complete-success" class="alert alert-success" style="display:none; margin-bottom: 16px;"></div>
         </div>
 
         <div class="button-group">
-          <button class="btn-daftar" onclick="register(this)">Daftar</button>
+          <button class="btn-daftar" onclick="completeRegistration(this)">Selesaikan Pendaftaran</button>
         </div>
       </div>
 
@@ -195,7 +231,7 @@
         <div class="form-fields">
           <label>Email <span style="color: #E74C3C;">*</span></label>
           <div class="input-wrapper">
-            <input type="email" id="verify-email" placeholder="Email terdaftar">
+            <input type="email" id="verify-email" placeholder="Email terdaftar" readonly>
           </div>
 
           <label>Kode OTP <span style="color: #E74C3C;">*</span></label>
@@ -209,7 +245,8 @@
 
         <div class="button-group">
           <button class="btn-masuk" onclick="verifyEmailOtp(this)">Verifikasi Email</button>
-          <button class="btn-buat-akun" onclick="resendVerificationOtp(this)">Kirim ulang OTP</button>
+          <button id="verify-resend-btn" class="btn-buat-akun" onclick="resendVerificationOtp(this)">Kirim ulang OTP</button>
+          <div id="verify-resend-status" class="otp-resend-status" aria-live="polite"></div>
         </div>
       </div>
 
@@ -298,13 +335,18 @@
     </div>
   </div>
 
+  <script src="/js/app-async.js"></script>
+  <script src="/js/phone-validation.js"></script>
   <script>
     // Redirect kalau sudah login
     if (localStorage.getItem('token') && localStorage.getItem('role') === 'user') {
       window.location.href = '/user';
     }
 
-    const authForms = ['form-login', 'form-register', 'form-verify', 'form-forgot', 'form-reset'];
+    const authForms = ['form-login', 'form-register', 'form-verify', 'form-complete', 'form-forgot', 'form-reset'];
+    let resendCountdownTimer = null;
+    let resendAvailableAt = 0;
+    let registrationCompletionToken = sessionStorage.getItem('registration_completion_token') || '';
 
     function showAuthForm(formId) {
       authForms.forEach(id => {
@@ -329,18 +371,7 @@
     }
 
     function setButtonBusy(button, busy, text) {
-      if (!button) return;
-      if (busy) {
-        button.dataset.originalHtml = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = text;
-      } else {
-        button.disabled = false;
-        if (button.dataset.originalHtml) {
-          button.innerHTML = button.dataset.originalHtml;
-          delete button.dataset.originalHtml;
-        }
-      }
+      return AppAsync.setButtonLoading(button, busy, text);
     }
 
     function normalizeOtpInput(inputId) {
@@ -350,7 +381,10 @@
     }
 
     function showRegister() {
-      hideAlerts('login-error', 'login-success', 'register-error', 'register-success');
+      hideAlerts('login-error', 'login-success', 'register-error', 'register-success', 'complete-error', 'complete-success');
+      registrationCompletionToken = '';
+      sessionStorage.removeItem('registration_completion_token');
+      sessionStorage.removeItem('registration_completion_email');
       showAuthForm('form-register');
     }
 
@@ -359,11 +393,97 @@
       showAuthForm('form-login');
     }
 
-    function showVerify(email) {
+    function formatCountdown(seconds) {
+      const safeSeconds = Math.max(0, Number(seconds) || 0);
+      const minutes = Math.floor(safeSeconds / 60);
+      const remainder = safeSeconds % 60;
+      return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
+    }
+
+    function renderResendCountdown() {
+      const button = document.getElementById('verify-resend-btn');
+      const status = document.getElementById('verify-resend-status');
+      const remaining = Math.max(0, Math.ceil((resendAvailableAt - Date.now()) / 1000));
+
+      if (remaining > 0) {
+        button.disabled = true;
+        status.textContent = `Kirim ulang tersedia dalam ${formatCountdown(remaining)}`;
+        return;
+      }
+
+      button.disabled = false;
+      status.textContent = 'Tidak menerima kode? Anda dapat mengirim ulang OTP.';
+      if (resendCountdownTimer) {
+        clearInterval(resendCountdownTimer);
+        resendCountdownTimer = null;
+      }
+    }
+
+    function startResendCountdown(seconds) {
+      const remaining = Math.max(0, Number(seconds) || 0);
+      resendAvailableAt = Date.now() + (remaining * 1000);
+      if (resendCountdownTimer) clearInterval(resendCountdownTimer);
+      renderResendCountdown();
+      if (remaining > 0) {
+        resendCountdownTimer = setInterval(renderResendCountdown, 1000);
+      }
+    }
+
+    function showVerify(email, verificationState = {}) {
       hideAlerts('login-error', 'login-success', 'register-error', 'register-success', 'verify-error', 'verify-success');
       if (email) document.getElementById('verify-email').value = email;
       document.getElementById('verify-otp').value = '';
       showAuthForm('form-verify');
+      startResendCountdown(verificationState.resend_available_in_seconds || 0);
+    }
+
+    function showCompleteProfile(data = {}) {
+      const token = data.registration_token || registrationCompletionToken;
+      const email = data.email || sessionStorage.getItem('registration_completion_email') || '';
+      if (!token || !email) {
+        showRegister();
+        showAlert('register-error', 'Sesi verifikasi tidak ditemukan. Masukkan kembali email Anda.');
+        return;
+      }
+
+      registrationCompletionToken = token;
+      sessionStorage.setItem('registration_completion_token', token);
+      sessionStorage.setItem('registration_completion_email', email);
+      document.getElementById('complete-email').value = email;
+      hideAlerts('verify-error', 'verify-success', 'complete-error', 'complete-success');
+      showAuthForm('form-complete');
+    }
+
+    function enterUserPage(data) {
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('nama', data.nama);
+      localStorage.setItem('role', data.role);
+      sessionStorage.removeItem('registration_completion_token');
+      sessionStorage.removeItem('registration_completion_email');
+      registrationCompletionToken = '';
+      window.location.href = '/user';
+    }
+
+    function followRegistrationStatus(data, fallbackEmail) {
+      if (data.status === 'pending_profile_completion') {
+        showCompleteProfile(data);
+        return true;
+      }
+      if (data.status === 'pending_email_verification') {
+        showVerify(data.email || fallbackEmail, data);
+        showAlert('verify-success', data.message || 'Masukkan kode OTP dari email Anda.');
+        return true;
+      }
+      if (data.status === 'active') {
+        if (data.token) {
+          enterUserPage(data);
+          return true;
+        }
+        showLogin();
+        showAlert('login-error', data.message || 'Email sudah terdaftar. Silakan masuk.');
+        return true;
+      }
+      return false;
     }
 
     function showForgotPassword() {
@@ -402,9 +522,9 @@
         showAlert('login-error', 'Email dan kata sandi wajib diisi');
         return;
       }
-      setButtonBusy(button, true, 'Memproses...');
+      if (!setButtonBusy(button, true, 'Memproses...')) return;
       try {
-        const res = await fetch('/api/auth/login', {
+        const res = await AppAsync.fetchWithTimeout('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ identifier, password })
@@ -412,7 +532,7 @@
         const data = await res.json();
         if (!res.ok) {
           if (res.status === 403 && data.code === 'EMAIL_NOT_VERIFIED') {
-            showVerify(data.email || identifier);
+            showVerify(data.email || identifier, data);
             showAlert('verify-error', data.message || 'Email belum diverifikasi.');
             return;
           }
@@ -423,40 +543,42 @@
         localStorage.setItem('nama', data.nama);
         localStorage.setItem('role', data.role);
         window.location.href = '/user';
-      } catch {
-        showAlert('login-error', 'Terjadi kesalahan, coba lagi');
+      } catch (error) {
+        showAlert('login-error', AppAsync.errorMessage(error, 'Login gagal. Silakan coba lagi.'));
       } finally {
         setButtonBusy(button, false);
       }
     }
 
     async function register(button) {
-      const nama_lengkap = document.getElementById('reg-nama').value.trim();
       const email = document.getElementById('reg-email').value.trim();
-      const no_hp = document.getElementById('reg-hp').value.trim();
-      const password = document.getElementById('reg-password').value;
       hideAlerts('register-error', 'register-success');
 
-      if (!nama_lengkap || !email || !no_hp || !password) {
-        showAlert('register-error', 'Semua field wajib diisi');
+      if (!email) {
+        showAlert('register-error', 'Email wajib diisi');
         return;
       }
-      setButtonBusy(button, true, 'Mendaftarkan...');
+      if (!setButtonBusy(button, true, 'Mengirim OTP...')) return;
       try {
-        const res = await fetch('/api/auth/register', {
+        const res = await AppAsync.fetchWithTimeout('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nama_lengkap, email, no_hp, password })
+          body: JSON.stringify({ email })
         });
         const data = await res.json();
         if (!res.ok) {
+          if (data.status === 'active') {
+            followRegistrationStatus(data, email);
+            return;
+          }
           showAlert('register-error', data.message);
           return;
         }
-        showVerify(email);
-        showAlert('verify-success', data.message || 'Registrasi berhasil. Masukkan kode OTP dari email Anda.');
-      } catch {
-        showAlert('register-error', 'Terjadi kesalahan, coba lagi');
+        if (!followRegistrationStatus(data, email)) {
+          showAlert('register-error', 'Status pendaftaran tidak dikenali. Silakan coba lagi.');
+        }
+      } catch (error) {
+        showAlert('register-error', AppAsync.errorMessage(error, 'Registrasi gagal. Silakan coba lagi.'));
       } finally {
         setButtonBusy(button, false);
       }
@@ -472,9 +594,9 @@
         return;
       }
 
-      setButtonBusy(button, true, 'Memverifikasi...');
+      if (!setButtonBusy(button, true, 'Memverifikasi...')) return;
       try {
-        const res = await fetch('/api/auth/verify-email', {
+        const res = await AppAsync.fetchWithTimeout('/api/auth/verify-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp })
@@ -484,10 +606,73 @@
           showAlert('verify-error', data.message || 'Verifikasi gagal');
           return;
         }
+        if (followRegistrationStatus(data, email)) {
+          return;
+        }
+        if (data.token) {
+          enterUserPage(data);
+          return;
+        }
         showLogin();
         showAlert('login-success', data.message || 'Email berhasil diverifikasi. Silakan login.');
-      } catch {
-        showAlert('verify-error', 'Terjadi kesalahan, coba lagi');
+      } catch (error) {
+        showAlert('verify-error', AppAsync.errorMessage(error, 'Verifikasi gagal. Silakan coba lagi.'));
+      } finally {
+        setButtonBusy(button, false);
+      }
+    }
+
+    async function completeRegistration(button) {
+      const nama_lengkap = document.getElementById('reg-nama').value.trim();
+      const phoneResult = PhoneValidation.validateInput(
+        'reg-hp',
+        'reg-hp-feedback',
+        { showEmpty: true }
+      );
+      const password = document.getElementById('reg-password').value;
+      hideAlerts('complete-error', 'complete-success');
+
+      if (!registrationCompletionToken) {
+        showAlert('complete-error', 'Sesi pendaftaran tidak ditemukan. Masukkan kembali email Anda.');
+        return;
+      }
+      if (!nama_lengkap || !document.getElementById('reg-hp').value.trim() || !password) {
+        showAlert('complete-error', 'Semua data diri wajib diisi');
+        return;
+      }
+      if (!phoneResult.valid) {
+        showAlert('complete-error', phoneResult.message);
+        return;
+      }
+      if (password.length < 6) {
+        showAlert('complete-error', 'Kata sandi minimal 6 karakter');
+        return;
+      }
+
+      if (!setButtonBusy(button, true, 'Membuat Akun...')) return;
+      try {
+        const res = await AppAsync.fetchWithTimeout('/api/auth/complete-registration', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            registration_token: registrationCompletionToken,
+            nama_lengkap,
+            no_hp: phoneResult.normalized,
+            password
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert('complete-error', data.message || 'Pendaftaran gagal diselesaikan');
+          if (data.code === 'REGISTRATION_TOKEN_EXPIRED' || data.code === 'REGISTRATION_SESSION_EXPIRED') {
+            registrationCompletionToken = '';
+            sessionStorage.removeItem('registration_completion_token');
+          }
+          return;
+        }
+        enterUserPage(data);
+      } catch (error) {
+        showAlert('complete-error', AppAsync.errorMessage(error, 'Pendaftaran gagal diselesaikan.'));
       } finally {
         setButtonBusy(button, false);
       }
@@ -502,23 +687,29 @@
         return;
       }
 
-      setButtonBusy(button, true, 'Mengirim...');
+      if (!setButtonBusy(button, true, 'Mengirim...')) return;
+      let nextCountdown = null;
       try {
-        const res = await fetch('/api/auth/resend-verification', {
+        const res = await AppAsync.fetchWithTimeout('/api/auth/resend-verification', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
         });
         const data = await res.json();
         if (!res.ok) {
+          if (data.code === 'OTP_COOLDOWN') {
+            nextCountdown = data.retry_after_seconds || 0;
+          }
           showAlert('verify-error', data.message || 'Gagal mengirim OTP');
           return;
         }
+        nextCountdown = data.resend_available_in_seconds || 0;
         showAlert('verify-success', data.message || 'Kode OTP baru telah dikirim.');
-      } catch {
-        showAlert('verify-error', 'Terjadi kesalahan, coba lagi');
+      } catch (error) {
+        showAlert('verify-error', AppAsync.errorMessage(error, 'OTP gagal dikirim. Silakan coba lagi.'));
       } finally {
         setButtonBusy(button, false);
+        if (nextCountdown !== null) startResendCountdown(nextCountdown);
       }
     }
 
@@ -531,9 +722,9 @@
         return;
       }
 
-      setButtonBusy(button, true, 'Mengirim OTP...');
+      if (!setButtonBusy(button, true, 'Mengirim OTP...')) return;
       try {
-        const res = await fetch('/api/auth/forgot-password', {
+        const res = await AppAsync.fetchWithTimeout('/api/auth/forgot-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
@@ -545,8 +736,8 @@
         }
         showResetPassword(email);
         showAlert('reset-success', data.message || 'Kode OTP reset telah dikirim ke email.');
-      } catch {
-        showAlert('forgot-error', 'Terjadi kesalahan, coba lagi');
+      } catch (error) {
+        showAlert('forgot-error', AppAsync.errorMessage(error, 'OTP reset gagal dikirim.'));
       } finally {
         setButtonBusy(button, false);
       }
@@ -563,9 +754,9 @@
         return;
       }
 
-      setButtonBusy(button, true, 'Menyimpan...');
+      if (!setButtonBusy(button, true, 'Menyimpan...')) return;
       try {
-        const res = await fetch('/api/auth/reset-password', {
+        const res = await AppAsync.fetchWithTimeout('/api/auth/reset-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp, password })
@@ -579,8 +770,8 @@
         document.getElementById('identifier').value = email;
         showLogin();
         showAlert('login-success', data.message || 'Kata sandi berhasil diubah. Silakan login.');
-      } catch {
-        showAlert('reset-error', 'Terjadi kesalahan, coba lagi');
+      } catch (error) {
+        showAlert('reset-error', AppAsync.errorMessage(error, 'Kata sandi gagal diubah.'));
       } finally {
         setButtonBusy(button, false);
       }
@@ -592,10 +783,16 @@
         if (visibleForm === 'form-login') login(document.querySelector('#form-login .btn-masuk'));
         if (visibleForm === 'form-register') register(document.querySelector('#form-register .btn-daftar'));
         if (visibleForm === 'form-verify') verifyEmailOtp(document.querySelector('#form-verify .btn-masuk'));
+        if (visibleForm === 'form-complete') completeRegistration(document.querySelector('#form-complete .btn-daftar'));
         if (visibleForm === 'form-forgot') requestPasswordReset(document.querySelector('#form-forgot .btn-masuk'));
         if (visibleForm === 'form-reset') submitPasswordReset(document.querySelector('#form-reset .btn-daftar'));
       }
     });
+
+    if (registrationCompletionToken && sessionStorage.getItem('registration_completion_email')) {
+      showCompleteProfile();
+    }
+    PhoneValidation.bind('reg-hp', 'reg-hp-feedback');
   </script>
 </body>
 

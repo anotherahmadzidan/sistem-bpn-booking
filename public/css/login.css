@@ -331,6 +331,7 @@
 #reg-nama,
 #reg-email,
 #reg-hp,
+#complete-email,
 #verify-email,
 #verify-otp,
 #forgot-email,
@@ -411,10 +412,24 @@
     transform: translateY(-1px);
 }
 
+.form-fields input[readonly] {
+    color: #475569;
+    background: #eef4fb;
+    cursor: default;
+}
+
 .button-group button:disabled {
     cursor: wait;
     opacity: 0.72;
     transform: none;
+}
+
+.otp-resend-status {
+    min-height: 18px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.4;
+    text-align: center;
 }
 
 .auth-help-row {
@@ -556,11 +571,11 @@
     }
 
     /* Penyesuaian form register agar konsisten tingginya */
-    #form-register .form-fields {
+    #form-complete .form-fields {
         margin-bottom: 0;
     }
 
-    #form-register .input-wrapper {
+    #form-complete .input-wrapper {
         margin-bottom: 14px;
     }
 }
@@ -624,43 +639,43 @@
         margin-bottom: 0;
     }
 
-    #form-register .form-fields {
+    #form-complete .form-fields {
         margin-bottom: 0;
     }
 
-    #form-register .input-wrapper {
+    #form-complete .input-wrapper {
         margin-bottom: 14px;
     }
 
-    #form-register .button-group {
+    #form-complete .button-group {
         margin-top: 24px;
         /* Mendorong tombol 'Daftar' menjauh dari form Kata sandi */
     }
 
     /* 1. Kurangi ruang kosong di bagian atas header */
-    #form-register .card-header-new {
+    #form-complete .card-header-new {
         padding: 24px 24px 16px 32px;
     }
 
     /* 2. Rapatkan jarak antara teks label (Nama, Email, dll) dengan kotaknya */
-    #form-register .form-fields label {
+    #form-complete .form-fields label {
         margin-bottom: 4px;
     }
 
     /* 3. Rapatkan jarak antar kolom input satu dengan yang lain */
-    #form-register .input-wrapper {
+    #form-complete .input-wrapper {
         margin-bottom: 12px;
     }
 
     /* 4. Kurangi jarak antara kotak password/error dengan tombol Daftar */
-    #form-register .button-group {
+    #form-complete .button-group {
         margin-top: 12px;
         margin-bottom: 0;
         /* Hindari margin bawah berlebih */
     }
 
     /* 5. Buat kotak pesan error sedikit lebih tipis khusus di form register */
-    #form-register .alert {
+    #form-complete .alert {
         padding: 8px 16px;
         margin-bottom: 12px;
         font-size: 12px;
@@ -668,7 +683,7 @@
     }
 
     /* 6. Mengecilkan tinggi kotak input khusus di form register */
-    #form-register .form-fields input {
+    #form-complete .form-fields input {
         padding-top: 13px;
         padding-bottom: 13px;
         font-size: 13px;
@@ -873,6 +888,7 @@ body {
     #reg-nama,
     #reg-email,
     #reg-hp,
+    #complete-email,
     #verify-email,
     #verify-otp,
     #forgot-email,

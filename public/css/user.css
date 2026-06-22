@@ -404,23 +404,6 @@ button:disabled {
     pointer-events: none;
 }
 
-body.is-processing {
-    cursor: wait;
-}
-
-.page-interaction-lock {
-    position: fixed;
-    inset: 0;
-    z-index: 10000;
-    background: transparent;
-    cursor: wait;
-    touch-action: none;
-}
-
-.page-interaction-lock[hidden] {
-    display: none !important;
-}
-
 .btn-primary-gradient.is-loading,
 .modal-footer .btn.is-loading,
 .dropdown-item.is-loading {

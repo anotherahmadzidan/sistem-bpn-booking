@@ -6,7 +6,9 @@ require('dotenv').config();
 const { ensureNotificationSchema, verifyEmailTransport } = require('./utils/notifikasi');
 const { ensureQuotaSchema } = require('./utils/kuota');
 const { ensureOtpSchema } = require('./utils/otp');
+const { ensurePhoneSchema } = require('./utils/phone');
 const pool = require('./config/db');
+const { serverError } = require('./utils/http');
 
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
@@ -98,11 +100,7 @@ app.use((err, req, res, next) => {
         return res.status(400).json({ message: err.message });
     }
 
-    console.error('[Server Error]', err);
-    return res.status(err.status || 500).json({
-        message: 'Server error',
-        ...(isProduction ? {} : { error: err.message })
-    });
+    return serverError(res, err);
 });
 
 const PORT = process.env.PORT || 3000;
@@ -123,6 +121,15 @@ app.listen(PORT, () => {
     });
     ensureOtpSchema().catch(err => {
         console.error('Gagal menyiapkan schema OTP:', err.message);
+    });
+    ensurePhoneSchema().then(report => {
+        if (report.invalid.length > 0) {
+            console.warn(
+                `[Phone Migration] ${report.invalid.length} nomor lama tidak valid dan perlu dikoreksi manual.`
+            );
+        }
+    }).catch(err => {
+        console.error('Gagal menyiapkan schema nomor HP:', err.message);
     });
     verifyEmailTransport().catch(err => {
         console.error('Gagal memeriksa SMTP email:', err.message);

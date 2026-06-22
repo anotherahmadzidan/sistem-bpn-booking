@@ -1,0 +1,25 @@
+.phone-validation-message {
+    display: block;
+    min-height: 18px;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.phone-validation-message.is-error {
+    color: #b91c1c;
+}
+
+.phone-validation-message.is-valid {
+    color: #047857;
+}
+
+input.phone-input-invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+}
+
+input.phone-input-valid {
+    border-color: #10b981 !important;
+}

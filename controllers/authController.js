@@ -4,23 +4,108 @@ const jwt = require('jsonwebtoken');
 const { ensureNotificationSchema } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
 const {
+    normalizeIndonesianPhone,
+    requireIndonesianPhone,
+    assertPhoneAvailable,
+    acquirePhoneLock,
+    releasePhoneLock,
+    ensurePhoneSchema
+} = require('../utils/phone');
+const {
     ensureOtpSchema,
     sendOtp,
+    getOtpState,
     verifyOtp,
     normalizeEmail,
     maskEmail,
-    pendingRegistrationExpiresMinutes
+    pendingRegistrationRetentionDays,
+    profileCompletionTrustHours
 } = require('../utils/otp');
 require('dotenv').config();
 
 const generateToken = (payload) =>
     jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 
+const generateRegistrationToken = (pendingRegistrationId, email) =>
+    jwt.sign(
+        {
+            pending_registration_id: pendingRegistrationId,
+            email,
+            purpose: 'complete_registration'
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.REGISTRATION_COMPLETION_EXPIRES_IN || '30m' }
+    );
+
+const registrationResumeCookieName = 'bpn_registration_resume';
+
+const generateRegistrationResumeToken = (pendingRegistrationId, email) =>
+    jwt.sign(
+        {
+            pending_registration_id: pendingRegistrationId,
+            email,
+            purpose: 'registration_resume'
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: `${profileCompletionTrustHours}h` }
+    );
+
+function parseCookies(req) {
+    return String(req.headers?.cookie || '')
+        .split(';')
+        .map(part => part.trim())
+        .filter(Boolean)
+        .reduce((cookies, part) => {
+            const separator = part.indexOf('=');
+            if (separator <= 0) return cookies;
+            const key = decodeURIComponent(part.slice(0, separator));
+            cookies[key] = decodeURIComponent(part.slice(separator + 1));
+            return cookies;
+        }, {});
+}
+
+function hasValidRegistrationResume(req, pendingRegistration) {
+    const token = parseCookies(req)[registrationResumeCookieName];
+    if (!token) return false;
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        return payload.purpose === 'registration_resume'
+            && Number(payload.pending_registration_id) === Number(pendingRegistration.id)
+            && normalizeEmail(payload.email) === normalizeEmail(pendingRegistration.email);
+    } catch {
+        return false;
+    }
+}
+
+function setRegistrationResumeCookie(res, pendingRegistration) {
+    res.cookie(
+        registrationResumeCookieName,
+        generateRegistrationResumeToken(pendingRegistration.id, pendingRegistration.email),
+        {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: profileCompletionTrustHours * 60 * 60 * 1000,
+            path: '/'
+        }
+    );
+}
+
+function clearRegistrationResumeCookie(res) {
+    res.clearCookie(registrationResumeCookieName, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/'
+    });
+}
+
 function authError(res, err) {
     if (err.status) {
         return res.status(err.status).json({
             message: err.message,
-            code: err.code
+            code: err.code,
+            ...(err.details || {})
         });
     }
     return serverError(res, err);
@@ -32,69 +117,281 @@ function isValidEmail(email) {
 
 async function cleanupPendingRegistrations() {
     await pool.query(`
-        DELETE FROM pending_registrations
-        WHERE verified_at IS NOT NULL OR expires_at <= NOW()
+        UPDATE otp_tokens otp
+        INNER JOIN pending_registrations pending
+            ON pending.id = otp.pending_registration_id
+        SET otp.used_at = COALESCE(otp.used_at, NOW())
+        WHERE pending.expires_at <= NOW()
+          AND otp.used_at IS NULL
     `);
+    await pool.query(`
+        DELETE FROM pending_registrations
+        WHERE expires_at <= NOW()
+    `);
+}
+
+function verificationPayload({
+    status,
+    code,
+    message,
+    email,
+    otpSent,
+    otpState = null,
+    delivery = null
+}) {
+    return {
+        status,
+        code,
+        message,
+        requires_verification: true,
+        otp_sent: Boolean(otpSent),
+        email,
+        masked_email: delivery?.maskedEmail || maskEmail(email),
+        otp_expires_in_seconds: Number(
+            delivery?.expiresInSeconds
+            ?? otpState?.expiresInSeconds
+            ?? 0
+        ),
+        resend_available_in_seconds: Number(
+            delivery?.resendAvailableInSeconds
+            ?? otpState?.resendAvailableInSeconds
+            ?? 0
+        )
+    };
+}
+
+function emailAlreadyRegistered(res) {
+    clearRegistrationResumeCookie(res);
+    return res.status(409).json({
+        status: 'active',
+        code: 'EMAIL_ALREADY_REGISTERED',
+        message: 'Email sudah terdaftar. Silakan masuk.'
+    });
+}
+
+function profileCompletionPayload(pendingRegistration) {
+    const verificationAge = Math.max(
+        0,
+        Number(pendingRegistration.verification_age_seconds || 0)
+    );
+    const trustSeconds = profileCompletionTrustHours * 60 * 60;
+    return {
+        status: 'pending_profile_completion',
+        code: 'PROFILE_COMPLETION_REQUIRED',
+        message: 'Email berhasil diverifikasi. Lengkapi data diri untuk membuat akun.',
+        requires_verification: false,
+        requires_profile_completion: true,
+        email: pendingRegistration.email,
+        masked_email: maskEmail(pendingRegistration.email),
+        profile_completion_valid_for_seconds: Math.max(0, trustSeconds - verificationAge),
+        registration_token: generateRegistrationToken(
+            pendingRegistration.id,
+            pendingRegistration.email
+        )
+    };
+}
+
+function profileCompletionIsTrusted(pendingRegistration) {
+    const age = Number(pendingRegistration.verification_age_seconds);
+    return Number.isFinite(age)
+        && age >= 0
+        && age < profileCompletionTrustHours * 60 * 60;
+}
+
+async function issuePendingRegistrationOtp(pendingRegistration, email, responseState) {
+    await pool.query(
+        `UPDATE pending_registrations
+         SET status = 'pending_email_verification',
+             verified_at = NULL,
+             email_verified_at = NULL,
+             expires_at = DATE_ADD(NOW(), INTERVAL ${pendingRegistrationRetentionDays} DAY)
+         WHERE id = ?`,
+        [pendingRegistration.id]
+    );
+
+    const delivery = await sendOtp({
+        pendingRegistrationId: pendingRegistration.id,
+        email,
+        purpose: 'verify_email',
+        enforceCooldown: false
+    });
+
+    return verificationPayload({
+        status: 'pending_email_verification',
+        code: responseState.code,
+        message: responseState.message,
+        email,
+        otpSent: true,
+        delivery
+    });
 }
 
 // REGISTER PEMOHON
 const registerUser = async (req, res) => {
-    const nama_lengkap = String(req.body.nama_lengkap || '').trim();
-    const no_hp = String(req.body.no_hp || '').trim();
-    const password = req.body.password;
     const email = normalizeEmail(req.body.email);
-    if (!nama_lengkap || !email || !no_hp || !password)
-        return res.status(400).json({ message: 'Semua field wajib diisi' });
+    if (!email)
+        return res.status(400).json({ message: 'Email wajib diisi' });
 
     if (!isValidEmail(email))
         return res.status(400).json({ message: 'Format email tidak valid' });
-
-    if (String(password).length < 6)
-        return res.status(400).json({ message: 'Kata sandi minimal 6 karakter' });
 
     try {
         await ensureOtpSchema();
         await cleanupPendingRegistrations();
 
-        const [exist] = await pool.query(
-            'SELECT id FROM users WHERE email = ? OR no_hp = ?', [email, no_hp]
+        const [userRows] = await pool.query(
+            `SELECT id, email, email_verified_at, profile_completed_at
+             FROM users
+             WHERE email = ?
+             LIMIT 1`,
+            [email]
         );
-        if (exist.length > 0)
-            return res.status(409).json({ message: 'Email atau No. HP sudah terdaftar' });
 
-        const hash = await bcrypt.hash(password, 10);
+        const existingUser = userRows[0];
+        if (existingUser?.email_verified_at && existingUser?.profile_completed_at) {
+            return emailAlreadyRegistered(res);
+        }
 
-        await pool.query(
-            'DELETE FROM pending_registrations WHERE email = ? OR no_hp = ?',
-            [email, no_hp]
+        if (existingUser) {
+            const otpState = await getOtpState({
+                userId: existingUser.id,
+                email,
+                purpose: 'verify_email'
+            });
+
+            if (otpState.active) {
+                return res.json(verificationPayload({
+                    status: 'pending_email_verification',
+                    code: 'PENDING_VERIFICATION',
+                    message: 'Kode OTP yang sebelumnya dikirim masih aktif. Masukkan kode tersebut untuk melanjutkan verifikasi.',
+                    email,
+                    otpSent: false,
+                    otpState
+                }));
+            }
+
+            const delivery = await sendOtp({
+                userId: existingUser.id,
+                email,
+                purpose: 'verify_email',
+                enforceCooldown: false
+            });
+
+            return res.json(verificationPayload({
+                status: 'pending_email_verification',
+                code: 'OTP_EXPIRED_REISSUED',
+                message: 'Kode OTP sebelumnya sudah tidak aktif. Kode OTP baru telah dikirim ke email Anda.',
+                email,
+                otpSent: true,
+                delivery
+            }));
+        }
+
+        const [pendingRows] = await pool.query(
+            `SELECT *,
+                    TIMESTAMPDIFF(
+                        SECOND,
+                        COALESCE(email_verified_at, verified_at),
+                        NOW()
+                    ) AS verification_age_seconds
+             FROM pending_registrations
+             WHERE email = ? AND expires_at > NOW()
+             LIMIT 1`,
+            [email]
         );
+        const pendingRegistration = pendingRows[0];
+
+        if (pendingRegistration) {
+            if (pendingRegistration.status === 'pending_profile_completion') {
+                if (
+                    profileCompletionIsTrusted(pendingRegistration)
+                    && hasValidRegistrationResume(req, pendingRegistration)
+                ) {
+                    return res.json(profileCompletionPayload(pendingRegistration));
+                }
+
+                clearRegistrationResumeCookie(res);
+                const payload = await issuePendingRegistrationOtp(
+                    pendingRegistration,
+                    email,
+                    {
+                        code: profileCompletionIsTrusted(pendingRegistration)
+                            ? 'PROFILE_DEVICE_REVERIFICATION_REQUIRED'
+                            : 'PROFILE_REVERIFICATION_REQUIRED',
+                        message: profileCompletionIsTrusted(pendingRegistration)
+                            ? 'Browser ini belum memiliki sesi verifikasi. Kode OTP baru telah dikirim untuk menjaga keamanan akun.'
+                            : `Verifikasi terakhir sudah lebih dari ${profileCompletionTrustHours} jam. Kode OTP baru telah dikirim.`
+                    }
+                );
+                return res.json(payload);
+            }
+
+            const otpState = await getOtpState({
+                pendingRegistrationId: pendingRegistration.id,
+                email,
+                purpose: 'verify_email'
+            });
+
+            if (otpState.active) {
+                return res.json(verificationPayload({
+                    status: 'pending_email_verification',
+                    code: 'PENDING_VERIFICATION',
+                    message: 'Kode OTP yang sebelumnya dikirim masih aktif. Masukkan kode tersebut untuk melanjutkan verifikasi.',
+                    email,
+                    otpSent: false,
+                    otpState
+                }));
+            }
+        }
+
+        if (pendingRegistration) {
+            const payload = await issuePendingRegistrationOtp(
+                pendingRegistration,
+                email,
+                {
+                    code: 'OTP_EXPIRED_REISSUED',
+                    message: 'Kode OTP sebelumnya sudah tidak aktif. Kode OTP baru telah dikirim ke email Anda.'
+                }
+            );
+            return res.json(payload);
+        }
 
         const [pending] = await pool.query(
             `INSERT INTO pending_registrations
-                (nama_lengkap, email, no_hp, password_hash, expires_at)
-             VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ${pendingRegistrationExpiresMinutes} MINUTE))`,
-            [nama_lengkap, email, no_hp, hash]
+                (email, status, expires_at)
+             VALUES (
+                ?,
+                'pending_email_verification',
+                DATE_ADD(NOW(), INTERVAL ${pendingRegistrationRetentionDays} DAY)
+             )`,
+            [email]
         );
 
         try {
-            await sendOtp({
+            const delivery = await sendOtp({
                 pendingRegistrationId: pending.insertId,
                 email,
                 purpose: 'verify_email'
             });
+
+            return res.status(201).json(verificationPayload({
+                status: 'pending_email_verification',
+                code: 'OTP_SENT',
+                message: 'Kode OTP verifikasi telah dikirim. Masukkan OTP untuk menyelesaikan pendaftaran akun.',
+                email,
+                otpSent: true,
+                delivery
+            }));
         } catch (otpErr) {
             await pool.query('DELETE FROM pending_registrations WHERE id = ?', [pending.insertId]);
             console.error('[OTP Register]', otpErr.code || 'OTP_EMAIL_FAILED', otpErr.message);
             return authError(res, otpErr);
         }
-
-        res.status(201).json({
-            message: 'Kode OTP verifikasi telah dikirim. Masukkan OTP untuk menyelesaikan pendaftaran akun.',
-            requires_verification: true,
-            otp_sent: true,
-            email: maskEmail(email)
-        });
     } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY' && !req.registrationConflictRetried) {
+            req.registrationConflictRetried = true;
+            return registerUser(req, res);
+        }
         return authError(res, err);
     }
 };
@@ -107,9 +404,17 @@ const loginUser = async (req, res) => {
 
     try {
         await ensureOtpSchema();
+        await ensurePhoneSchema();
+
+        const cleanIdentifier = String(identifier).trim();
+        const phoneIdentifier = normalizeIndonesianPhone(cleanIdentifier);
+        const lookupIdentifier = cleanIdentifier.includes('@') || !phoneIdentifier.valid
+            ? cleanIdentifier
+            : phoneIdentifier.normalized;
 
         const [rows] = await pool.query(
-            'SELECT * FROM users WHERE email = ? OR no_hp = ?', [identifier, identifier]
+            'SELECT * FROM users WHERE email = ? OR no_hp = ?',
+            [lookupIdentifier, lookupIdentifier]
         );
         if (rows.length === 0)
             return res.status(401).json({ message: 'Akun tidak ditemukan' });
@@ -120,11 +425,18 @@ const loginUser = async (req, res) => {
             return res.status(401).json({ message: 'Password salah' });
 
         if (!user.email_verified_at) {
+            const otpState = await getOtpState({
+                userId: user.id,
+                email: user.email,
+                purpose: 'verify_email'
+            });
             return res.status(403).json({
                 message: 'Email belum diverifikasi. Masukkan kode OTP yang dikirim ke email Anda.',
                 code: 'EMAIL_NOT_VERIFIED',
                 email: user.email,
-                masked_email: maskEmail(user.email)
+                masked_email: maskEmail(user.email),
+                otp_expires_in_seconds: otpState.expiresInSeconds,
+                resend_available_in_seconds: otpState.resendAvailableInSeconds
             });
         }
 
@@ -153,13 +465,28 @@ const verifyEmailOtp = async (req, res) => {
             if (result.affectedRows === 0) {
                 return res.status(400).json({ message: 'Pendaftaran tidak ditemukan. Silakan daftar ulang.' });
             }
-            return res.json({ message: 'Email berhasil diverifikasi. Silakan login.' });
+            const [userRows] = await pool.query(
+                'SELECT id, nama_lengkap FROM users WHERE id = ? AND email = ? LIMIT 1',
+                [verified.userId, email]
+            );
+            const user = userRows[0];
+            if (!user) {
+                return res.status(400).json({ message: 'Akun tidak ditemukan. Silakan daftar ulang.' });
+            }
+            return res.json({
+                status: 'active',
+                code: 'ACCOUNT_COMPLETED',
+                message: 'Email berhasil diverifikasi.',
+                token: generateToken({ id: user.id, nama: user.nama_lengkap, role: 'user' }),
+                nama: user.nama_lengkap,
+                role: 'user'
+            });
         }
 
         const [pendingRows] = await pool.query(
             `SELECT *
              FROM pending_registrations
-             WHERE id = ? AND email = ? AND verified_at IS NULL AND expires_at > NOW()
+             WHERE id = ? AND email = ? AND expires_at > NOW()
              LIMIT 1`,
             [verified.pendingRegistrationId, email]
         );
@@ -168,31 +495,170 @@ const verifyEmailOtp = async (req, res) => {
             return res.status(400).json({ message: 'Pendaftaran sementara tidak ditemukan. Silakan daftar ulang.' });
         }
 
-        const pending = pendingRows[0];
-        const [exist] = await pool.query(
-            'SELECT id FROM users WHERE email = ? OR no_hp = ?',
-            [pending.email, pending.no_hp]
-        );
-        if (exist.length > 0) {
-            await pool.query('DELETE FROM pending_registrations WHERE id = ?', [pending.id]);
-            return res.status(409).json({ message: 'Email atau No. HP sudah terdaftar' });
-        }
-
         await pool.query(
-            `INSERT INTO users
-                (nama_lengkap, email, no_hp, password, email_verified_at)
-             VALUES (?, ?, ?, ?, NOW())`,
-            [pending.nama_lengkap, pending.email, pending.no_hp, pending.password_hash]
+            `UPDATE pending_registrations
+             SET status = 'pending_profile_completion',
+                 verified_at = NOW(),
+                 email_verified_at = NOW(),
+                 expires_at = DATE_ADD(NOW(), INTERVAL ${pendingRegistrationRetentionDays} DAY)
+             WHERE id = ?`,
+            [pendingRows[0].id]
         );
 
-        await pool.query(
-            'UPDATE pending_registrations SET verified_at = NOW() WHERE id = ?',
-            [pending.id]
-        );
-
-        res.json({ message: 'Email berhasil diverifikasi. Akun berhasil dibuat, silakan login.' });
+        const verifiedPending = {
+            ...pendingRows[0],
+            status: 'pending_profile_completion',
+            verified_at: new Date(),
+            email_verified_at: new Date(),
+            verification_age_seconds: 0
+        };
+        setRegistrationResumeCookie(res, verifiedPending);
+        res.json(profileCompletionPayload({
+            ...verifiedPending
+        }));
     } catch (err) {
         return authError(res, err);
+    }
+};
+
+const completeRegistration = async (req, res) => {
+    const registrationToken = String(req.body.registration_token || '');
+    const nama_lengkap = String(req.body.nama_lengkap || '').trim();
+    const password = String(req.body.password || '');
+
+    if (!registrationToken || !nama_lengkap || !req.body.no_hp || !password) {
+        return res.status(400).json({ message: 'Semua data diri wajib diisi' });
+    }
+    if (password.length < 6) {
+        return res.status(400).json({ message: 'Kata sandi minimal 6 karakter' });
+    }
+
+    let no_hp;
+    try {
+        no_hp = requireIndonesianPhone(req.body.no_hp);
+    } catch (err) {
+        return authError(res, err);
+    }
+
+    let registration;
+    try {
+        registration = jwt.verify(registrationToken, process.env.JWT_SECRET);
+    } catch (err) {
+        const expired = err.name === 'TokenExpiredError';
+        return res.status(401).json({
+            code: expired ? 'REGISTRATION_TOKEN_EXPIRED' : 'REGISTRATION_TOKEN_INVALID',
+            message: expired
+                ? 'Sesi pengisian data telah berakhir. Masukkan kembali email Anda untuk melanjutkan.'
+                : 'Sesi pendaftaran tidak valid. Silakan mulai kembali.'
+        });
+    }
+
+    if (
+        registration.purpose !== 'complete_registration'
+        || !registration.pending_registration_id
+        || !registration.email
+    ) {
+        return res.status(401).json({
+            code: 'REGISTRATION_TOKEN_INVALID',
+            message: 'Sesi pendaftaran tidak valid. Silakan mulai kembali.'
+        });
+    }
+
+    let connection;
+    let phoneLockName = null;
+    try {
+        await ensureOtpSchema();
+        await ensurePhoneSchema();
+        const passwordHash = await bcrypt.hash(password, 10);
+        connection = await pool.getConnection();
+        phoneLockName = await acquirePhoneLock(connection, no_hp);
+        await connection.beginTransaction();
+
+        const [pendingRows] = await connection.query(
+            `SELECT id, email
+             FROM pending_registrations
+             WHERE id = ?
+               AND email = ?
+               AND status = 'pending_profile_completion'
+               AND COALESCE(email_verified_at, verified_at) >=
+                   DATE_SUB(NOW(), INTERVAL ${profileCompletionTrustHours} HOUR)
+               AND expires_at > NOW()
+             LIMIT 1
+             FOR UPDATE`,
+            [registration.pending_registration_id, normalizeEmail(registration.email)]
+        );
+
+        if (pendingRows.length === 0) {
+            await connection.rollback();
+            return res.status(401).json({
+                code: 'REGISTRATION_SESSION_EXPIRED',
+                message: 'Sesi pendaftaran telah berakhir. Masukkan kembali email Anda untuk melanjutkan.'
+            });
+        }
+
+        const pending = pendingRows[0];
+        const [existingUsers] = await connection.query(
+            `SELECT id, email
+             FROM users
+             WHERE email = ?`,
+            [pending.email]
+        );
+
+        if (existingUsers.some(user => normalizeEmail(user.email) === pending.email)) {
+            await connection.rollback();
+            return emailAlreadyRegistered(res);
+        }
+        await assertPhoneAvailable(connection, no_hp);
+
+        const [insertResult] = await connection.query(
+            `INSERT INTO users
+                (
+                    nama_lengkap,
+                    email,
+                    no_hp,
+                    password,
+                    email_verified_at,
+                    profile_completed_at
+                )
+             VALUES (?, ?, ?, ?, NOW(), NOW())`,
+            [nama_lengkap, pending.email, no_hp, passwordHash]
+        );
+        await connection.query(
+            'DELETE FROM pending_registrations WHERE id = ?',
+            [pending.id]
+        );
+        await connection.commit();
+        clearRegistrationResumeCookie(res);
+
+        const token = generateToken({
+            id: insertResult.insertId,
+            nama: nama_lengkap,
+            role: 'user'
+        });
+        return res.status(201).json({
+            status: 'active',
+            code: 'ACCOUNT_COMPLETED',
+            message: 'Akun berhasil dibuat.',
+            token,
+            nama: nama_lengkap,
+            role: 'user'
+        });
+    } catch (err) {
+        if (connection) {
+            try {
+                await connection.rollback();
+            } catch {}
+        }
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({
+                code: 'ACCOUNT_DATA_ALREADY_REGISTERED',
+                message: 'Email atau No. HP sudah terdaftar.'
+            });
+        }
+        return authError(res, err);
+    } finally {
+        await releasePhoneLock(connection, phoneLockName);
+        connection?.release();
     }
 };
 
@@ -209,28 +675,79 @@ const resendVerificationOtp = async (req, res) => {
             [email]
         );
 
-        if (userRows.length > 0) {
-            return res.json({ message: 'Email sudah terdaftar. Silakan login.' });
+        if (userRows.length > 0 && userRows[0].email_verified_at) {
+            return emailAlreadyRegistered(res);
         }
 
-        const [pendingRows] = await pool.query(
-            `SELECT id
-             FROM pending_registrations
-             WHERE email = ? AND verified_at IS NULL AND expires_at > NOW()
-             LIMIT 1`,
-            [email]
-        );
+        const userId = userRows[0]?.id || null;
+        let pendingRegistrationId = null;
 
-        if (pendingRows.length === 0) {
-            return res.status(404).json({ message: 'Pendaftaran sementara tidak ditemukan. Silakan daftar ulang.' });
+        if (!userId) {
+            const [pendingRows] = await pool.query(
+                `SELECT id, status,
+                        TIMESTAMPDIFF(
+                            SECOND,
+                            COALESCE(email_verified_at, verified_at),
+                            NOW()
+                        ) AS verification_age_seconds
+                 FROM pending_registrations
+                 WHERE email = ? AND expires_at > NOW()
+                 LIMIT 1`,
+                [email]
+            );
+
+            if (pendingRows.length === 0) {
+                return res.status(404).json({
+                    code: 'PENDING_REGISTRATION_NOT_FOUND',
+                    message: 'Pendaftaran sementara tidak ditemukan. Silakan daftar ulang.'
+                });
+            }
+            if (
+                pendingRows[0].status === 'pending_profile_completion'
+                && profileCompletionIsTrusted(pendingRows[0])
+                && hasValidRegistrationResume(req, {
+                    ...pendingRows[0],
+                    email
+                })
+            ) {
+                return res.json(profileCompletionPayload({
+                    ...pendingRows[0],
+                    email
+                }));
+            }
+            if (pendingRows[0].status === 'pending_profile_completion') {
+                clearRegistrationResumeCookie(res);
+                const payload = await issuePendingRegistrationOtp(
+                    pendingRows[0],
+                    email,
+                    {
+                        code: profileCompletionIsTrusted(pendingRows[0])
+                            ? 'PROFILE_DEVICE_REVERIFICATION_REQUIRED'
+                            : 'PROFILE_REVERIFICATION_REQUIRED',
+                        message: profileCompletionIsTrusted(pendingRows[0])
+                            ? 'Browser ini belum memiliki sesi verifikasi. Kode OTP baru telah dikirim untuk menjaga keamanan akun.'
+                            : `Verifikasi terakhir sudah lebih dari ${profileCompletionTrustHours} jam. Kode OTP baru telah dikirim.`
+                    }
+                );
+                return res.json(payload);
+            }
+            pendingRegistrationId = pendingRows[0].id;
         }
 
-        await sendOtp({
-            pendingRegistrationId: pendingRows[0].id,
+        const delivery = await sendOtp({
+            userId,
+            pendingRegistrationId,
             email,
             purpose: 'verify_email'
         });
-        res.json({ message: 'Kode OTP baru telah dikirim ke email.' });
+        res.json(verificationPayload({
+            status: 'pending_email_verification',
+            code: 'OTP_RESENT',
+            message: 'Kode OTP baru telah dikirim ke email.',
+            email,
+            otpSent: true,
+            delivery
+        }));
     } catch (err) {
         return authError(res, err);
     }
@@ -397,6 +914,7 @@ module.exports = {
     registerUser,
     loginUser,
     verifyEmailOtp,
+    completeRegistration,
     resendVerificationOtp,
     forgotPassword,
     resetPassword,

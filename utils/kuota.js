@@ -453,12 +453,44 @@ async function setKuotaRentang({ tipe, id, tanggal_mulai, tanggal_selesai, kuota
         throw new Error('Rentang tanggal maksimal 366 hari');
     }
     const setOrder = newSetOrder();
+    const config = getQuotaType(tipe);
+    const unlimited = config.supportsUnlimited && is_unlimited ? 1 : 0;
+    const max = normalizeQuotaMax(kuota_max, Boolean(unlimited));
 
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
-        for (const tanggal of dates) {
-            await setKuotaTanggal({ tipe, id, tanggal, kuota_max, is_unlimited, set_order: setOrder, conn });
+        const chunkSize = 100;
+        for (let start = 0; start < dates.length; start += chunkSize) {
+            const chunk = dates.slice(start, start + chunkSize);
+            const values = [];
+            const params = [];
+
+            chunk.forEach(tanggal => {
+                if (config.supportsUnlimited) {
+                    values.push("(?, ?, ?, 0, ?, 'tanggal', ?)");
+                    params.push(id, tanggal, max, unlimited, setOrder);
+                } else {
+                    values.push("(?, ?, ?, 0, 'tanggal', ?)");
+                    params.push(id, tanggal, max, setOrder);
+                }
+            });
+
+            const unlimitedColumn = config.supportsUnlimited ? ', is_unlimited' : '';
+            const unlimitedUpdate = config.supportsUnlimited
+                ? ', is_unlimited = VALUES(is_unlimited)'
+                : '';
+            await conn.query(
+                `INSERT INTO ${config.table}
+                    (${config.column}, tanggal, kuota_max, terisi${unlimitedColumn}, source, set_order)
+                 VALUES ${values.join(',')}
+                 ON DUPLICATE KEY UPDATE
+                    kuota_max = VALUES(kuota_max)
+                    ${unlimitedUpdate},
+                    source = 'tanggal',
+                    set_order = VALUES(set_order)`,
+                params
+            );
         }
         await conn.commit();
         return dates.length;

@@ -5,6 +5,7 @@ const {
     registerUser,
     loginUser,
     verifyEmailOtp,
+    completeRegistration,
     resendVerificationOtp,
     forgotPassword,
     resetPassword,
@@ -22,6 +23,7 @@ const { authLimiter } = require('../middleware/rateLimit');
 router.post('/register', authLimiter, registerUser);
 router.post('/login', authLimiter, loginUser);
 router.post('/verify-email', authLimiter, verifyEmailOtp);
+router.post('/complete-registration', authLimiter, completeRegistration);
 router.post('/resend-verification', authLimiter, resendVerificationOtp);
 router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);

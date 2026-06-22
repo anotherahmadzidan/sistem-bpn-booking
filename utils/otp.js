@@ -13,7 +13,14 @@ function positiveNumber(value, fallback) {
 const otpExpiresMinutes = positiveNumber(process.env.OTP_EXPIRES_MINUTES, 10);
 const otpMaxAttempts = positiveNumber(process.env.OTP_MAX_ATTEMPTS, 5);
 const otpCooldownSeconds = positiveNumber(process.env.OTP_RESEND_COOLDOWN_SECONDS, 60);
-const pendingRegistrationExpiresMinutes = positiveNumber(process.env.PENDING_REGISTRATION_EXPIRES_MINUTES, 30);
+const pendingRegistrationRetentionDays = positiveNumber(
+    process.env.PENDING_REGISTRATION_RETENTION_DAYS,
+    30
+);
+const profileCompletionTrustHours = positiveNumber(
+    process.env.PROFILE_COMPLETION_TRUST_HOURS,
+    24
+);
 
 let schemaPromise = null;
 
@@ -29,10 +36,11 @@ function maskEmail(email) {
     return `${name.slice(0, 2)}***@${domain}`;
 }
 
-function otpError(status, message, code) {
+function otpError(status, message, code, details = {}) {
     const err = new Error(message);
     err.status = status;
     err.code = code;
+    err.details = details;
     return err;
 }
 
@@ -106,6 +114,17 @@ async function ensureOtpSchema() {
             `);
         }
 
+        if (!userColumnMap.has('profile_completed_at')) {
+            await pool.query(
+                'ALTER TABLE users ADD COLUMN profile_completed_at DATETIME NULL AFTER email_verified_at'
+            );
+            await pool.query(`
+                UPDATE users
+                SET profile_completed_at = COALESCE(created_at, NOW())
+                WHERE profile_completed_at IS NULL
+            `);
+        }
+
         await pool.query(`
             CREATE TABLE IF NOT EXISTS otp_tokens (
                 id INT NOT NULL AUTO_INCREMENT,
@@ -143,20 +162,70 @@ async function ensureOtpSchema() {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS pending_registrations (
                 id INT NOT NULL AUTO_INCREMENT,
-                nama_lengkap VARCHAR(150) NOT NULL,
+                nama_lengkap VARCHAR(150) NULL,
                 email VARCHAR(150) NOT NULL,
-                no_hp VARCHAR(20) NOT NULL,
-                password_hash VARCHAR(255) NOT NULL,
+                no_hp VARCHAR(20) NULL,
+                password_hash VARCHAR(255) NULL,
                 expires_at DATETIME NOT NULL,
                 verified_at DATETIME NULL,
+                email_verified_at DATETIME NULL,
+                status ENUM(
+                    'pending_email_verification',
+                    'pending_profile_completion'
+                ) NOT NULL DEFAULT 'pending_email_verification',
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 UNIQUE KEY uniq_pending_email (email),
                 UNIQUE KEY uniq_pending_no_hp (no_hp),
                 KEY idx_pending_expires (expires_at),
-                KEY idx_pending_verified (verified_at)
+                KEY idx_pending_verified (verified_at),
+                KEY idx_pending_status (status)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        `);
+
+        const [pendingColumns] = await pool.query('SHOW COLUMNS FROM pending_registrations');
+        const pendingColumnMap = new Map(pendingColumns.map(col => [col.Field, col]));
+        if (pendingColumnMap.get('nama_lengkap')?.Null === 'NO') {
+            await pool.query('ALTER TABLE pending_registrations MODIFY nama_lengkap VARCHAR(150) NULL');
+        }
+        if (pendingColumnMap.get('no_hp')?.Null === 'NO') {
+            await pool.query('ALTER TABLE pending_registrations MODIFY no_hp VARCHAR(20) NULL');
+        }
+        if (pendingColumnMap.get('password_hash')?.Null === 'NO') {
+            await pool.query('ALTER TABLE pending_registrations MODIFY password_hash VARCHAR(255) NULL');
+        }
+        if (!pendingColumnMap.has('email_verified_at')) {
+            await pool.query(
+                'ALTER TABLE pending_registrations ADD COLUMN email_verified_at DATETIME NULL AFTER verified_at'
+            );
+        }
+        if (!pendingColumnMap.has('status')) {
+            await pool.query(`
+                ALTER TABLE pending_registrations
+                ADD COLUMN status ENUM(
+                    'pending_email_verification',
+                    'pending_profile_completion'
+                ) NOT NULL DEFAULT 'pending_email_verification'
+                AFTER email_verified_at
+            `);
+        }
+
+        await pool.query(`
+            UPDATE pending_registrations
+            SET email_verified_at = COALESCE(email_verified_at, verified_at),
+                status = CASE
+                    WHEN COALESCE(email_verified_at, verified_at) IS NOT NULL
+                        THEN 'pending_profile_completion'
+                    ELSE 'pending_email_verification'
+                END,
+                expires_at = GREATEST(
+                    expires_at,
+                    DATE_ADD(
+                        COALESCE(email_verified_at, verified_at, created_at),
+                        INTERVAL ${pendingRegistrationRetentionDays} DAY
+                    )
+                )
         `);
 
         const [indexes] = await pool.query('SHOW INDEX FROM otp_tokens');
@@ -169,6 +238,12 @@ async function ensureOtpSchema() {
         }
         if (!indexNames.has('idx_otp_pending')) {
             await pool.query('CREATE INDEX idx_otp_pending ON otp_tokens (pending_registration_id, purpose, created_at)');
+        }
+
+        const [pendingIndexes] = await pool.query('SHOW INDEX FROM pending_registrations');
+        const pendingIndexNames = new Set(pendingIndexes.map(index => index.Key_name));
+        if (!pendingIndexNames.has('idx_pending_status')) {
+            await pool.query('CREATE INDEX idx_pending_status ON pending_registrations (status)');
         }
     })().catch(err => {
         schemaPromise = null;
@@ -194,7 +269,13 @@ function buildOtpMessage({ purpose, otp }) {
     `;
 }
 
-async function sendOtp({ userId = null, pendingRegistrationId = null, email, purpose }) {
+async function sendOtp({
+    userId = null,
+    pendingRegistrationId = null,
+    email,
+    purpose,
+    enforceCooldown = true
+}) {
     assertPurpose(purpose);
     const normalizedEmail = normalizeEmail(email);
     if ((!userId && !pendingRegistrationId) || !normalizedEmail) {
@@ -203,22 +284,35 @@ async function sendOtp({ userId = null, pendingRegistrationId = null, email, pur
 
     await ensureOtpSchema();
 
-    const [recent] = await pool.query(
-        `SELECT created_at
-         FROM otp_tokens
-         WHERE email = ? AND purpose = ? AND used_at IS NULL
-           AND created_at > DATE_SUB(NOW(), INTERVAL ${otpCooldownSeconds} SECOND)
-         ORDER BY created_at DESC
-         LIMIT 1`,
-        [normalizedEmail, purpose]
-    );
-
-    if (recent.length > 0) {
-        throw otpError(
-            429,
-            `Kode OTP baru bisa dikirim ulang setelah ${otpCooldownSeconds} detik.`,
-            'OTP_COOLDOWN'
+    if (enforceCooldown) {
+        const [recent] = await pool.query(
+            `SELECT created_at,
+                    GREATEST(
+                        TIMESTAMPDIFF(
+                            SECOND,
+                            NOW(),
+                            DATE_ADD(created_at, INTERVAL ${otpCooldownSeconds} SECOND)
+                        ),
+                        0
+                    ) AS retry_after_seconds
+             FROM otp_tokens
+             WHERE email = ? AND purpose = ? AND used_at IS NULL
+                AND created_at > DATE_SUB(NOW(), INTERVAL ${otpCooldownSeconds} SECOND)
+             ORDER BY created_at DESC
+             LIMIT 1`,
+            [normalizedEmail, purpose]
         );
+
+        if (recent.length > 0) {
+            throw otpError(
+                429,
+                `Kode OTP baru bisa dikirim ulang setelah ${otpCooldownSeconds} detik.`,
+                'OTP_COOLDOWN',
+                {
+                    retry_after_seconds: Math.max(1, Number(recent[0].retry_after_seconds || otpCooldownSeconds))
+                }
+            );
+        }
     }
 
     await pool.query(
@@ -248,7 +342,61 @@ async function sendOtp({ userId = null, pendingRegistrationId = null, email, pur
 
     return {
         maskedEmail: maskEmail(normalizedEmail),
-        expiresInMinutes: otpExpiresMinutes
+        expiresInMinutes: otpExpiresMinutes,
+        expiresInSeconds: otpExpiresMinutes * 60,
+        resendAvailableInSeconds: otpCooldownSeconds
+    };
+}
+
+async function getOtpState({
+    userId = null,
+    pendingRegistrationId = null,
+    email,
+    purpose
+}) {
+    assertPurpose(purpose);
+    const normalizedEmail = normalizeEmail(email);
+    if ((!userId && !pendingRegistrationId) || !normalizedEmail) {
+        throw otpError(400, 'Data penerima OTP tidak lengkap', 'OTP_RECIPIENT_INVALID');
+    }
+
+    await ensureOtpSchema();
+
+    const ownerColumn = pendingRegistrationId ? 'pending_registration_id' : 'user_id';
+    const ownerId = pendingRegistrationId || userId;
+    const [rows] = await pool.query(
+        `SELECT id,
+                expires_at > NOW() AS is_active,
+                GREATEST(TIMESTAMPDIFF(SECOND, NOW(), expires_at), 0) AS expires_in_seconds,
+                GREATEST(
+                    TIMESTAMPDIFF(
+                        SECOND,
+                        NOW(),
+                        DATE_ADD(created_at, INTERVAL ${otpCooldownSeconds} SECOND)
+                    ),
+                    0
+                ) AS resend_available_in_seconds
+         FROM otp_tokens
+         WHERE email = ? AND purpose = ? AND ${ownerColumn} = ? AND used_at IS NULL
+         ORDER BY created_at DESC
+         LIMIT 1`,
+        [normalizedEmail, purpose, ownerId]
+    );
+
+    if (rows.length === 0) {
+        return {
+            exists: false,
+            active: false,
+            expiresInSeconds: 0,
+            resendAvailableInSeconds: 0
+        };
+    }
+
+    return {
+        exists: true,
+        active: Number(rows[0].is_active) === 1,
+        expiresInSeconds: Number(rows[0].expires_in_seconds || 0),
+        resendAvailableInSeconds: Number(rows[0].resend_available_in_seconds || 0)
     };
 }
 
@@ -315,8 +463,10 @@ async function verifyOtp({ email, purpose, otp }) {
 module.exports = {
     ensureOtpSchema,
     sendOtp,
+    getOtpState,
     verifyOtp,
     normalizeEmail,
     maskEmail,
-    pendingRegistrationExpiresMinutes
+    pendingRegistrationRetentionDays,
+    profileCompletionTrustHours
 };

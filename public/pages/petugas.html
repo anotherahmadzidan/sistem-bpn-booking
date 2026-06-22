@@ -7,6 +7,7 @@
     <title>Dashboard Petugas - BPN Luwu Timur</title>
     <link rel="stylesheet" href="/css/petugas.css">
     <link rel="stylesheet" href="/css/petugas-dashboard.css">
+    <link rel="stylesheet" href="/css/app-async.css">
     <style>
         #filter-dropdown {
             width: auto !important;
@@ -195,7 +196,7 @@
         </div>
 
         <!-- INPUT HASIL -->
-        <div id="page-hasil" style="display:none">
+        <div id="page-hasil" data-app-form style="display:none">
             <div class="page-header">
                 <h1>Input Hasil Pemeriksaan</h1>
                 <p>Isi hasil pemeriksaan lapangan setelah peninjauan selesai dilakukan</p>
@@ -228,6 +229,12 @@
                     </div>
                     <div id="hasil-error" class="alert alert-error" style="display:none"></div>
                     <div id="hasil-success" class="alert alert-success" style="display:none"></div>
+                    <div class="app-upload-progress" id="hasil-upload-progress" aria-live="polite">
+                        <div class="app-upload-progress__track">
+                            <div class="app-upload-progress__bar" id="hasil-upload-progress-bar"></div>
+                        </div>
+                        <span class="app-upload-progress__label" id="hasil-upload-progress-label">Mengunggah 0%</span>
+                    </div>
                     <div style="display:flex;gap:10px;margin-top:8px">
                         <button class="btn btn-primary" id="btn-submit-hasil" onclick="submitHasil()">
                             <span class="btn-icon" aria-hidden="true">
@@ -344,8 +351,7 @@
         </div>
     </div>
 
-    <div class="petugas-action-lock" id="petugas-action-lock" aria-hidden="true"></div>
-
+    <script src="/js/app-async.js"></script>
     <script>
         const token = localStorage.getItem('token');
         const nama = localStorage.getItem('nama');
@@ -370,36 +376,12 @@
         let currentFilter = 'semua';
         let currentSearchQuery = '';
         let notifOpen = false;
-        let isPetugasProcessing = false;
+        let tugasLoaded = false;
+        let tugasLoadPromise = null;
         const today = new Date().toISOString().split('T')[0];
 
         function setPetugasButtonLoading(button, isLoading, label = 'Memproses...') {
-            if (!button) return;
-
-            if (isLoading) {
-                if (!button.dataset.originalHtml) {
-                    button.dataset.originalHtml = button.innerHTML;
-                }
-                button.disabled = true;
-                button.setAttribute('aria-busy', 'true');
-                button.classList.add('is-loading');
-                button.innerHTML = `<span class="button-spinner" aria-hidden="true"></span><span>${label}</span>`;
-                return;
-            }
-
-            button.disabled = false;
-            button.removeAttribute('aria-busy');
-            button.classList.remove('is-loading');
-            if (button.dataset.originalHtml) {
-                button.innerHTML = button.dataset.originalHtml;
-                delete button.dataset.originalHtml;
-            }
-        }
-
-        function setPetugasScreenLocked(isLocked) {
-            isPetugasProcessing = isLocked;
-            document.body.classList.toggle('petugas-ui-locked', isLocked);
-            document.getElementById('petugas-action-lock').classList.toggle('show', isLocked);
+            return AppAsync.setButtonLoading(button, isLoading, label);
         }
 
         function setPetugasSidebarOpen(isOpen) {
@@ -412,7 +394,7 @@
         }
 
         function togglePetugasSidebar() {
-            if (isPetugasProcessing) return;
+            if (AppAsync.isBusy()) return;
             setPetugasSidebarOpen(!document.body.classList.contains('petugas-sidebar-open'));
         }
 
@@ -431,18 +413,25 @@
         }
 
         async function apiFetch(url, options = {}) {
-            const res = await fetch(url, {
+            const res = await AppAsync.fetchWithTimeout(url, {
                 ...options,
                 headers: { 'Authorization': 'Bearer ' + token, ...(options.headers || {}) }
             });
-            if (res.status === 401) { logout(); return null; }
+            if (res.status === 401) {
+                localStorage.clear();
+                window.location.href = '/login-petugas';
+                throw new AppAsync.AppRequestError('Sesi Anda telah berakhir.', {
+                    code: 'UNAUTHORIZED',
+                    status: 401
+                });
+            }
             return res;
         }
 
         async function loadNotifikasi() {
             try {
                 const res = await apiFetch('/api/auth/notifications');
-                if (!res) return;
+                if (!res.ok) throw await AppAsync.responseError(res, 'Notifikasi gagal dimuat.');
                 const data = await res.json();
                 const badge = document.getElementById('petugas-notif-count');
                 const list = document.getElementById('petugas-notif-list');
@@ -467,7 +456,10 @@
                     </div>
                 `).join('');
             } catch (err) {
-                console.error('Gagal load notifikasi', err);
+                if (notifOpen) {
+                    document.getElementById('petugas-notif-list').innerHTML =
+                        `<div class="role-notif-empty">${escapeHTML(AppAsync.errorMessage(err, 'Notifikasi gagal dimuat.'))}</div>`;
+                }
             }
         }
 
@@ -482,7 +474,8 @@
 
         async function markAllNotifikasiRead() {
             try {
-                await apiFetch('/api/auth/notifications/read', { method: 'PATCH' });
+                const res = await apiFetch('/api/auth/notifications/read', { method: 'PATCH' });
+                if (!res.ok) throw await AppAsync.responseError(res, 'Notifikasi gagal ditandai dibaca.');
                 setTimeout(loadNotifikasi, 400);
             } catch (err) {
                 console.error('Gagal mark read notifikasi', err);
@@ -501,17 +494,31 @@
             if (e.key === 'Escape') closePetugasSidebar();
         });
 
-        async function loadTugas() {
-            const list = document.getElementById('tugas-list');
-            list.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat tugas...</div>';
-            try {
-                const res = await apiFetch('/api/petugas/tugas');
-                allTugas = await res.json();
+        async function loadTugas(force = false) {
+            if (tugasLoaded && !force) {
                 updateFilterCounts();
-                renderTugas(getFiltered(currentFilter));
-            } catch {
-                list.innerHTML = '<div class="alert alert-error">Gagal memuat tugas</div>';
+                return renderTugas(getFiltered(currentFilter));
             }
+            if (tugasLoadPromise && !force) return tugasLoadPromise;
+            const list = document.getElementById('tugas-list');
+            const operationId = AppAsync.startOperation('Memuat daftar tugas...');
+            list.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat tugas...</div>';
+            tugasLoadPromise = (async () => {
+                try {
+                    const res = await apiFetch('/api/petugas/tugas');
+                    if (!res.ok) throw await AppAsync.responseError(res, 'Gagal memuat tugas.');
+                    allTugas = await res.json();
+                    tugasLoaded = true;
+                    updateFilterCounts();
+                    await renderTugas(getFiltered(currentFilter));
+                } catch (error) {
+                    list.innerHTML = `<div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat tugas.'))}</div>`;
+                } finally {
+                    tugasLoadPromise = null;
+                    AppAsync.finishOperation(operationId);
+                }
+            })();
+            return tugasLoadPromise;
         }
 
         function getFiltered(filter) {
@@ -565,6 +572,15 @@
             });
         }
 
+        function updateLocalTugas(id, changes) {
+            const index = allTugas.findIndex(item => item.id === Number(id));
+            if (index < 0) return false;
+            allTugas[index] = { ...allTugas[index], ...changes };
+            updateFilterCounts();
+            renderTugas(getFiltered(currentFilter));
+            return true;
+        }
+
         function actionIcon(type) {
             const icons = {
                 confirm: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>',
@@ -579,11 +595,10 @@
 
         function renderTugas(data) {
             const list = document.getElementById('tugas-list');
-            if (data.length === 0) {
-                const emptyMessage = currentSearchQuery.trim()
-                    ? 'Tidak ada tugas yang cocok dengan pencarian'
-                    : 'Tidak ada tugas untuk filter ini';
-                list.innerHTML = `
+            const emptyMessage = currentSearchQuery.trim()
+                ? 'Tidak ada tugas yang cocok dengan pencarian'
+                : 'Tidak ada tugas untuk filter ini';
+            const emptyHtml = `
                     <div class="empty-state">
                         <div class="empty-icon empty-icon-svg" aria-hidden="true">
                             <svg viewBox="0 0 24 24">
@@ -595,9 +610,7 @@
                         </div>
                         <p>${emptyMessage}</p>
                     </div>`;
-                return;
-            }
-            list.innerHTML = data.map(b => {
+            return AppAsync.renderList(list, data, b => {
                 const perluKonfirmasi = ['pending', 'rescheduled_by_user'].includes(b.status);
                 const bisaInputHasil = b.status === 'jadwal_fix';
                 const mapsUrl = b.koordinat_maps
@@ -673,7 +686,7 @@
                         ${b.status === 'dibatalkan' ? `<p class="action-note">Permohonan dibatalkan oleh pemohon.</p>` : ''}
                     </section>
                 </article>`;
-            }).join('');
+            }, { chunkSize: 25, emptyHtml });
         }
 
         function openKonfirmasi(id) {
@@ -694,8 +707,7 @@
             const errEl = document.getElementById('konfirmasi-error');
             const btn = document.getElementById('btn-submit-konfirmasi');
             errEl.style.display = 'none';
-            setPetugasButtonLoading(btn, true, 'Mengonfirmasi...');
-            setPetugasScreenLocked(true);
+            if (!setPetugasButtonLoading(btn, true, 'Mengonfirmasi...')) return;
             try {
                 const res = await apiFetch('/api/petugas/konfirmasi/' + selectedBookingId, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }
@@ -703,13 +715,17 @@
                 const data = await res.json();
                 if (!res.ok) { errEl.textContent = data.message; errEl.style.display = 'block'; return; }
                 closeModal('modal-konfirmasi', true);
-                await loadTugas();
-            } catch {
-                errEl.textContent = 'Terjadi kesalahan, coba lagi';
+                const booking = allTugas.find(item => item.id === Number(selectedBookingId));
+                updateLocalTugas(selectedBookingId, {
+                    status: 'jadwal_fix',
+                    tanggal_fix: booking?.tanggal_diminta || null
+                });
+                loadNotifikasi();
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Konfirmasi jadwal gagal.');
                 errEl.style.display = 'block';
             } finally {
                 setPetugasButtonLoading(btn, false);
-                setPetugasScreenLocked(false);
             }
         }
 
@@ -736,8 +752,7 @@
                 errEl.style.display = 'block';
                 return;
             }
-            setPetugasButtonLoading(btn, true, 'Menyimpan...');
-            setPetugasScreenLocked(true);
+            if (!setPetugasButtonLoading(btn, true, 'Menyimpan...')) return;
             try {
                 const res = await apiFetch('/api/petugas/tolak/' + selectedBookingId, {
                     method: 'POST',
@@ -747,13 +762,19 @@
                 const data = await res.json();
                 if (!res.ok) { errEl.textContent = data.message; errEl.style.display = 'block'; return; }
                 closeModal('modal-tolak', true);
-                await loadTugas();
-            } catch {
-                errEl.textContent = 'Terjadi kesalahan, coba lagi';
+                updateLocalTugas(selectedBookingId, {
+                    status: 'rescheduled_by_petugas',
+                    tanggal_diminta: tanggal_baru,
+                    tanggal_fix: null,
+                    last_reschedule_by: 'petugas',
+                    last_reschedule_alasan: alasan
+                });
+                loadNotifikasi();
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Perubahan jadwal gagal.');
                 errEl.style.display = 'block';
             } finally {
                 setPetugasButtonLoading(btn, false);
-                setPetugasScreenLocked(false);
             }
         }
 
@@ -783,8 +804,7 @@
                     errEl.style.display = 'block';
                     return;
                 }
-                setPetugasButtonLoading(btn, true, 'Menolak...');
-                setPetugasScreenLocked(true);
+                if (!setPetugasButtonLoading(btn, true, 'Menolak...')) return;
                 try {
                     const res = await apiFetch('/api/petugas/tolak-berkas/' + selectedBookingId, {
                         method: 'POST',
@@ -798,30 +818,30 @@
                         return;
                     }
                     closeModal('modal-tolak-berkas', true);
-                    await loadTugas();
-                } catch {
-                    errEl.textContent = 'Terjadi kesalahan, coba lagi';
+                    updateLocalTugas(selectedBookingId, { status: 'ditolak' });
+                    loadNotifikasi();
+                } catch (error) {
+                    errEl.textContent = AppAsync.errorMessage(error, 'Penolakan berkas gagal.');
                     errEl.style.display = 'block';
                 } finally {
                     setPetugasButtonLoading(btn, false);
-                    setPetugasScreenLocked(false);
                 }
             }
 
         async function loadBerkasDropdown() {
             try {
-                const res = await apiFetch('/api/petugas/tugas');
-                const data = await res.json();
-                const fixList = data.filter(b => b.status === 'jadwal_fix');
+                if (!tugasLoaded) await loadTugas();
+                const fixList = allTugas.filter(b => b.status === 'jadwal_fix');
                 const sel = document.getElementById('hasil-berkas-select');
-                sel.innerHTML = '<option value="">-- Pilih Berkas (Jadwal Ditetapkan) --</option>';
-                fixList.forEach(b => {
-                    sel.innerHTML += '<option value="' + b.id + '" data-nomor="' + b.nomor_berkas + '" data-pemohon="' + b.nama_pemohon + '" data-lokasi="' + b.nama_kecamatan + ', ' + b.nama_kelurahan + '" data-tgl="' + b.tanggal_fix + '">' + b.nomor_berkas + ' - ' + b.nama_pemohon + '</option>';
-                });
+                sel.innerHTML = '<option value="">-- Pilih Berkas (Jadwal Ditetapkan) --</option>'
+                    + fixList.map(b => '<option value="' + b.id + '" data-nomor="' + b.nomor_berkas + '" data-pemohon="' + b.nama_pemohon + '" data-lokasi="' + b.nama_kecamatan + ', ' + b.nama_kelurahan + '" data-tgl="' + b.tanggal_fix + '">' + b.nomor_berkas + ' - ' + b.nama_pemohon + '</option>').join('');
                 if (fixList.length === 0) {
                     sel.innerHTML = '<option value="">Tidak ada berkas dengan Jadwal Ditetapkan</option>';
                 }
-            } catch { console.error('Gagal load berkas'); }
+            } catch (error) {
+                const sel = document.getElementById('hasil-berkas-select');
+                sel.innerHTML = `<option value="">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat berkas'))}</option>`;
+            }
         }
 
         function goToInputHasil(bookingId, nomorBerkas) {
@@ -861,26 +881,41 @@
             if (fotoLokasi) formData.append('foto_lokasi', fotoLokasi);
             if (fotoRisalah) formData.append('foto_risalah', fotoRisalah);
             formData.append('catatan_lapangan', document.getElementById('catatan_lapangan').value);
-            setPetugasButtonLoading(btn, true, 'Menyimpan...');
-            setPetugasScreenLocked(true);
+            if (!setPetugasButtonLoading(btn, true, 'Menyimpan...')) return;
+            const progress = document.getElementById('hasil-upload-progress');
+            const progressBar = document.getElementById('hasil-upload-progress-bar');
+            const progressLabel = document.getElementById('hasil-upload-progress-label');
+            progress.classList.add('is-visible');
+            progressBar.style.width = '0%';
+            progressLabel.textContent = 'Menyiapkan unggahan...';
             try {
-                const res = await fetch('/api/petugas/hasil/' + bookingId, {
+                const result = await AppAsync.uploadWithProgress('/api/petugas/hasil/' + bookingId, {
                     method: 'POST',
                     headers: { 'Authorization': 'Bearer ' + token },
-                    body: formData
+                    body: formData,
+                    onProgress: percent => {
+                        progressBar.style.width = percent + '%';
+                        progressLabel.textContent = `Mengunggah ${percent}%`;
+                    }
                 });
-                const data = await res.json();
-                if (!res.ok) { errEl.textContent = data.message; errEl.style.display = 'block'; return; }
+                if (!result.ok) {
+                    errEl.textContent = result.data?.message || 'Hasil pemeriksaan gagal disimpan.';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                progressBar.style.width = '100%';
+                progressLabel.textContent = 'Unggahan selesai';
                 sucEl.textContent = 'Hasil pemeriksaan berhasil disimpan!';
                 sucEl.style.display = 'block';
+                updateLocalTugas(bookingId, { status: 'selesai' });
                 resetHasil();
                 setTimeout(() => { sucEl.style.display = 'none'; loadBerkasDropdown(); }, 2000);
-            } catch {
-                errEl.textContent = 'Terjadi kesalahan, coba lagi';
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Hasil pemeriksaan gagal disimpan.');
                 errEl.style.display = 'block';
             } finally {
+                window.setTimeout(() => progress.classList.remove('is-visible'), 600);
                 setPetugasButtonLoading(btn, false);
-                setPetugasScreenLocked(false);
             }
         }
 
@@ -894,13 +929,12 @@
         }
 
         function closeModal(id, force = false) {
-            if (isPetugasProcessing && !force) return;
+            if (AppAsync.isBusy() && !force) return;
             document.getElementById(id).classList.remove('show');
         }
         function logout(button) {
             const btn = button || document.getElementById('btn-petugas-logout');
-            setPetugasButtonLoading(btn, true, 'Keluar...');
-            setPetugasScreenLocked(true);
+            if (!setPetugasButtonLoading(btn, true, 'Keluar...')) return;
             localStorage.clear();
             window.location.href = '/login-petugas';
         }

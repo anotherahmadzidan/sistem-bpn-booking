@@ -1,0 +1,122 @@
+.app-async-overlay[hidden] {
+    display: none !important;
+}
+
+.app-async-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    background: rgba(0, 0, 0, 0.12);
+    cursor: wait;
+    touch-action: none;
+    overscroll-behavior: contain;
+}
+
+.app-async-progress[hidden] {
+    display: none !important;
+}
+
+.app-async-progress {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 20001;
+    height: 3px;
+    overflow: hidden;
+    pointer-events: none;
+    background: rgba(255, 193, 7, 0.16);
+}
+
+.app-async-progress__bar {
+    width: 34%;
+    height: 100%;
+    background: linear-gradient(90deg, #e5a800, #ffd75a, #f3b400);
+    box-shadow: 0 0 8px rgba(243, 180, 0, 0.55);
+    animation: app-async-progress 1.05s ease-in-out infinite;
+}
+
+.app-button-spinner {
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: app-async-spin 0.7s linear infinite;
+}
+
+.app-button-loading {
+    pointer-events: none;
+    cursor: wait !important;
+}
+
+.app-form-loading {
+    cursor: wait;
+}
+
+.app-form-loading :is(input, select, textarea, button):disabled {
+    cursor: wait;
+}
+
+body.app-operation-active {
+    cursor: wait;
+    user-select: none;
+}
+
+.app-upload-progress {
+    display: none;
+    margin-top: 10px;
+}
+
+.app-upload-progress.is-visible {
+    display: block;
+}
+
+.app-upload-progress__track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #dce7f5;
+}
+
+.app-upload-progress__bar {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: #0b5cc5;
+    transition: width 160ms ease;
+}
+
+.app-upload-progress__label {
+    display: block;
+    margin-top: 5px;
+    color: #4c6483;
+    font: 600 12px/1.3 Inter, system-ui, sans-serif;
+    text-align: right;
+}
+
+@keyframes app-async-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes app-async-progress {
+    from {
+        transform: translateX(-110%);
+    }
+    to {
+        transform: translateX(310%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-button-spinner {
+        animation-duration: 1.4s;
+    }
+
+    .app-async-progress__bar {
+        animation-duration: 2s;
+    }
+}

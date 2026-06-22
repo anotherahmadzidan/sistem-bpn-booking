@@ -7,6 +7,8 @@
     <title>Dashboard Admin - BPN Luwu Timur</title>
     <link rel="stylesheet" href="/css/petugas.css">
     <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/app-async.css">
+    <link rel="stylesheet" href="/css/phone-validation.css">
 </head>
 
 <body class="dashboard admin-dashboard">
@@ -102,7 +104,7 @@
             </button>
         </nav>
         <div class="sidebar-footer">
-            <button class="btn btn-secondary btn-block admin-logout" onclick="logout()">
+            <button class="btn btn-secondary btn-block admin-logout" id="btn-admin-logout" onclick="logout(this)">
                 <span class="logout-symbol">-&gt;</span>
                 Keluar
             </button>
@@ -331,7 +333,9 @@
                         </div>
                         <div class="form-group">
                             <label>No. HP</label>
-                            <input type="text" id="new-hp" placeholder="No. HP petugas">
+                            <input type="text" id="new-hp" inputmode="tel" autocomplete="tel"
+                                maxlength="24" placeholder="Contoh: 081234567890">
+                            <small id="new-hp-feedback" class="phone-validation-message">Contoh: 081234567890</small>
                         </div>
                     </div>
                     <div class="form-group">
@@ -470,7 +474,7 @@
                             <div class="quota-active-controls quota-active-controls-2">
                                 <input type="date" id="kec-lihat-tanggal" class="quota-active-input">
                                 <button class="btn btn-secondary btn-sm quota-active-button"
-                                    onclick="lihatKuota('kecamatan', true)">Tampilkan</button>
+                                    onclick="lihatKuota('kecamatan', true, this)">Tampilkan</button>
                             </div>
                         </div>
                         <div class="card-body" id="kec-result">
@@ -541,7 +545,7 @@
                                 </select>
                                 <input type="date" id="kel-lihat-tanggal" class="quota-active-input">
                                 <button class="btn btn-secondary btn-sm quota-active-button"
-                                    onclick="lihatKuota('kelurahan', true)">Tampilkan</button>
+                                    onclick="lihatKuota('kelurahan', true, this)">Tampilkan</button>
                             </div>
                         </div>
                         <div class="card-body" id="kel-result">
@@ -595,7 +599,7 @@
                             <div class="quota-active-controls quota-active-controls-2">
                                 <input type="date" id="pet-lihat-tanggal" class="quota-active-input">
                                 <button class="btn btn-secondary btn-sm quota-active-button"
-                                    onclick="lihatKuota('petugas', true)">Tampilkan</button>
+                                    onclick="lihatKuota('petugas', true, this)">Tampilkan</button>
                             </div>
                         </div>
                         <div class="card-body" id="pet-result">
@@ -685,7 +689,9 @@
                 </div>
                 <div class="form-group">
                     <label>No. HP</label>
-                    <input type="text" id="edit-hp">
+                    <input type="text" id="edit-hp" inputmode="tel" autocomplete="tel"
+                        maxlength="24" placeholder="Contoh: 081234567890">
+                    <small id="edit-hp-feedback" class="phone-validation-message">Contoh: 081234567890</small>
                 </div>
                 <div class="form-group">
                     <label>Password Baru <span style="color:#888;font-size:12px">(kosongkan jika tidak
@@ -761,6 +767,8 @@
         </div>
     </div>
 
+    <script src="/js/app-async.js"></script>
+    <script src="/js/phone-validation.js"></script>
     <script>
         const token = localStorage.getItem('token');
         const nama = localStorage.getItem('nama');
@@ -787,28 +795,11 @@
             kuota: false
         };
         const kuotaResultCache = {};
+        const adminLoadPromises = {};
+        let bookingsLoadPromise = null;
 
         function setAdminButtonLoading(button, isLoading, label = 'Memproses...') {
-            if (!button) return;
-
-            if (isLoading) {
-                if (!button.dataset.originalHtml) {
-                    button.dataset.originalHtml = button.innerHTML;
-                }
-                button.disabled = true;
-                button.setAttribute('aria-busy', 'true');
-                button.classList.add('is-loading');
-                button.innerHTML = `<span class="admin-button-spinner" aria-hidden="true"></span><span>${label}</span>`;
-                return;
-            }
-
-            button.disabled = false;
-            button.removeAttribute('aria-busy');
-            button.classList.remove('is-loading');
-            if (button.dataset.originalHtml) {
-                button.innerHTML = button.dataset.originalHtml;
-                delete button.dataset.originalHtml;
-            }
+            return AppAsync.setButtonLoading(button, isLoading, label);
         }
 
         function setAdminSidebarOpen(isOpen) {
@@ -859,7 +850,7 @@
         // API HELPER
         // ============================================================
         async function apiFetch(url, options = {}) {
-            const res = await fetch(url, {
+            const res = await AppAsync.fetchWithTimeout(url, {
                 ...options,
                 headers: {
                     'Content-Type': 'application/json',
@@ -867,56 +858,77 @@
                     ...(options.headers || {})
                 }
             });
-            if (res.status === 401) { logout(); return null; }
+            if (res.status === 401) {
+                localStorage.clear();
+                window.location.href = '/login-petugas';
+                throw new AppAsync.AppRequestError('Sesi Anda telah berakhir.', {
+                    code: 'UNAUTHORIZED',
+                    status: 401
+                });
+            }
             return res;
         }
 
         // ============================================================
         // DASHBOARD
         // ============================================================
+        async function loadBookingsData(force = false) {
+            const hasCache = loadedAdminPages.dashboard || loadedAdminPages.berkas;
+            if (hasCache && !force) return allBerkas;
+            if (bookingsLoadPromise && !force) return bookingsLoadPromise;
+
+            bookingsLoadPromise = (async () => {
+                const response = await apiFetch('/api/admin/bookings');
+                if (!response.ok) throw await AppAsync.responseError(response, 'Gagal memuat berkas.');
+                allBerkas = await response.json();
+                return allBerkas;
+            })();
+            try {
+                return await bookingsLoadPromise;
+            } finally {
+                bookingsLoadPromise = null;
+            }
+        }
+
+        function renderDashboard() {
+            document.getElementById('stat-total').textContent = allBerkas.length;
+            document.getElementById('stat-pending').textContent = allBerkas.filter(b => b.status === 'pending').length;
+            document.getElementById('stat-rescheduled-user').textContent = allBerkas.filter(b => b.status === 'rescheduled_by_user').length;
+            document.getElementById('stat-rescheduled-petugas').textContent = allBerkas.filter(b => b.status === 'rescheduled_by_petugas').length;
+            document.getElementById('stat-fix').textContent = allBerkas.filter(b => b.status === 'jadwal_fix').length;
+            document.getElementById('stat-selesai').textContent = allBerkas.filter(b => b.status === 'selesai').length;
+            document.getElementById('stat-ditolak').textContent = allBerkas.filter(b => b.status === 'ditolak').length;
+            document.getElementById('stat-dibatalkan').textContent = allBerkas.filter(b => b.status === 'dibatalkan').length;
+
+            return AppAsync.renderList(document.getElementById('tabel-dashboard'), allBerkas.slice(0, 8), b => `
+                <tr>
+                    <td><strong>${escapeHTML(b.nomor_berkas)}</strong></td>
+                    <td>${escapeHTML(b.nama_pemohon)}</td>
+                    <td>${escapeHTML(b.nama_kecamatan)}</td>
+                    <td>${escapeHTML(b.nama_kelurahan)}</td>
+                    <td>${escapeHTML(b.nama_petugas)}</td>
+                    <td>${formatDate(b.tanggal_diminta)}</td>
+                    <td>${badgeStatus(b.status)}</td>
+                </tr>`, {
+                chunkSize: 8,
+                emptyHtml: `<tr><td colspan="7"><div class="empty-state">
+                    ${adminIcon('emptyFile', 'empty-icon empty-icon-svg')}<p>Belum ada berkas</p>
+                </div></td></tr>`
+            });
+        }
+
         async function loadDashboard(force = false) {
             if (loadedAdminPages.dashboard && !force) return;
+            const operationId = AppAsync.startOperation('Memuat dashboard...');
             try {
-                const resBerkas = await apiFetch('/api/admin/bookings');
-                allBerkas = await resBerkas.json();
-
-                document.getElementById('stat-total').textContent = allBerkas.length;
-                document.getElementById('stat-pending').textContent =
-                    allBerkas.filter(b => b.status === 'pending').length;
-                document.getElementById('stat-rescheduled-user').textContent =
-                    allBerkas.filter(b => b.status === 'rescheduled_by_user').length;
-                document.getElementById('stat-rescheduled-petugas').textContent =
-                    allBerkas.filter(b => b.status === 'rescheduled_by_petugas').length;
-                document.getElementById('stat-fix').textContent =
-                    allBerkas.filter(b => b.status === 'jadwal_fix').length;
-                document.getElementById('stat-selesai').textContent =
-                    allBerkas.filter(b => b.status === 'selesai').length;
-                document.getElementById('stat-ditolak').textContent =
-                    allBerkas.filter(b => b.status === 'ditolak').length;
-                document.getElementById('stat-dibatalkan').textContent =
-                    allBerkas.filter(b => b.status === 'dibatalkan').length;
-
-                const tbody = document.getElementById('tabel-dashboard');
-                const recent = allBerkas.slice(0, 8);
-                if (recent.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
-            ${adminIcon('emptyFile', 'empty-icon empty-icon-svg')}<p>Belum ada berkas</p></div></td></tr>`;
-                    loadedAdminPages.dashboard = true;
-                    return;
-                }
-                tbody.innerHTML = recent.map(b => `
-          <tr>
-            <td><strong>${b.nomor_berkas}</strong></td>
-            <td>${b.nama_pemohon}</td>
-            <td>${b.nama_kecamatan}</td>
-            <td>${b.nama_kelurahan}</td>
-            <td>${b.nama_petugas}</td>
-            <td>${formatDate(b.tanggal_diminta)}</td>
-            <td>${badgeStatus(b.status)}</td>
-          </tr>`).join('');
+                await loadBookingsData(force);
+                await renderDashboard();
                 loadedAdminPages.dashboard = true;
-            } catch (err) {
-                console.error(err);
+            } catch (error) {
+                document.getElementById('tabel-dashboard').innerHTML =
+                    `<tr><td colspan="7"><div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat dashboard.'))}</div></td></tr>`;
+            } finally {
+                AppAsync.finishOperation(operationId);
             }
         }
 
@@ -926,13 +938,15 @@
         async function loadBerkas(force = false) {
             if (loadedAdminPages.berkas && !force) return;
             const tbody = document.getElementById('tabel-berkas');
+            const operationId = AppAsync.startOperation('Memuat semua berkas...');
             try {
-                const res = await apiFetch('/api/admin/bookings');
-                allBerkas = await res.json();
-                renderBerkas(allBerkas);
+                await loadBookingsData(force);
+                await renderBerkas(allBerkas);
                 loadedAdminPages.berkas = true;
-            } catch {
-                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:red">Gagal memuat data</td></tr>`;
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="10"><div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat data.'))}</div></td></tr>`;
+            } finally {
+                AppAsync.finishOperation(operationId);
             }
         }
 
@@ -950,18 +964,13 @@
 
         function renderBerkas(data) {
             const tbody = document.getElementById('tabel-berkas');
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state">
-          ${adminIcon('emptyFile', 'empty-icon empty-icon-svg')}<p>Tidak ada data</p></div></td></tr>`;
-                return;
-            }
-            tbody.innerHTML = data.map(b => `
+            return AppAsync.renderList(tbody, data, b => `
         <tr>
-          <td><strong>${b.nomor_berkas}</strong></td>
-          <td>${b.nama_pemohon}</td>
-          <td>${b.nama_kecamatan}</td>
-          <td>${b.nama_kelurahan}</td>
-          <td>${b.nama_petugas}</td>
+          <td><strong>${escapeHTML(b.nomor_berkas)}</strong></td>
+          <td>${escapeHTML(b.nama_pemohon)}</td>
+          <td>${escapeHTML(b.nama_kecamatan)}</td>
+          <td>${escapeHTML(b.nama_kelurahan)}</td>
+          <td>${escapeHTML(b.nama_petugas)}</td>
           <td>${formatDate(b.tanggal_diminta)}</td>
           <td>${b.tanggal_fix ? formatDate(b.tanggal_fix) : '<span style="color:#aaa">-</span>'}</td>
           <td style="text-align:center">${b.reschedule_count}x</td>
@@ -970,7 +979,12 @@
             <button class="btn btn-secondary btn-sm" onclick="lihatDetail(${b.id})">Detail</button>
             <button class="btn btn-danger btn-sm" onclick="openHapusBerkas(${b.id})">Hapus</button>
           </td>
-        </tr>`).join('');
+        </tr>`, {
+                chunkSize: 40,
+                emptyHtml: `<tr><td colspan="10"><div class="empty-state">
+                    ${adminIcon('emptyFile', 'empty-icon empty-icon-svg')}<p>Tidak ada data</p>
+                </div></td></tr>`
+            });
         }
 
         function formatDateTime(d) {
@@ -983,11 +997,13 @@
 
         async function lihatDetail(id) {
             const body = document.getElementById('modal-detail-body');
+            const operationId = AppAsync.startOperation('Memuat detail berkas...');
             body.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat detail...</div>';
             document.getElementById('modal-detail').classList.add('show');
 
             try {
                 const res = await apiFetch('/api/admin/berkas/' + id);
+                if (!res.ok) throw await AppAsync.responseError(res, 'Gagal memuat detail berkas.');
                 const data = await res.json();
                 const b = data.booking;
 
@@ -1119,8 +1135,10 @@
             </div>` : ''}
 
         </div>`;
-            } catch (err) {
-                body.innerHTML = '<div class="alert alert-error">Gagal memuat detail berkas</div>';
+            } catch (error) {
+                body.innerHTML = `<div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat detail berkas.'))}</div>`;
+            } finally {
+                AppAsync.finishOperation(operationId);
             }
         }
 
@@ -1163,8 +1181,7 @@
                 return;
             }
 
-            btn.disabled = true;
-            btn.textContent = 'Menghapus...';
+            if (!setAdminButtonLoading(btn, true, 'Menghapus...')) return;
             try {
                 const res = await apiFetch(`/api/admin/berkas/${selectedDeleteBerkas.id}`, {
                     method: 'DELETE',
@@ -1178,14 +1195,16 @@
                 }
                 closeModal('modal-hapus-berkas');
                 closeModal('modal-detail');
+                const deletedId = Number(selectedDeleteBerkas.id);
                 selectedDeleteBerkas = null;
-                await loadBerkas(true);
-                await loadDashboard(true);
-            } catch {
-                errEl.textContent = 'Terjadi kesalahan saat menghapus berkas';
+                allBerkas = allBerkas.filter(item => item.id !== deletedId);
+                if (loadedAdminPages.berkas) await renderBerkas(allBerkas);
+                if (loadedAdminPages.dashboard) await renderDashboard();
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Terjadi kesalahan saat menghapus berkas.');
                 errEl.style.display = 'block';
             } finally {
-                btn.textContent = 'Hapus Permanen';
+                setAdminButtonLoading(btn, false, 'Hapus Permanen');
                 validateDeleteBerkasConfirm();
             }
         }
@@ -1193,47 +1212,53 @@
         // ============================================================
         // KELOLA PETUGAS
         // ============================================================
+        function renderPetugas() {
+            const tbody = document.getElementById('tabel-petugas');
+            return AppAsync.renderList(tbody, allPetugas, p => `
+                <tr>
+                    <td>${escapeHTML(p.nip)}</td>
+                    <td><strong>${escapeHTML(p.nama_lengkap)}</strong></td>
+                    <td>${escapeHTML(p.email)}</td>
+                    <td>${escapeHTML(p.no_hp)}</td>
+                    <td>
+                        <span class="badge ${p.is_active ? 'badge-confirmed' : 'badge-ditolak'}">
+                            ${p.is_active ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                    </td>
+                    <td style="display:flex;gap:6px;flex-wrap:wrap">
+                        <button class="btn btn-secondary btn-sm" onclick="openEditPetugas(${p.id})">Edit</button>
+                        <button class="btn btn-sm ${p.is_active ? 'btn-danger' : 'btn-success'}"
+                            onclick="openTogglePetugas(${p.id}, ${p.is_active ? 1 : 0})">
+                            ${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                        </button>
+                        <button class="btn btn-sm"
+                            style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5"
+                            onclick="openHapusPetugas(${p.id})">
+                            ${adminIcon('trash', 'btn-icon')} Hapus
+                        </button>
+                    </td>
+                </tr>`, {
+                chunkSize: 40,
+                emptyHtml: `<tr><td colspan="6"><div class="empty-state">
+                    ${adminIcon('users', 'empty-icon empty-icon-svg')}<p>Belum ada petugas</p>
+                </div></td></tr>`
+            });
+        }
+
         async function loadPetugas(force = false) {
             if (loadedAdminPages.petugas && !force) return;
             const tbody = document.getElementById('tabel-petugas');
+            const operationId = AppAsync.startOperation('Memuat daftar petugas...');
             try {
                 const res = await apiFetch('/api/admin/petugas');
+                if (!res.ok) throw await AppAsync.responseError(res, 'Gagal memuat petugas.');
                 allPetugas = await res.json();
-
-                if (allPetugas.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">
-            ${adminIcon('users', 'empty-icon empty-icon-svg')}<p>Belum ada petugas</p></div></td></tr>`;
-                    loadedAdminPages.petugas = true;
-                    return;
-                }
-
-                tbody.innerHTML = allPetugas.map(p => `
-          <tr>
-            <td>${p.nip}</td>
-            <td><strong>${p.nama_lengkap}</strong></td>
-            <td>${p.email}</td>
-            <td>${p.no_hp}</td>
-            <td>
-              <span class="badge ${p.is_active ? 'badge-confirmed' : 'badge-ditolak'}">
-                ${p.is_active ? 'Aktif' : 'Nonaktif'}
-              </span>
-            </td>
-            <td style="display:flex;gap:6px;flex-wrap:wrap">
-  <button class="btn btn-secondary btn-sm" onclick="openEditPetugas(${p.id})">Edit</button>
-  <button class="btn btn-sm ${p.is_active ? 'btn-danger' : 'btn-success'}"
-    onclick="openTogglePetugas(${p.id}, ${p.is_active})">
-    ${p.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-  </button>
-  <button class="btn btn-sm" 
-    style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5"
-    onclick="openHapusPetugas(${p.id})">
-    ${adminIcon('trash', 'btn-icon')} Hapus
-  </button>
-</td>
-          </tr>`).join('');
+                await renderPetugas();
                 loadedAdminPages.petugas = true;
-            } catch {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:red">Gagal memuat data</td></tr>`;
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="6"><div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat data.'))}</div></td></tr>`;
+            } finally {
+                AppAsync.finishOperation(operationId);
             }
         }
 
@@ -1241,7 +1266,11 @@
             const nip = document.getElementById('new-nip').value.trim();
             const nama_lengkap = document.getElementById('new-nama').value.trim();
             const email = document.getElementById('new-email').value.trim();
-            const no_hp = document.getElementById('new-hp').value.trim();
+            const phoneResult = PhoneValidation.validateInput(
+                'new-hp',
+                'new-hp-feedback',
+                { showEmpty: true }
+            );
             const password = document.getElementById('new-password').value;
             const errEl = document.getElementById('petugas-error');
             const sucEl = document.getElementById('petugas-success');
@@ -1249,16 +1278,27 @@
             errEl.style.display = 'none';
             sucEl.style.display = 'none';
 
-            if (!nip || !nama_lengkap || !email || !no_hp || !password) {
+            if (!nip || !nama_lengkap || !email || !document.getElementById('new-hp').value.trim() || !password) {
                 errEl.textContent = 'Semua field wajib diisi';
                 errEl.style.display = 'block';
                 return;
             }
-            setAdminButtonLoading(btn, true, 'Menyimpan...');
+            if (!phoneResult.valid) {
+                errEl.textContent = phoneResult.message;
+                errEl.style.display = 'block';
+                return;
+            }
+            if (!setAdminButtonLoading(btn, true, 'Menyimpan...')) return;
             try {
                 const res = await apiFetch('/api/admin/petugas', {
                     method: 'POST',
-                    body: JSON.stringify({ nip, nama_lengkap, email, no_hp, password })
+                    body: JSON.stringify({
+                        nip,
+                        nama_lengkap,
+                        email,
+                        no_hp: phoneResult.normalized,
+                        password
+                    })
                 });
                 const data = await res.json();
                 if (!res.ok) {
@@ -1270,9 +1310,15 @@
                 sucEl.style.display = 'block';
                 ['new-nip', 'new-nama', 'new-email', 'new-hp', 'new-password']
                     .forEach(id => document.getElementById(id).value = '');
-                await loadPetugas(true);
-            } catch {
-                errEl.textContent = 'Terjadi kesalahan';
+                if (data.petugas) {
+                    allPetugas.unshift(data.petugas);
+                    await renderPetugas();
+                    loadedAdminPages.petugas = true;
+                } else {
+                    await loadPetugas(true);
+                }
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Petugas gagal ditambahkan.');
                 errEl.style.display = 'block';
             } finally {
                 setAdminButtonLoading(btn, false);
@@ -1286,6 +1332,7 @@
             document.getElementById('edit-nama').value = p.nama_lengkap;
             document.getElementById('edit-email').value = p.email;
             document.getElementById('edit-hp').value = p.no_hp;
+            PhoneValidation.validateInput('edit-hp', 'edit-hp-feedback');
             document.getElementById('edit-password').value = '';
             document.getElementById('edit-error').style.display = 'none';
             document.getElementById('modal-edit-petugas').classList.add('show');
@@ -1295,17 +1342,31 @@
             const id = document.getElementById('edit-id').value;
             const nama_lengkap = document.getElementById('edit-nama').value.trim();
             const email = document.getElementById('edit-email').value.trim();
-            const no_hp = document.getElementById('edit-hp').value.trim();
+            const phoneResult = PhoneValidation.validateInput(
+                'edit-hp',
+                'edit-hp-feedback',
+                { showEmpty: true }
+            );
             const password = document.getElementById('edit-password').value;
             const errEl = document.getElementById('edit-error');
             const btn = document.getElementById('btn-edit-petugas');
             errEl.style.display = 'none';
 
-            setAdminButtonLoading(btn, true, 'Menyimpan...');
+            if (!phoneResult.valid) {
+                errEl.textContent = phoneResult.message;
+                errEl.style.display = 'block';
+                return;
+            }
+            if (!setAdminButtonLoading(btn, true, 'Menyimpan...')) return;
             try {
                 const res = await apiFetch(`/api/admin/petugas/${id}`, {
                     method: 'PUT',
-                    body: JSON.stringify({ nama_lengkap, email, no_hp, password })
+                    body: JSON.stringify({
+                        nama_lengkap,
+                        email,
+                        no_hp: phoneResult.normalized,
+                        password
+                    })
                 });
                 const data = await res.json();
                 if (!res.ok) {
@@ -1314,14 +1375,26 @@
                     return;
                 }
                 closeModal('modal-edit-petugas');
-                await loadPetugas(true);
-            } catch {
-                errEl.textContent = 'Terjadi kesalahan';
+                const index = allPetugas.findIndex(item => item.id === Number(id));
+                if (index >= 0) {
+                    allPetugas[index] = {
+                        ...allPetugas[index],
+                        nama_lengkap,
+                        email,
+                        no_hp: data.petugas?.no_hp || phoneResult.normalized
+                    };
+                    await renderPetugas();
+                }
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Data petugas gagal disimpan.');
                 errEl.style.display = 'block';
             } finally {
                 setAdminButtonLoading(btn, false);
             }
         }
+
+        PhoneValidation.bind('new-hp', 'new-hp-feedback');
+        PhoneValidation.bind('edit-hp', 'edit-hp-feedback');
 
         function openTogglePetugas(id, isActive) {
             const petugas = allPetugas.find(p => p.id === id);
@@ -1360,20 +1433,27 @@
             const errEl = document.getElementById('status-petugas-error');
 
             errEl.style.display = 'none';
-            setAdminButtonLoading(btn, true, isActive ? 'Menonaktifkan...' : 'Mengaktifkan...');
+            if (!setAdminButtonLoading(btn, true, isActive ? 'Menonaktifkan...' : 'Mengaktifkan...')) return;
             try {
                 const res = await apiFetch(`/api/admin/petugas/${id}/toggle`, { method: 'PATCH' });
-                if (!res || !res.ok) {
-                    const data = res ? await res.json() : {};
+                const data = await res.json();
+                if (!res.ok) {
                     errEl.textContent = data.message || 'Gagal mengubah status petugas';
                     errEl.style.display = 'block';
                     return;
                 }
                 closeModal('modal-status-petugas');
+                const index = allPetugas.findIndex(item => item.id === Number(id));
+                if (index >= 0) {
+                    allPetugas[index] = {
+                        ...allPetugas[index],
+                        is_active: data.petugas?.is_active ?? (isActive ? 0 : 1)
+                    };
+                    await renderPetugas();
+                }
                 selectedStatusPetugas = null;
-                await loadPetugas(true);
-            } catch {
-                errEl.textContent = 'Gagal mengubah status petugas';
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Gagal mengubah status petugas.');
                 errEl.style.display = 'block';
             } finally {
                 setAdminButtonLoading(btn, false);
@@ -1418,7 +1498,7 @@
                 return;
             }
 
-            setAdminButtonLoading(btn, true, 'Menghapus...');
+            if (!setAdminButtonLoading(btn, true, 'Menghapus...')) return;
             try {
                 const res = await apiFetch(`/api/admin/petugas/${selectedDeletePetugas.id}`, { method: 'DELETE' });
                 const data = await res.json();
@@ -1428,10 +1508,12 @@
                     return;
                 }
                 closeModal('modal-hapus-petugas');
+                const deletedId = Number(selectedDeletePetugas.id);
                 selectedDeletePetugas = null;
-                await loadPetugas(true);
-            } catch {
-                errEl.textContent = 'Terjadi kesalahan saat menghapus petugas';
+                allPetugas = allPetugas.filter(item => item.id !== deletedId);
+                await renderPetugas();
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Terjadi kesalahan saat menghapus petugas.');
                 errEl.style.display = 'block';
             } finally {
                 setAdminButtonLoading(btn, false);
@@ -1448,40 +1530,40 @@
                 lihatKuota(activeTab);
                 return;
             }
+            const operationId = AppAsync.startOperation('Menyiapkan data kuota...');
             try {
-                const res = await fetch('/api/admin/wilayah');
-                wilayahData = await res.json();
-                const resPet = await apiFetch('/api/admin/petugas');
-                allPetugas = await resPet.json();
+                const petugasCached = loadedAdminPages.petugas;
+                const [resWilayah, resPetugas] = await Promise.all([
+                    AppAsync.fetchWithTimeout('/api/admin/wilayah'),
+                    petugasCached ? Promise.resolve(null) : apiFetch('/api/admin/petugas')
+                ]);
+                if (!resWilayah.ok) throw await AppAsync.responseError(resWilayah, 'Gagal memuat wilayah.');
+                if (resPetugas && !resPetugas.ok) throw await AppAsync.responseError(resPetugas, 'Gagal memuat petugas.');
+                wilayahData = await resWilayah.json();
+                if (resPetugas) allPetugas = await resPetugas.json();
 
                 // Isi dropdown kecamatan
                 const selKec = document.getElementById('kec-target');
-                selKec.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
-                wilayahData.kecamatan.forEach(k => {
-                    selKec.innerHTML += `<option value="${k.id}">${k.nama_kecamatan}</option>`;
-                });
+                selKec.innerHTML = '<option value="">-- Pilih Kecamatan --</option>'
+                    + wilayahData.kecamatan.map(k => `<option value="${k.id}">${k.nama_kecamatan}</option>`).join('');
 
                 // Isi filter kecamatan untuk kelurahan
                 const selFilterKec = document.getElementById('kel-filter-kec');
-                selFilterKec.innerHTML = '<option value="">-- Semua Kecamatan --</option>';
-                wilayahData.kecamatan.forEach(k => {
-                    selFilterKec.innerHTML += `<option value="${k.id}">${k.nama_kecamatan}</option>`;
-                });
+                selFilterKec.innerHTML = '<option value="">-- Semua Kecamatan --</option>'
+                    + wilayahData.kecamatan.map(k => `<option value="${k.id}">${k.nama_kecamatan}</option>`).join('');
                 const selLihatKec = document.getElementById('kel-lihat-kec');
-                selLihatKec.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
-                wilayahData.kecamatan.forEach(k => {
-                    selLihatKec.innerHTML += `<option value="${k.id}">${k.nama_kecamatan}</option>`;
-                });
+                selLihatKec.innerHTML = '<option value="">-- Pilih Kecamatan --</option>'
+                    + wilayahData.kecamatan.map(k => `<option value="${k.id}">${k.nama_kecamatan}</option>`).join('');
 
                 // Isi dropdown kelurahan (semua)
                 filterKelurahanKuota();
 
                 // Isi dropdown petugas
                 const selPet = document.getElementById('pet-target');
-                selPet.innerHTML = '<option value="">-- Pilih Petugas --</option>';
-                allPetugas.filter(p => p.is_active).forEach(p => {
-                    selPet.innerHTML += `<option value="${p.id}">${p.nama_lengkap} (${p.nip})</option>`;
-                });
+                selPet.innerHTML = '<option value="">-- Pilih Petugas --</option>'
+                    + allPetugas.filter(p => p.is_active)
+                        .map(p => `<option value="${p.id}">${p.nama_lengkap} (${p.nip})</option>`)
+                        .join('');
 
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('kec-tanggal').value = today;
@@ -1499,8 +1581,11 @@
                 loadedAdminPages.kuota = true;
                 lihatKuota('kecamatan');
 
-            } catch (err) {
-                console.error(err);
+            } catch (error) {
+                document.getElementById('kec-result').innerHTML =
+                    `<div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Data kuota gagal dimuat.'))}</div>`;
+            } finally {
+                AppAsync.finishOperation(operationId);
             }
         }
 
@@ -1577,7 +1662,8 @@
                 errEl.style.display = 'block';
                 return;
             }
-            setAdminButtonLoading(button || document.getElementById(`btn-kuota-${tipe}`), true, 'Menyimpan...');
+            const submitButton = button || document.getElementById(`btn-kuota-${tipe}`);
+            if (!setAdminButtonLoading(submitButton, true, 'Menyimpan...')) return;
             try {
                 const res = await apiFetch('/api/admin/kuota', {
                     method: 'POST',
@@ -1594,11 +1680,11 @@
                 // Auto refresh tampilan kuota aktif
                 invalidateKuotaCache(tipe);
                 await lihatKuota(tipe, true);
-            } catch {
-                errEl.textContent = 'Terjadi kesalahan';
+            } catch (error) {
+                errEl.textContent = AppAsync.errorMessage(error, 'Kuota gagal disimpan.');
                 errEl.style.display = 'block';
             } finally {
-                setAdminButtonLoading(button || document.getElementById(`btn-kuota-${tipe}`), false);
+                setAdminButtonLoading(submitButton, false);
             }
         }
 
@@ -1636,7 +1722,7 @@
                 .forEach(key => delete kuotaResultCache[key]);
         }
 
-        async function lihatKuota(tipe, force = false) {
+        async function lihatKuota(tipe, force = false, button = null) {
             const tglMap = { kecamatan: 'kec-lihat-tanggal', kelurahan: 'kel-lihat-tanggal', petugas: 'pet-lihat-tanggal' };
             const resMap = { kecamatan: 'kec-result', kelurahan: 'kel-result', petugas: 'pet-result' };
             const tanggal = document.getElementById(tglMap[tipe]).value;
@@ -1659,14 +1745,22 @@
                 el.innerHTML = kuotaResultCache[cacheKey];
                 return;
             }
+            if (adminLoadPromises[cacheKey]) return adminLoadPromises[cacheKey];
 
             el.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat...</div>';
-            try {
+            const operationId = button
+                ? null
+                : AppAsync.startOperation('Memuat kuota...');
+            if (button && !setAdminButtonLoading(button, true, 'Memuat...')) return;
+
+            adminLoadPromises[cacheKey] = (async () => {
+                try {
                 const params = new URLSearchParams({ tanggal });
                 if (tipe === 'kelurahan' && kecamatanFilter) {
                     params.set('kecamatan_id', kecamatanFilter);
                 }
                 const res = await apiFetch(`/api/admin/kuota?${params.toString()}`);
+                if (!res.ok) throw await AppAsync.responseError(res, 'Gagal memuat kuota.');
                 const data = await res.json();
 
                 let items = [];
@@ -1715,9 +1809,15 @@
                     }).join('') + `</div>`;
                 el.innerHTML = html;
                 kuotaResultCache[cacheKey] = html;
-            } catch {
-                el.innerHTML = '<div class="alert alert-error">Gagal memuat kuota</div>';
-            }
+                } catch (error) {
+                    el.innerHTML = `<div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat kuota.'))}</div>`;
+                } finally {
+                    delete adminLoadPromises[cacheKey];
+                    if (button) setAdminButtonLoading(button, false);
+                    if (operationId) AppAsync.finishOperation(operationId);
+                }
+            })();
+            return adminLoadPromises[cacheKey];
         }
 
         function switchKuotaTab(tab) {
@@ -1745,7 +1845,13 @@
         }
 
         function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-        function logout() { localStorage.clear(); window.location.href = '/login-petugas'; }
+        function logout(button) {
+            if (!setAdminButtonLoading(button || document.getElementById('btn-admin-logout'), true, 'Keluar...')) return;
+            window.setTimeout(() => {
+                localStorage.clear();
+                window.location.href = '/login-petugas';
+            }, 100);
+        }
         function formatDate(d) {
             if (!d) return '-';
             return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });

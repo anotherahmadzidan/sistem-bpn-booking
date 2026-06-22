@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { kirimNotifikasi, kirimNotifikasiAdmin } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
 const { reserveKuotaAktif, kurangiKuotaAktif, getEffectiveKuota } = require('../utils/kuota');
+const { requireIndonesianPhone } = require('../utils/phone');
 
 const formatTgl = (d) => new Date(d).toLocaleDateString('id-ID', {
     day: '2-digit', month: 'long', year: 'numeric'
@@ -78,6 +79,13 @@ const createBooking = async (req, res) => {
         !kelurahan_id || !alamat_lokasi || !no_telepon || !petugas_id || !tanggal_diminta)
         return res.status(400).json({ message: 'Semua field wajib diisi' });
 
+    let normalizedPhone;
+    try {
+        normalizedPhone = requireIndonesianPhone(no_telepon);
+    } catch (err) {
+        return res.status(err.status || 400).json({ message: err.message, code: err.code });
+    }
+
     if (!isDateOnly(tanggal_berkas) || !isDateOnly(tanggal_diminta)) {
         return res.status(400).json({ message: 'Format tanggal tidak valid' });
     }
@@ -136,23 +144,24 @@ const createBooking = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
             [nomor_berkas, user_id, petugas_id, kecamatan_id, kelurahan_id,
                 nama_pemohon, tanggal_berkas, alamat_lokasi, koordinat_maps,
-                no_telepon, tanggal_diminta]
+                normalizedPhone, tanggal_diminta]
         );
 
         await conn.commit();
 
         // Kirim notifikasi booking dibuat
-        const [userInfo] = await pool.query('SELECT email, nama_lengkap FROM users WHERE id = ?', [user_id]);
-        const [petugasInfo] = await pool.query('SELECT email, nama_lengkap FROM petugas WHERE id = ?', [petugas_id]);
-        await kirimNotifikasi({
+        const [[userInfo], [petugasInfo]] = await Promise.all([
+            pool.query('SELECT email, nama_lengkap FROM users WHERE id = ?', [user_id]),
+            pool.query('SELECT email, nama_lengkap FROM petugas WHERE id = ?', [petugas_id])
+        ]);
+        await Promise.all([kirimNotifikasi({
             user_id: user_id,
             booking_id: result.insertId,
             judul: 'Booking Berhasil Diajukan',
             pesan: `Permohonan berkas <strong>${nomor_berkas}</strong> berhasil diajukan dan sedang menunggu konfirmasi petugas.`,
             email_user: userInfo[0]?.email,
             nomor_berkas: nomor_berkas
-        });
-        await kirimNotifikasi({
+        }), kirimNotifikasi({
             recipient_role: 'petugas',
             recipient_id: petugas_id,
             booking_id: result.insertId,
@@ -160,13 +169,12 @@ const createBooking = async (req, res) => {
             pesan: `Berkas <strong>${nomor_berkas}</strong> dari <strong>${nama_pemohon}</strong> masuk dan menunggu tindak lanjut jadwal.`,
             email_user: petugasInfo[0]?.email,
             nomor_berkas: nomor_berkas
-        });
-        await kirimNotifikasiAdmin({
+        }), kirimNotifikasiAdmin({
             booking_id: result.insertId,
             judul: 'Berkas Baru Masuk',
             pesan: `Berkas <strong>${nomor_berkas}</strong> dari <strong>${nama_pemohon}</strong> ditugaskan kepada <strong>${petugasInfo[0]?.nama_lengkap || 'petugas'}</strong>.`,
             nomor_berkas: nomor_berkas
-        });
+        })]);
         res.status(201).json({ message: 'Booking berhasil dibuat', booking_id: result.insertId });
     } catch (err) {
         await conn.rollback();
@@ -281,17 +289,18 @@ const rescheduleBooking = async (req, res) => {
 
         await conn.commit();
 
-        const [userInfo] = await pool.query('SELECT email, nama_lengkap FROM users WHERE id = ?', [booking.user_id]);
-        const [petugasInfo] = await pool.query('SELECT email, nama_lengkap FROM petugas WHERE id = ?', [booking.petugas_id]);
-        await kirimNotifikasi({
+        const [[userInfo], [petugasInfo]] = await Promise.all([
+            pool.query('SELECT email, nama_lengkap FROM users WHERE id = ?', [booking.user_id]),
+            pool.query('SELECT email, nama_lengkap FROM petugas WHERE id = ?', [booking.petugas_id])
+        ]);
+        await Promise.all([kirimNotifikasi({
             user_id: booking.user_id,
             booking_id: parseInt(id),
             judul: 'Pengajuan Reschedule Terkirim',
             pesan: `Permintaan perubahan jadwal berkas <strong>${booking.nomor_berkas}</strong> ke tanggal <strong>${tanggal_baru}</strong> sudah dikirim ke petugas.`,
             email_user: userInfo[0]?.email,
             nomor_berkas: booking.nomor_berkas
-        });
-        await kirimNotifikasi({
+        }), kirimNotifikasi({
             recipient_role: 'petugas',
             recipient_id: booking.petugas_id,
             booking_id: parseInt(id),
@@ -299,13 +308,12 @@ const rescheduleBooking = async (req, res) => {
             pesan: `Pemohon <strong>${userInfo[0]?.nama_lengkap || 'pemohon'}</strong> meminta perubahan jadwal berkas <strong>${booking.nomor_berkas}</strong> ke tanggal <strong>${tanggal_baru}</strong>.${alasan ? ' Alasan: ' + alasan : ''}`,
             email_user: petugasInfo[0]?.email,
             nomor_berkas: booking.nomor_berkas
-        });
-        await kirimNotifikasiAdmin({
+        }), kirimNotifikasiAdmin({
             booking_id: parseInt(id),
             judul: 'Reschedule Diajukan Pemohon',
             pesan: `Pemohon <strong>${userInfo[0]?.nama_lengkap || 'pemohon'}</strong> mengajukan reschedule berkas <strong>${booking.nomor_berkas}</strong> kepada <strong>${petugasInfo[0]?.nama_lengkap || 'petugas'}</strong>.`,
             nomor_berkas: booking.nomor_berkas
-        });
+        })]);
         res.json({ message: 'Reschedule berhasil diajukan' });
     } catch (err) {
         await conn.rollback();
@@ -347,9 +355,11 @@ const approvePetugasSchedule = async (req, res) => {
 
         await conn.commit();
 
-        const [userInfo] = await pool.query('SELECT nama_lengkap FROM users WHERE id = ?', [booking.user_id]);
-        const [petugasInfo] = await pool.query('SELECT email, nama_lengkap FROM petugas WHERE id = ?', [booking.petugas_id]);
-        await kirimNotifikasi({
+        const [[userInfo], [petugasInfo]] = await Promise.all([
+            pool.query('SELECT nama_lengkap FROM users WHERE id = ?', [booking.user_id]),
+            pool.query('SELECT email, nama_lengkap FROM petugas WHERE id = ?', [booking.petugas_id])
+        ]);
+        await Promise.all([kirimNotifikasi({
             recipient_role: 'petugas',
             recipient_id: booking.petugas_id,
             booking_id: parseInt(id),
@@ -357,13 +367,12 @@ const approvePetugasSchedule = async (req, res) => {
             pesan: `Pemohon <strong>${userInfo[0]?.nama_lengkap || 'pemohon'}</strong> menyetujui jadwal baru berkas <strong>${booking.nomor_berkas}</strong> pada <strong>${formatTgl(booking.tanggal_diminta)}</strong>.`,
             email_user: petugasInfo[0]?.email,
             nomor_berkas: booking.nomor_berkas
-        });
-        await kirimNotifikasiAdmin({
+        }), kirimNotifikasiAdmin({
             booking_id: parseInt(id),
             judul: 'Jadwal Disetujui Pemohon',
             pesan: `Pemohon menyetujui jadwal baru berkas <strong>${booking.nomor_berkas}</strong> yang diusulkan oleh <strong>${petugasInfo[0]?.nama_lengkap || 'petugas'}</strong>.`,
             nomor_berkas: booking.nomor_berkas
-        });
+        })]);
 
         res.json({ message: 'Jadwal baru berhasil disetujui' });
     } catch (err) {
@@ -421,19 +430,20 @@ const cancelBooking = async (req, res) => {
 
         await conn.commit();
 
-        const [userInfo] = await pool.query('SELECT email, nama_lengkap FROM users WHERE id = ?', [booking.user_id]);
-        const [petugasInfo] = await pool.query('SELECT email, nama_lengkap FROM petugas WHERE id = ?', [booking.petugas_id]);
+        const [[userInfo], [petugasInfo]] = await Promise.all([
+            pool.query('SELECT email, nama_lengkap FROM users WHERE id = ?', [booking.user_id]),
+            pool.query('SELECT email, nama_lengkap FROM petugas WHERE id = ?', [booking.petugas_id])
+        ]);
         const alasanAman = escapeHTML(alasan);
 
-        await kirimNotifikasi({
+        await Promise.all([kirimNotifikasi({
             user_id: booking.user_id,
             booking_id: parseInt(id),
             judul: 'Permohonan Dibatalkan',
             pesan: `Permohonan berkas <strong>${booking.nomor_berkas}</strong> berhasil dibatalkan. Alasan: <strong>${alasanAman}</strong>.`,
             email_user: userInfo[0]?.email,
             nomor_berkas: booking.nomor_berkas
-        });
-        await kirimNotifikasi({
+        }), kirimNotifikasi({
             recipient_role: 'petugas',
             recipient_id: booking.petugas_id,
             booking_id: parseInt(id),
@@ -441,13 +451,12 @@ const cancelBooking = async (req, res) => {
             pesan: `Pemohon <strong>${userInfo[0]?.nama_lengkap || 'pemohon'}</strong> membatalkan permohonan berkas <strong>${booking.nomor_berkas}</strong>. Alasan: <strong>${alasanAman}</strong>.`,
             email_user: petugasInfo[0]?.email,
             nomor_berkas: booking.nomor_berkas
-        });
-        await kirimNotifikasiAdmin({
+        }), kirimNotifikasiAdmin({
             booking_id: parseInt(id),
             judul: 'Permohonan Dibatalkan Pemohon',
             pesan: `Pemohon <strong>${userInfo[0]?.nama_lengkap || 'pemohon'}</strong> membatalkan permohonan berkas <strong>${booking.nomor_berkas}</strong> yang ditangani <strong>${petugasInfo[0]?.nama_lengkap || 'petugas'}</strong>. Alasan: <strong>${alasanAman}</strong>.`,
             nomor_berkas: booking.nomor_berkas
-        });
+        })]);
 
         res.json({ message: 'Permohonan berhasil dibatalkan' });
     } catch (err) {
