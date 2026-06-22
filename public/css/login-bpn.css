@@ -629,10 +629,12 @@ button {
 }
 
 /* ============================================================
-   PORTRAIT TABLET: 480-899
+   PORTRAIT TABLET / LARGE PORTRAIT: 480+
+   Orientasi menjadi penentu utama agar tablet lebar tidak salah
+   diklasifikasikan sebagai laptop.
    ============================================================ */
 
-@media (min-width: 480px) and (max-width: 899px) and (orientation: portrait) {
+@media (min-width: 480px) and (orientation: portrait) {
     .mobile-viewport-container {
         background-image: url("/img/login-bg-768x1024.webp");
         background-position: center top;
@@ -643,13 +645,13 @@ button {
         max-width: 820px;
         margin-inline: auto;
         padding:
-            clamp(34px, 5svh, 54px)
+            clamp(32px, 4svh, 54px)
             clamp(42px, 8vw, 72px)
             max(38px, env(safe-area-inset-bottom));
     }
 
     .header-area {
-        min-height: clamp(340px, 41svh, 440px);
+        min-height: clamp(430px, 48svh, 655px);
     }
 
     .target-logo {
@@ -675,7 +677,7 @@ button {
     }
 
     .target-card {
-        width: min(70vw, 560px);
+        width: min(70vw, 620px);
     }
 }
 
@@ -736,7 +738,7 @@ button {
    LAPTOP: 900-1199
    ============================================================ */
 
-@media (min-width: 900px) {
+@media (min-width: 900px) and (orientation: landscape) {
     html,
     body.mobile-body {
         height: 100%;
@@ -858,7 +860,7 @@ button {
    DESKTOP: 1200+
    ============================================================ */
 
-@media (min-width: 1200px) {
+@media (min-width: 1200px) and (orientation: landscape) {
     .mobile-viewport-container {
         background-image: url("/img/login-bg-1440x900.webp");
     }
@@ -914,7 +916,7 @@ button {
    SHORT DESKTOP
    ============================================================ */
 
-@media (min-width: 900px) and (max-height: 700px) {
+@media (min-width: 900px) and (max-height: 700px) and (orientation: landscape) {
     .mobile-viewport {
         padding-top: 24px;
         padding-bottom: 24px;
