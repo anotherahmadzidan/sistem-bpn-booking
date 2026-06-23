@@ -47,7 +47,7 @@
     min-width: 0;
 }
 
-.brand-mark > div {
+.brand-mark>div {
     min-width: 0;
 }
 
@@ -92,7 +92,7 @@
     overflow: hidden;
 }
 
-.admin-dashboard .sidebar-user > div:first-child {
+.admin-dashboard .sidebar-user>div:first-child {
     min-width: 0;
 }
 
@@ -1336,6 +1336,34 @@
     text-align: center;
 }
 
+.admin-dashboard #page-petugas table th:nth-child(1),
+.admin-dashboard #page-petugas table td:nth-child(1),
+.admin-dashboard #page-petugas table th:nth-child(2),
+.admin-dashboard #page-petugas table td:nth-child(2) {
+    width: 18%;
+}
+
+.admin-dashboard #page-petugas table th:nth-child(3),
+.admin-dashboard #page-petugas table td:nth-child(3),
+.admin-dashboard #page-petugas table th:nth-child(4),
+.admin-dashboard #page-petugas table td:nth-child(4) {
+    width: 19%;
+}
+
+.admin-dashboard #page-petugas table th:nth-child(5),
+.admin-dashboard #page-petugas table td:nth-child(5) {
+    width: 18%;
+    padding-inline: 8px;
+    text-align: center;
+}
+
+.admin-dashboard #page-petugas table th:nth-child(6),
+.admin-dashboard #page-petugas table td:nth-child(6) {
+    width: 15%;
+    padding-inline: 8px;
+    text-align: center;
+}
+
 .admin-dashboard .petugas-validation-message {
     display: block;
     min-height: 18px;
@@ -1422,19 +1450,68 @@
 
 .admin-dashboard #page-berkas .table-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: center;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     width: 100%;
+    white-space: nowrap;
 }
 
-.admin-dashboard #page-berkas .table-actions .btn-sm {
-    width: 100%;
-    max-width: 72px;
-    min-width: 66px;
-    padding: 8px 9px;
-    text-align: center;
+.admin-dashboard #page-berkas .berkas-icon-button {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 36px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #d7e1ef;
+    border-radius: 8px;
+    background: #fff;
+    color: #173a6d;
+    cursor: pointer;
+    transition: background-color 0.16s ease, border-color 0.16s ease,
+        color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.admin-dashboard #page-berkas .berkas-icon-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(8, 44, 102, 0.12);
+}
+
+.admin-dashboard #page-berkas .berkas-icon-info:hover {
+    border-color: #7fb1ff;
+    background: #eaf2ff;
+    color: #0b56b3;
+}
+
+.admin-dashboard #page-berkas .berkas-icon-delete {
+    border-color: #fecaca;
+    background: #fff7f7;
+    color: #dc2626;
+}
+
+.admin-dashboard #page-berkas .berkas-icon-delete:hover {
+    border-color: #f87171;
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.admin-dashboard #page-berkas .berkas-action-icon,
+.admin-dashboard #page-berkas .berkas-action-icon svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}
+
+.admin-dashboard #page-berkas .berkas-action-icon svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .modal-danger-confirm {
@@ -2501,6 +2578,23 @@
     }
 
     .admin-dashboard #tabel-petugas td:nth-child(6) button.petugas-icon-button {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        margin: 0;
+        padding: 0;
+        flex: 0 0 36px;
+    }
+
+    .admin-dashboard #tabel-berkas td:nth-child(10) .table-actions {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .admin-dashboard #tabel-berkas td:nth-child(10) button.berkas-icon-button {
         width: 36px;
         min-width: 36px;
         height: 36px;

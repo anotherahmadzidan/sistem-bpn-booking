@@ -10,10 +10,10 @@ const {
     getKuota,
     setKuota,
     getWilayah,
-    hapusPetugas,
     hapusBerkas
 } = require('../controllers/adminController');
 const { getDetailBerkas } = require('../controllers/adminController');
+const { hapusPetugas } = require('./petugasDeletion');
 
 router.get('/berkas/:id', verify('admin'), getDetailBerkas);
 router.delete('/berkas/:id', verify('admin'), hapusBerkas);
