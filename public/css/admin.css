@@ -25,8 +25,8 @@
     padding: 24px 18px;
     overflow-x: hidden;
     background:
-        linear-gradient(180deg, rgba(2, 27, 72, 0.22), rgba(3, 55, 126, 0.18)),
-        url("/img/blue-background.svg") left center / cover no-repeat,
+        linear-gradient(180deg, rgba(2, 27, 72, 0.16), rgba(3, 55, 126, 0.12)),
+        url("/img/admin-bg.svg") left bottom / auto 110% no-repeat,
         #052d70;
     box-shadow: 8px 0 26px rgba(5, 35, 82, 0.12);
 }
@@ -2270,8 +2270,9 @@
         transition: transform 0.24s ease;
         border-radius: 0 20px 20px 0;
         background:
-            linear-gradient(160deg, rgba(2, 22, 63, 0.98), rgba(4, 67, 150, 0.94)),
-            url("/img/blue-background.svg") left center / cover no-repeat;
+            linear-gradient(160deg, rgba(2, 22, 63, 0.3), rgba(4, 67, 150, 0.22)),
+            url("/img/admin-bg.svg") left bottom / auto 110% no-repeat,
+            #052d70;
         box-shadow: 18px 0 42px rgba(3, 15, 38, 0.3);
     }
 
