@@ -327,14 +327,18 @@
                         </div>
                         <div class="form-group">
                             <label>Nama Lengkap</label>
-                            <input type="text" id="new-nama" placeholder="Nama lengkap petugas">
+                            <input type="text" id="new-nama" autocomplete="name"
+                                maxlength="100" placeholder="Nama lengkap petugas">
+                            <small id="new-nama-feedback" class="petugas-validation-message">
+                                Nama lengkap minimal 3 karakter.
+                            </small>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Email</label>
                             <input type="email" id="new-email" autocomplete="email"
-                                placeholder="nama@contoh.com">
+                                maxlength="100" placeholder="nama@contoh.com">
                             <small id="new-email-feedback" class="petugas-validation-message">
                                 Masukkan alamat email aktif.
                             </small>
@@ -348,7 +352,11 @@
                     </div>
                     <div class="form-group">
                         <label>Password</label>
-                        <input type="password" id="new-password" placeholder="Password awal">
+                        <input type="password" id="new-password" autocomplete="new-password"
+                            placeholder="Password awal">
+                        <small id="new-password-feedback" class="petugas-validation-message">
+                            Password minimal 6 karakter.
+                        </small>
                     </div>
                     <div id="petugas-error" class="alert alert-error" style="display:none"></div>
                     <div id="petugas-success" class="alert alert-success" style="display:none"></div>
@@ -363,6 +371,14 @@
                 <div class="card-body">
                     <div class="table-wrap">
                         <table>
+                            <colgroup>
+                                <col class="petugas-col-nip">
+                                <col class="petugas-col-nama">
+                                <col class="petugas-col-email">
+                                <col class="petugas-col-hp">
+                                <col class="petugas-col-status">
+                                <col class="petugas-col-aksi">
+                            </colgroup>
                             <thead>
                                 <tr>
                                     <th>NIP</th>
@@ -697,12 +713,16 @@
                 </div>
                 <div class="form-group">
                     <label>Nama Lengkap</label>
-                    <input type="text" id="edit-nama">
+                    <input type="text" id="edit-nama" autocomplete="name"
+                        maxlength="100" placeholder="Nama lengkap petugas">
+                    <small id="edit-nama-feedback" class="petugas-validation-message">
+                        Nama lengkap minimal 3 karakter.
+                    </small>
                 </div>
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" id="edit-email" autocomplete="email"
-                        placeholder="nama@contoh.com">
+                        maxlength="100" placeholder="nama@contoh.com">
                     <small id="edit-email-feedback" class="petugas-validation-message">
                         Masukkan alamat email aktif.
                     </small>
@@ -736,8 +756,8 @@
                             </svg>
                         </button>
                     </div>
-                    <small class="petugas-validation-message">
-                        Password lama terlindungi dan tidak dapat ditampilkan.
+                    <small id="edit-password-feedback" class="petugas-validation-message">
+                        Kosongkan jika tidak ingin mengubah password. Minimal 6 karakter jika diisi.
                     </small>
                 </div>
                 <div id="edit-error" class="alert alert-error" style="display:none"></div>
@@ -811,6 +831,7 @@
 
     <script src="/js/app-async.js"></script>
     <script src="/js/phone-validation.js"></script>
+
     <script>
         const token = localStorage.getItem('token');
         const nama = localStorage.getItem('nama');
@@ -1321,6 +1342,54 @@
             return { valid: true, value, message };
         }
 
+        function validatePetugasName(inputId, feedbackId, showEmpty = false) {
+            const input = document.getElementById(inputId);
+            const feedback = document.getElementById(feedbackId);
+            const value = input.value.trim();
+
+            if (!value) {
+                const message = showEmpty
+                    ? 'Nama lengkap wajib diisi.'
+                    : 'Nama lengkap minimal 3 karakter.';
+                setPetugasValidationState(input, feedback, showEmpty ? 'error' : 'neutral', message);
+                return { valid: false, value, message };
+            }
+
+            if (value.length < 3) {
+                const message = 'Nama lengkap minimal 3 karakter.';
+                setPetugasValidationState(input, feedback, 'error', message);
+                return { valid: false, value, message };
+            }
+
+            const message = 'Nama lengkap valid.';
+            setPetugasValidationState(input, feedback, 'valid', message);
+            return { valid: true, value, message };
+        }
+
+        function validatePetugasPassword(inputId, feedbackId, required = false) {
+            const input = document.getElementById(inputId);
+            const feedback = document.getElementById(feedbackId);
+            const value = input.value;
+
+            if (!value) {
+                const message = required
+                    ? 'Password wajib diisi.'
+                    : 'Kosongkan jika tidak ingin mengubah password. Minimal 6 karakter jika diisi.';
+                setPetugasValidationState(input, feedback, required ? 'error' : 'neutral', message);
+                return { valid: !required, value, message };
+            }
+
+            if (value.length < 6) {
+                const message = 'Password minimal 6 karakter.';
+                setPetugasValidationState(input, feedback, 'error', message);
+                return { valid: false, value, message };
+            }
+
+            const message = required ? 'Password valid.' : 'Password baru valid.';
+            setPetugasValidationState(input, feedback, 'valid', message);
+            return { valid: true, value, message };
+        }
+
         function bindPetugasIdentityValidation() {
             [
                 ['new-nip', 'new-nip-feedback'],
@@ -1337,6 +1406,24 @@
             ].forEach(([inputId, feedbackId]) => {
                 document.getElementById(inputId)?.addEventListener('input', () => {
                     validatePetugasEmail(inputId, feedbackId);
+                });
+            });
+
+            [
+                ['new-nama', 'new-nama-feedback'],
+                ['edit-nama', 'edit-nama-feedback']
+            ].forEach(([inputId, feedbackId]) => {
+                document.getElementById(inputId)?.addEventListener('input', () => {
+                    validatePetugasName(inputId, feedbackId);
+                });
+            });
+
+            [
+                ['new-password', 'new-password-feedback', true],
+                ['edit-password', 'edit-password-feedback', false]
+            ].forEach(([inputId, feedbackId, required]) => {
+                document.getElementById(inputId)?.addEventListener('input', () => {
+                    validatePetugasPassword(inputId, feedbackId, required);
                 });
             });
         }
@@ -1423,29 +1510,31 @@
 
         async function tambahPetugas() {
             const nipResult = validatePetugasNip('new-nip', 'new-nip-feedback', true);
+            const nameResult = validatePetugasName('new-nama', 'new-nama-feedback', true);
             const emailResult = validatePetugasEmail('new-email', 'new-email-feedback', true);
+            const passwordResult = validatePetugasPassword('new-password', 'new-password-feedback', true);
             const nip = nipResult.value;
-            const nama_lengkap = document.getElementById('new-nama').value.trim();
+            const nama_lengkap = nameResult.value;
             const email = emailResult.value;
             const phoneResult = PhoneValidation.validateInput(
                 'new-hp',
                 'new-hp-feedback',
                 { showEmpty: true }
             );
-            const password = document.getElementById('new-password').value;
+            const password = passwordResult.value;
             const errEl = document.getElementById('petugas-error');
             const sucEl = document.getElementById('petugas-success');
             const btn = document.getElementById('btn-add-petugas');
             errEl.style.display = 'none';
             sucEl.style.display = 'none';
 
-            if (!nip || !nama_lengkap || !email || !document.getElementById('new-hp').value.trim() || !password) {
-                errEl.textContent = 'Semua field wajib diisi';
+            if (!nipResult.valid) {
+                errEl.textContent = nipResult.message;
                 errEl.style.display = 'block';
                 return;
             }
-            if (!nipResult.valid) {
-                errEl.textContent = nipResult.message;
+            if (!nameResult.valid) {
+                errEl.textContent = nameResult.message;
                 errEl.style.display = 'block';
                 return;
             }
@@ -1456,6 +1545,11 @@
             }
             if (!phoneResult.valid) {
                 errEl.textContent = phoneResult.message;
+                errEl.style.display = 'block';
+                return;
+            }
+            if (!passwordResult.valid) {
+                errEl.textContent = passwordResult.message;
                 errEl.style.display = 'block';
                 return;
             }
@@ -1505,9 +1599,11 @@
             document.getElementById('edit-email').value = p.email;
             document.getElementById('edit-hp').value = p.no_hp;
             validatePetugasNip('edit-nip', 'edit-nip-feedback');
+            validatePetugasName('edit-nama', 'edit-nama-feedback');
             validatePetugasEmail('edit-email', 'edit-email-feedback');
             PhoneValidation.validateInput('edit-hp', 'edit-hp-feedback');
             document.getElementById('edit-password').value = '';
+            validatePetugasPassword('edit-password', 'edit-password-feedback', false);
             resetPetugasPasswordVisibility();
             document.getElementById('edit-error').style.display = 'none';
             document.getElementById('modal-edit-petugas').classList.add('show');
@@ -1516,22 +1612,29 @@
         async function submitEditPetugas() {
             const id = document.getElementById('edit-id').value;
             const nipResult = validatePetugasNip('edit-nip', 'edit-nip-feedback', true);
+            const nameResult = validatePetugasName('edit-nama', 'edit-nama-feedback', true);
             const emailResult = validatePetugasEmail('edit-email', 'edit-email-feedback', true);
+            const passwordResult = validatePetugasPassword('edit-password', 'edit-password-feedback', false);
             const nip = nipResult.value;
-            const nama_lengkap = document.getElementById('edit-nama').value.trim();
+            const nama_lengkap = nameResult.value;
             const email = emailResult.value;
             const phoneResult = PhoneValidation.validateInput(
                 'edit-hp',
                 'edit-hp-feedback',
                 { showEmpty: true }
             );
-            const password = document.getElementById('edit-password').value;
+            const password = passwordResult.value;
             const errEl = document.getElementById('edit-error');
             const btn = document.getElementById('btn-edit-petugas');
             errEl.style.display = 'none';
 
             if (!nipResult.valid) {
                 errEl.textContent = nipResult.message;
+                errEl.style.display = 'block';
+                return;
+            }
+            if (!nameResult.valid) {
+                errEl.textContent = nameResult.message;
                 errEl.style.display = 'block';
                 return;
             }
@@ -1542,6 +1645,11 @@
             }
             if (!phoneResult.valid) {
                 errEl.textContent = phoneResult.message;
+                errEl.style.display = 'block';
+                return;
+            }
+            if (!passwordResult.valid) {
+                errEl.textContent = passwordResult.message;
                 errEl.style.display = 'block';
                 return;
             }

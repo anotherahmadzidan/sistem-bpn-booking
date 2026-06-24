@@ -1235,8 +1235,7 @@
 }
 
 .admin-dashboard .petugas-action-cell {
-    width: 148px;
-    min-width: 148px;
+    min-width: 0;
     white-space: nowrap;
     text-align: center;
 }
@@ -1332,34 +1331,32 @@
     stroke-linejoin: round;
 }
 
-.admin-dashboard #page-petugas table th:nth-child(6) {
-    text-align: center;
+.admin-dashboard #page-petugas table {
+    table-layout: fixed;
 }
 
-.admin-dashboard #page-petugas table th:nth-child(1),
-.admin-dashboard #page-petugas table td:nth-child(1),
-.admin-dashboard #page-petugas table th:nth-child(2),
-.admin-dashboard #page-petugas table td:nth-child(2) {
+.admin-dashboard #page-petugas .petugas-col-nip,
+.admin-dashboard #page-petugas .petugas-col-nama {
+    width: 17%;
+}
+
+.admin-dashboard #page-petugas .petugas-col-email,
+.admin-dashboard #page-petugas .petugas-col-hp,
+.admin-dashboard #page-petugas .petugas-col-aksi {
     width: 18%;
 }
 
-.admin-dashboard #page-petugas table th:nth-child(3),
-.admin-dashboard #page-petugas table td:nth-child(3),
-.admin-dashboard #page-petugas table th:nth-child(4),
-.admin-dashboard #page-petugas table td:nth-child(4) {
-    width: 19%;
+.admin-dashboard #page-petugas .petugas-col-status {
+    width: 12%;
 }
 
-.admin-dashboard #page-petugas table th:nth-child(5),
-.admin-dashboard #page-petugas table td:nth-child(5) {
-    width: 18%;
-    padding-inline: 8px;
-    text-align: center;
+.admin-dashboard #page-petugas table th,
+.admin-dashboard #page-petugas table td {
+    padding-inline: 16px;
 }
 
 .admin-dashboard #page-petugas table th:nth-child(6),
 .admin-dashboard #page-petugas table td:nth-child(6) {
-    width: 15%;
     padding-inline: 8px;
     text-align: center;
 }
