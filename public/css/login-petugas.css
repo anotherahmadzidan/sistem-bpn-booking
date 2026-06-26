@@ -1,0 +1,327 @@
+/* ============================================================
+LOGIN PETUGAS — pelengkap login-core.css
+Hanya elemen khas halaman login petugas: kartu "Akses Terbatas"
+(info-card) dan tab peran Petugas/Admin (tab-*).
+============================================================ */
+
+.info-card {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 0 0 14px;
+    padding: 13px 16px 13px 13px;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.32));
+    color: var(--login-navy);
+    box-shadow:
+    0 14px 30px rgba(7, 39, 76, 0.18),
+    0 3px 8px rgba(7, 39, 76, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -2px 6px rgba(7, 39, 76, 0.06);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
+}
+
+.info-icon {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    padding: 9px;
+    border-radius: 11px;
+    background: linear-gradient(160deg, #16548f, var(--login-navy) 55%, var(--login-navy-dark));
+    color: var(--login-white);
+    box-shadow:
+    0 6px 14px rgba(11, 58, 104, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -2px 4px rgba(7, 39, 76, 0.5);
+}
+
+.info-text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    color: #3f5571;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.info-text strong {
+    margin-bottom: 2px;
+    color: var(--login-navy);
+    font-family: var(--login-font-heading);
+    font-size: 12px;
+}
+
+/* ============================================================
+ROLE TABS
+============================================================ */
+
+.tab-container {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 30px 0 22px;
+    padding-inline: 24px;
+}
+
+.tab-btn {
+    min-width: 0;
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 11px;
+    border: 1px solid var(--login-line);
+    border-radius: 11px;
+    background: var(--login-white);
+    color: var(--login-navy);
+    cursor: pointer;
+    text-align: left;
+    transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.tab-btn:hover {
+    border-color: #c5d4e2;
+    background: #f7faff;
+}
+
+.tab-btn:focus-visible {
+    outline: 3px solid rgba(11, 58, 104, 0.2);
+    outline-offset: 2px;
+}
+
+.tab-btn.active {
+    border-color: var(--login-navy-dark);
+    background: linear-gradient(180deg, #18548c 0%, var(--login-navy) 55%, var(--login-navy-dark) 100%);
+    color: var(--login-white);
+    box-shadow:
+    0 10px 20px rgba(11, 58, 104, 0.3),
+    0 3px 6px rgba(11, 58, 104, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -3px 6px rgba(7, 39, 76, 0.4);
+    transform: translateY(-2px);
+}
+
+.tab-icon {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    color: var(--login-muted);
+}
+
+.tab-btn.active .tab-icon {
+    color: var(--login-white);
+}
+
+.tab-text {
+    min-width: 0;
+}
+
+.tab-text strong,
+.tab-text span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tab-text strong {
+    color: var(--login-navy);
+    font-family: var(--login-font-heading);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.tab-text span {
+    margin-top: 3px;
+    color: var(--login-muted);
+    font-size: 9px;
+    line-height: 1.2;
+}
+
+.tab-btn.active .tab-text strong {
+    color: var(--login-white);
+}
+
+.tab-btn.active .tab-text span {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+@media (max-width: 380px) {
+    .info-card {
+        margin-bottom: 12px;
+        padding-block: 11px;
+    }
+
+    .tab-container {
+        gap: 7px;
+        margin: 26px 0 18px;
+        padding-inline: 18px;
+    }
+
+    .tab-btn {
+        min-height: 42px;
+        gap: 7px;
+        padding: 8px 9px;
+    }
+
+    .tab-icon {
+        width: 19px;
+        height: 19px;
+        flex-basis: 19px;
+    }
+
+    .tab-text strong {
+        font-size: 10.5px;
+    }
+
+    .tab-text span {
+        display: none;
+    }
+}
+
+@media (max-width: 559px) and (max-height: 560px) {
+    .info-card {
+        margin-bottom: 10px;
+        padding-block: 10px;
+    }
+
+    .tab-container {
+        margin-top: 20px;
+        margin-bottom: 13px;
+    }
+}
+
+@media (max-width: 425px) and (max-height: 560px) {
+    .tab-container {
+        gap: 7px;
+        margin-top: 14px;
+        margin-bottom: 10px;
+        padding-inline: 16px;
+    }
+
+    .tab-btn {
+        min-height: 38px;
+        gap: 6px;
+        padding: 6px 8px;
+        border-radius: 9px;
+    }
+
+    .tab-icon {
+        width: 18px;
+        height: 18px;
+        flex-basis: 18px;
+    }
+
+    .tab-text strong {
+        font-size: 10.5px;
+    }
+
+    .tab-text span {
+        display: none;
+    }
+}
+
+@media (min-width: 480px) and (orientation: portrait) {
+    .info-card {
+        gap: 16px;
+        padding: 18px 22px 18px 18px;
+        border-radius: 18px;
+    }
+
+    .info-icon svg {
+        width: 26px;
+        height: 26px;
+    }
+
+    .info-text {
+        font-size: 13px;
+    }
+
+    .info-text strong {
+        font-size: 14.5px;
+    }
+
+    .tab-container {
+        gap: 14px;
+        margin: 34px 0 26px;
+        padding-inline: 30px;
+    }
+
+    .tab-btn {
+        min-height: 66px;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 14px;
+    }
+
+    .tab-icon {
+        width: 27px;
+        height: 27px;
+        flex-basis: 27px;
+    }
+
+    .tab-text strong {
+        font-size: 14.5px;
+    }
+
+    .tab-text span {
+        font-size: 11px;
+        margin-top: 4px;
+    }
+}
+
+@media (min-width: 900px) and (orientation: landscape) {
+    .info-card {
+        gap: 14px;
+        margin-bottom: 16px;
+        padding: 15px 18px 15px 15px;
+        border-radius: 16px;
+    }
+
+    .tab-container {
+        padding-inline: 30px;
+    }
+}
+
+@media (min-width: 1200px) and (orientation: landscape) {
+    .info-card {
+        width: 100%;
+        margin: 0 0 18px;
+        padding: 16px 22px 16px 16px;
+    }
+
+    .tab-container {
+        margin-top: 32px;
+        padding-inline: 32px;
+    }
+}
+
+@media (min-width: 900px) and (max-height: 700px) and (orientation: landscape) {
+    .info-card {
+        margin: 0 0 12px;
+        padding-block: 11px;
+    }
+
+    .tab-container {
+        margin-top: 22px;
+        margin-bottom: 14px;
+    }
+}
+
+/* Landscape: lebar kartu "Akses Terbatas" mengikuti kartu login
+   (variabel --ls-card-max diset di .login-column pada login-core.css). */
+@media (min-width: 640px) and (orientation: landscape) {
+    .info-card {
+        max-width: var(--ls-card-max, 420px);
+    }
+}

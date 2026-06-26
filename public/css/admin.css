@@ -279,11 +279,6 @@
     border-radius: 11px !important;
 }
 
-.logout-symbol {
-    transform: rotate(180deg);
-    font-weight: 800;
-}
-
 .security-note {
     display: flex;
     gap: 12px;

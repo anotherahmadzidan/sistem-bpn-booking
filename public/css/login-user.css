@@ -1,8 +1,8 @@
 /* ============================================================
-   LOGIN PEMOHON — pelengkap login-bpn.css
+   LOGIN PEMOHON — pelengkap login-core.css
    File ini HANYA berisi elemen yang khas pada kartu login pemohon
    (header avatar, tombol buat-akun/daftar, separator, dsb). Hero,
-   latar, layout, input, dan tombol "Masuk" mengikuti login-bpn.css
+   latar, layout, input, dan tombol "Masuk" mengikuti login-core.css
    agar identik dengan halaman login petugas.
    ============================================================ */
 
@@ -73,7 +73,7 @@
     transform: translateX(-3px);
 }
 
-/* ----- Tombol pada kartu pemohon ("Masuk" diwarisi login-bpn) ----- */
+/* ----- Tombol pada kartu pemohon ("Masuk" diwarisi login-core) ----- */
 .button-group button {
     margin-bottom: 12px;
 }
@@ -181,7 +181,7 @@
     text-align: center;
 }
 
-/* ----- Alert sukses (login-bpn hanya mendefinisikan error) ----- */
+/* ----- Alert sukses (login-core hanya mendefinisikan error) ----- */
 .alert-success {
     border: 1px solid #a9dfbf;
     background: #d5f5e3;
@@ -207,8 +207,15 @@
     padding-left: 16px;
 }
 
+/* Kartu lebar (>=480px) memakai varian blob "wide" yang lebih gempal. */
+@media (min-width: 480px) {
+    .card-accent-corner {
+        background-image: url("/img/card-login/yellow-bolb.-wide.svg");
+    }
+}
+
 /* ============================================================
-   TABLET PORTRAIT >= 480px — selaraskan skala dengan login-bpn
+   TABLET PORTRAIT >= 480px — selaraskan skala dengan login-core
    ============================================================ */
 @media (min-width: 480px) and (orientation: portrait) {
     .card-header-new {

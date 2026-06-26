@@ -185,11 +185,6 @@
     border-radius: 11px !important;
 }
 
-.petugas-dashboard .logout-symbol {
-    transform: rotate(180deg);
-    font-weight: 800;
-}
-
 .petugas-dashboard .main-content {
     margin-left: 286px;
     max-width: calc(100vw - 286px);
