@@ -18,6 +18,23 @@ const {
     isDateOnly
 } = require('../utils/kuota');
 
+// Validasi sisi server untuk data petugas (defense-in-depth, tidak hanya klien).
+const NIP_REGEX = /^\d{18}$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function validatePetugasInput({ nip, nama_lengkap, email, password, requirePassword }) {
+    if (!NIP_REGEX.test(String(nip || '')))
+        return 'NIP harus terdiri dari 18 digit angka';
+    if (String(nama_lengkap || '').trim().length < 3)
+        return 'Nama lengkap minimal 3 karakter';
+    if (!EMAIL_REGEX.test(String(email || '').trim()))
+        return 'Format email tidak valid';
+    if (requirePassword && String(password || '').length < 6)
+        return 'Password minimal 6 karakter';
+    if (!requirePassword && password && String(password).length < 6)
+        return 'Password minimal 6 karakter';
+    return null;
+}
+
 // SEMUA BOOKINGS
 const getAllBookings = async (req, res) => {
     try {
@@ -56,6 +73,10 @@ const tambahPetugas = async (req, res) => {
     const { nip, nama_lengkap, email, password } = req.body;
     if (!nip || !nama_lengkap || !email || !req.body.no_hp || !password)
         return res.status(400).json({ message: 'Semua field wajib diisi' });
+
+    const validationError = validatePetugasInput({ nip, nama_lengkap, email, password, requirePassword: true });
+    if (validationError)
+        return res.status(400).json({ message: validationError });
 
     let no_hp;
     try {
@@ -123,11 +144,15 @@ const tambahPetugas = async (req, res) => {
 // EDIT PETUGAS
 const editPetugas = async (req, res) => {
     const { id } = req.params;
-    const { nama_lengkap, email, password } = req.body;
+    const { nip, nama_lengkap, email, password } = req.body;
 
-    if (!nama_lengkap || !email || !req.body.no_hp) {
-        return res.status(400).json({ message: 'Nama, email, dan nomor HP wajib diisi' });
+    if (!nip || !nama_lengkap || !email || !req.body.no_hp) {
+        return res.status(400).json({ message: 'NIP, nama, email, dan nomor HP wajib diisi' });
     }
+
+    const validationError = validatePetugasInput({ nip, nama_lengkap, email, password, requirePassword: false });
+    if (validationError)
+        return res.status(400).json({ message: validationError });
 
     let no_hp;
     try {
@@ -144,32 +169,35 @@ const editPetugas = async (req, res) => {
         phoneLockName = await acquirePhoneLock(connection, no_hp);
         await connection.beginTransaction();
 
-        const [emailOwner] = await connection.query(
-            'SELECT id FROM petugas WHERE email = ? AND id <> ? LIMIT 1',
-            [email, id]
+        const [conflict] = await connection.query(
+            'SELECT id, nip, email FROM petugas WHERE (email = ? OR nip = ?) AND id <> ? LIMIT 1',
+            [email, nip, id]
         );
-        if (emailOwner.length > 0) {
+        if (conflict.length > 0) {
             await connection.rollback();
-            return res.status(409).json({ message: 'Email sudah digunakan petugas lain.' });
+            const message = String(conflict[0].nip) === String(nip)
+                ? 'NIP sudah digunakan petugas lain.'
+                : 'Email sudah digunakan petugas lain.';
+            return res.status(409).json({ message });
         }
         await assertPhoneAvailable(connection, no_hp, { excludePetugasId: id });
 
         if (password) {
             const hash = await bcrypt.hash(password, 10);
             await connection.query(
-                'UPDATE petugas SET nama_lengkap=?, email=?, no_hp=?, password=?, updated_at=NOW() WHERE id=?',
-                [nama_lengkap, email, no_hp, hash, id]
+                'UPDATE petugas SET nip=?, nama_lengkap=?, email=?, no_hp=?, password=?, updated_at=NOW() WHERE id=?',
+                [nip, nama_lengkap, email, no_hp, hash, id]
             );
         } else {
             await connection.query(
-                'UPDATE petugas SET nama_lengkap=?, email=?, no_hp=?, updated_at=NOW() WHERE id=?',
-                [nama_lengkap, email, no_hp, id]
+                'UPDATE petugas SET nip=?, nama_lengkap=?, email=?, no_hp=?, updated_at=NOW() WHERE id=?',
+                [nip, nama_lengkap, email, no_hp, id]
             );
         }
         await connection.commit();
         res.json({
             message: 'Data petugas berhasil diupdate',
-            petugas: { id: Number(id), nama_lengkap, email, no_hp }
+            petugas: { id: Number(id), nip, nama_lengkap, email, no_hp }
         });
     } catch (err) {
         if (connection) {
@@ -420,27 +448,6 @@ const getWilayah = async (req, res) => {
     }
 };
 
-const hapusPetugas = async (req, res) => {
-    const { id } = req.params;
-    try {
-        // Cek apakah petugas punya booking aktif
-        const [aktif] = await pool.query(
-            `SELECT COUNT(*) as total FROM bookings 
-       WHERE petugas_id = ? AND status NOT IN ('selesai', 'ditolak', 'dibatalkan')`,
-            [id]
-        );
-        if (aktif[0].total > 0) {
-            return res.status(400).json({
-                message: `Petugas tidak dapat dihapus karena masih memiliki ${aktif[0].total} berkas aktif.`
-            });
-        }
-        await pool.query('DELETE FROM petugas WHERE id = ?', [id]);
-        res.json({ message: 'Petugas berhasil dihapus' });
-    } catch (err) {
-        return serverError(res, err);
-    }
-};
-
 const getDetailBerkas = async (req, res) => {
     const { id } = req.params;
     try {
@@ -560,5 +567,5 @@ const hapusBerkas = async (req, res) => {
 module.exports = {
     getAllBookings, getAllPetugas, tambahPetugas,
     editPetugas, togglePetugas, getKuota, setKuota,
-    getWilayah, hapusPetugas, getDetailBerkas, hapusBerkas
+    getWilayah, getDetailBerkas, hapusBerkas
 };

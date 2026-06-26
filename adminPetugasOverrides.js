@@ -55,6 +55,12 @@ const editPetugas = async (req, res) => {
             message: 'NIP, nama, email, dan nomor HP wajib diisi.'
         });
     }
+    if (nama_lengkap.length < 3) {
+        return res.status(400).json({ message: 'Nama lengkap minimal 3 karakter.' });
+    }
+    if (password && password.length < 6) {
+        return res.status(400).json({ message: 'Password minimal 6 karakter.' });
+    }
 
     let no_hp;
     try {

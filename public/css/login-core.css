@@ -199,10 +199,10 @@ LOGIN CARD
     position: absolute;
     inset: 0 auto auto 0;
     z-index: 0;
-    width: 82px;
-    height: 82px;
+    width: 150px;
+    height: 150px;
     pointer-events: none;
-    background: url("/img/blob-baru.svg") left top / contain no-repeat;
+    background: url("/img/card-login/yellow-bolb.svg") left top / contain no-repeat;
 }
 
 /* ============================================================

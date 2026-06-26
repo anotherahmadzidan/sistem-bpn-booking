@@ -31,9 +31,12 @@ app.use(helmet({
 }));
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
+        // Same-origin / non-browser (tanpa header Origin) selalu diizinkan.
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        // Daftar kosong: izinkan semua origin HANYA di non-production (kemudahan dev).
+        // Di production, daftar kosong berarti hanya same-origin yang lolos.
+        if (allowedOrigins.length === 0 && !isProduction) return callback(null, true);
         return callback(new Error('Origin tidak diizinkan CORS'));
     },
     credentials: true

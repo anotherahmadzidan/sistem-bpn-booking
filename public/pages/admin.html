@@ -82,10 +82,10 @@
             <button class="nav-item" onclick="showPage('petugas')">
                 <span class="icon menu-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
-                        <circle cx="9" cy="8" r="3.5"></circle>
-                        <path d="M3.5 20a5.5 5.5 0 0 1 11 0"></path>
-                        <path d="M17 11.5a3 3 0 0 0 0-6"></path>
-                        <path d="M18.5 20a4.5 4.5 0 0 0-3-4.25"></path>
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                 </span>
                 Kelola Petugas
@@ -146,7 +146,12 @@
                 </div>
                 <div class="stat-card stat-pink">
                     <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v6h-6"></path><path d="M20 13a8 8 0 1 1-2.35-5.65"></path></svg>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h6.5"></path>
+                            <path d="M16 2v4M8 2v4M3 9.5h18"></path>
+                            <circle cx="17.5" cy="16.5" r="4.5"></circle>
+                            <path d="M17.5 14.5v2l1.4 1"></path>
+                        </svg>
                     </div>
                     <div class="stat-copy">
                     <div class="stat-label">Jadwal Diubah Pemohon</div>
@@ -155,7 +160,12 @@
                 </div>
                 <div class="stat-card stat-indigo">
                     <div class="stat-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v6h-6"></path><path d="M20 13a8 8 0 1 1-2.35-5.65"></path></svg>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h6.5"></path>
+                            <path d="M16 2v4M8 2v4M3 9.5h18"></path>
+                            <path d="M21.7 16.4a4.5 4.5 0 1 1-1.2-3.1"></path>
+                            <path d="M21.5 11.8v2.6H19"></path>
+                        </svg>
                     </div>
                     <div class="stat-copy">
                     <div class="stat-label">Jadwal Diubah Petugas</div>
@@ -987,7 +997,7 @@
 
         async function loadDashboard(force = false) {
             if (loadedAdminPages.dashboard && !force) return;
-            const operationId = AppAsync.startOperation('Memuat dashboard...');
+            // Navigasi menu tidak memunculkan overlay global; tabel sudah punya spinner inline.
             try {
                 await loadBookingsData(force);
                 await renderDashboard();
@@ -995,8 +1005,6 @@
             } catch (error) {
                 document.getElementById('tabel-dashboard').innerHTML =
                     `<tr><td colspan="7"><div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat dashboard.'))}</div></td></tr>`;
-            } finally {
-                AppAsync.finishOperation(operationId);
             }
         }
 
@@ -1006,15 +1014,13 @@
         async function loadBerkas(force = false) {
             if (loadedAdminPages.berkas && !force) return;
             const tbody = document.getElementById('tabel-berkas');
-            const operationId = AppAsync.startOperation('Memuat semua berkas...');
+            // Navigasi menu tidak memunculkan overlay global; tabel sudah punya spinner inline.
             try {
                 await loadBookingsData(force);
                 await renderBerkas(allBerkas);
                 loadedAdminPages.berkas = true;
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="10"><div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat data.'))}</div></td></tr>`;
-            } finally {
-                AppAsync.finishOperation(operationId);
             }
         }
 
@@ -1499,7 +1505,7 @@
         async function loadPetugas(force = false) {
             if (loadedAdminPages.petugas && !force) return;
             const tbody = document.getElementById('tabel-petugas');
-            const operationId = AppAsync.startOperation('Memuat daftar petugas...');
+            // Navigasi menu tidak memunculkan overlay global; tabel sudah punya spinner inline.
             try {
                 const res = await apiFetch('/api/admin/petugas');
                 if (!res.ok) throw await AppAsync.responseError(res, 'Gagal memuat petugas.');
@@ -1508,8 +1514,6 @@
                 loadedAdminPages.petugas = true;
             } catch (error) {
                 tbody.innerHTML = `<tr><td colspan="6"><div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Gagal memuat data.'))}</div></td></tr>`;
-            } finally {
-                AppAsync.finishOperation(operationId);
             }
         }
 
@@ -1533,29 +1537,18 @@
             errEl.style.display = 'none';
             sucEl.style.display = 'none';
 
-            if (!nipResult.valid) {
-                errEl.textContent = nipResult.message;
-                errEl.style.display = 'block';
-                return;
-            }
-            if (!nameResult.valid) {
-                errEl.textContent = nameResult.message;
-                errEl.style.display = 'block';
-                return;
-            }
-            if (!emailResult.valid) {
-                errEl.textContent = emailResult.message;
-                errEl.style.display = 'block';
-                return;
-            }
-            if (!phoneResult.valid) {
-                errEl.textContent = phoneResult.message;
-                errEl.style.display = 'block';
-                return;
-            }
-            if (!passwordResult.valid) {
-                errEl.textContent = passwordResult.message;
-                errEl.style.display = 'block';
+            // Validasi per-field sudah menampilkan pesannya masing-masing di
+            // bawah tiap input; kotak error utama hanya untuk error server.
+            // Jika ada yang tidak valid, cukup fokuskan field pertama yang gagal.
+            const firstInvalidAdd = [
+                { valid: nipResult.valid, id: 'new-nip' },
+                { valid: nameResult.valid, id: 'new-nama' },
+                { valid: emailResult.valid, id: 'new-email' },
+                { valid: phoneResult.valid, id: 'new-hp' },
+                { valid: passwordResult.valid, id: 'new-password' }
+            ].find(field => !field.valid);
+            if (firstInvalidAdd) {
+                document.getElementById(firstInvalidAdd.id).focus();
                 return;
             }
             if (!setAdminButtonLoading(btn, true, 'Menyimpan...')) return;
@@ -1633,29 +1626,18 @@
             const btn = document.getElementById('btn-edit-petugas');
             errEl.style.display = 'none';
 
-            if (!nipResult.valid) {
-                errEl.textContent = nipResult.message;
-                errEl.style.display = 'block';
-                return;
-            }
-            if (!nameResult.valid) {
-                errEl.textContent = nameResult.message;
-                errEl.style.display = 'block';
-                return;
-            }
-            if (!emailResult.valid) {
-                errEl.textContent = emailResult.message;
-                errEl.style.display = 'block';
-                return;
-            }
-            if (!phoneResult.valid) {
-                errEl.textContent = phoneResult.message;
-                errEl.style.display = 'block';
-                return;
-            }
-            if (!passwordResult.valid) {
-                errEl.textContent = passwordResult.message;
-                errEl.style.display = 'block';
+            // Validasi per-field sudah menampilkan pesannya masing-masing di
+            // bawah tiap input; kotak error utama hanya untuk error server.
+            // Jika ada yang tidak valid, cukup fokuskan field pertama yang gagal.
+            const firstInvalidEdit = [
+                { valid: nipResult.valid, id: 'edit-nip' },
+                { valid: nameResult.valid, id: 'edit-nama' },
+                { valid: emailResult.valid, id: 'edit-email' },
+                { valid: phoneResult.valid, id: 'edit-hp' },
+                { valid: passwordResult.valid, id: 'edit-password' }
+            ].find(field => !field.valid);
+            if (firstInvalidEdit) {
+                document.getElementById(firstInvalidEdit.id).focus();
                 return;
             }
             if (!setAdminButtonLoading(btn, true, 'Menyimpan...')) return;
@@ -1834,7 +1816,7 @@
                 lihatKuota(activeTab);
                 return;
             }
-            const operationId = AppAsync.startOperation('Menyiapkan data kuota...');
+            // Navigasi menu tidak memunculkan overlay global; panel kuota punya indikatornya sendiri.
             try {
                 const petugasCached = loadedAdminPages.petugas;
                 const [resWilayah, resPetugas] = await Promise.all([
@@ -1888,8 +1870,6 @@
             } catch (error) {
                 document.getElementById('kec-result').innerHTML =
                     `<div class="alert alert-error">${escapeHTML(AppAsync.errorMessage(error, 'Data kuota gagal dimuat.'))}</div>`;
-            } finally {
-                AppAsync.finishOperation(operationId);
             }
         }
 
@@ -2052,9 +2032,7 @@
             if (adminLoadPromises[cacheKey]) return adminLoadPromises[cacheKey];
 
             el.innerHTML = '<div class="loading"><span class="spinner"></span> Memuat...</div>';
-            const operationId = button
-                ? null
-                : AppAsync.startOperation('Memuat kuota...');
+            // Tanpa overlay global: panel sudah menampilkan spinner inline di atas.
             if (button && !setAdminButtonLoading(button, true, 'Memuat...')) return;
 
             adminLoadPromises[cacheKey] = (async () => {
@@ -2118,7 +2096,6 @@
                 } finally {
                     delete adminLoadPromises[cacheKey];
                     if (button) setAdminButtonLoading(button, false);
-                    if (operationId) AppAsync.finishOperation(operationId);
                 }
             })();
             return adminLoadPromises[cacheKey];

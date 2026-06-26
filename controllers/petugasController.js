@@ -69,21 +69,28 @@ const getTugas = async (req, res) => {
 const konfirmasiJadwal = async (req, res) => {
     const { id } = req.params;
     const petugas_id = req.user.id;
+    const conn = await pool.getConnection();
     try {
-        const [rows] = await pool.query(
-            'SELECT * FROM bookings WHERE id = ? AND petugas_id = ?', [id, petugas_id]
+        await conn.beginTransaction();
+        const [rows] = await conn.query(
+            'SELECT * FROM bookings WHERE id = ? AND petugas_id = ? FOR UPDATE', [id, petugas_id]
         );
-        if (rows.length === 0)
+        if (rows.length === 0) {
+            await conn.rollback();
             return res.status(404).json({ message: 'Booking tidak ditemukan' });
+        }
 
         const booking = rows[0];
-        if (!['pending', 'rescheduled_by_user'].includes(booking.status))
+        if (!['pending', 'rescheduled_by_user'].includes(booking.status)) {
+            await conn.rollback();
             return res.status(403).json({ message: 'Status tidak memungkinkan konfirmasi' });
+        }
 
-        await pool.query(
+        await conn.query(
             `UPDATE bookings SET status = 'jadwal_fix', tanggal_fix = tanggal_diminta,
        updated_at = NOW() WHERE id = ?`, [id]
         );
+        await conn.commit();
 
         // Kirim notifikasi
         const [userRows] = await pool.query(
@@ -105,7 +112,10 @@ const konfirmasiJadwal = async (req, res) => {
 
         res.json({ message: 'Jadwal dikonfirmasi' });
     } catch (err) {
+        try { await conn.rollback(); } catch {}
         return serverError(res, err);
+    } finally {
+        conn.release();
     }
 };
 
@@ -287,22 +297,28 @@ const inputHasil = async (req, res) => {
     const { id } = req.params;
     const { catatan_lapangan } = req.body;
     const petugas_id = req.user.id;
+    const conn = await pool.getConnection();
 
     try {
-        const [rows] = await pool.query(
-            'SELECT * FROM bookings WHERE id = ? AND petugas_id = ?', [id, petugas_id]
+        await conn.beginTransaction();
+        const [rows] = await conn.query(
+            'SELECT * FROM bookings WHERE id = ? AND petugas_id = ? FOR UPDATE', [id, petugas_id]
         );
-        if (rows.length === 0)
+        if (rows.length === 0) {
+            await conn.rollback();
             return res.status(404).json({ message: 'Booking tidak ditemukan' });
+        }
 
         const booking = rows[0];
-        if (booking.status !== 'jadwal_fix')
+        if (booking.status !== 'jadwal_fix') {
+            await conn.rollback();
             return res.status(403).json({ message: 'Pemeriksaan belum bisa diinput, jadwal belum fix' });
+        }
 
         const foto_lokasi = req.files?.foto_lokasi?.[0]?.filename || null;
         const foto_risalah = req.files?.foto_risalah?.[0]?.filename || null;
 
-        await pool.query(
+        await conn.query(
             `INSERT INTO hasil_pemeriksaan
         (booking_id, petugas_id, nomor_berkas, foto_lokasi, foto_risalah, catatan_lapangan)
        VALUES (?, ?, ?, ?, ?, ?)
@@ -314,9 +330,10 @@ const inputHasil = async (req, res) => {
             [id, petugas_id, booking.nomor_berkas, foto_lokasi, foto_risalah, catatan_lapangan]
         );
 
-        await pool.query(
+        await conn.query(
             `UPDATE bookings SET status = 'selesai', updated_at = NOW() WHERE id = ?`, [id]
         );
+        await conn.commit();
 
         // Kirim notifikasi
         const [userRows] = await pool.query(
@@ -338,7 +355,10 @@ const inputHasil = async (req, res) => {
 
         res.json({ message: 'Hasil pemeriksaan berhasil disimpan' });
     } catch (err) {
+        try { await conn.rollback(); } catch {}
         return serverError(res, err);
+    } finally {
+        conn.release();
     }
 };
 

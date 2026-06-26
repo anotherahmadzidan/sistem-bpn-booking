@@ -717,6 +717,52 @@ button:disabled {
     color: var(--navy);
 }
 
+/* ============================================================
+   FIELD POLOS DI DALAM MODAL (Ajukan Reschedule, Batalkan, dll)
+   Anak langsung .form-group -> tidak mengganggu input ber-ikon
+   yang dibungkus .input-icon-wrapper.
+   ============================================================ */
+.modal-body .form-group>input,
+.modal-body .form-group>select,
+.modal-body .form-group>textarea {
+    width: 100%;
+    padding: 12px 14px;
+    background-color: #F8FAFC;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    color: var(--text-main);
+    outline: none;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-body .form-group>textarea {
+    min-height: 104px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.modal-body .form-group>input:hover,
+.modal-body .form-group>select:hover,
+.modal-body .form-group>textarea:hover {
+    border-color: #cbd6e4;
+}
+
+.modal-body .form-group>input:focus,
+.modal-body .form-group>select:focus,
+.modal-body .form-group>textarea:focus {
+    border-color: var(--navy);
+    background-color: var(--white);
+    box-shadow: 0 0 0 4px rgba(15, 64, 105, 0.08);
+}
+
+.modal-body .form-group>input::placeholder,
+.modal-body .form-group>textarea::placeholder {
+    color: #94A3B8;
+    font-family: 'Inter', sans-serif;
+}
+
 .input-readonly {
     background-color: #EDF2F7 !important;
     color: #4A5568;
@@ -1347,8 +1393,16 @@ button:disabled {
 .alert-with-icon {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
     line-height: 1.45;
+}
+
+/* Warning di bagian atas modal (Ajukan Reschedule / Batalkan Permohonan):
+   beri jarak ke field di bawahnya + ruang dalam lebih lega agar tidak mepet. */
+.modal-body .alert-warning {
+    margin-bottom: 18px;
+    padding: 13px 15px;
+    line-height: 1.55;
 }
 
 .profile-meta {

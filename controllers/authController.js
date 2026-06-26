@@ -757,6 +757,9 @@ const forgotPassword = async (req, res) => {
     const email = normalizeEmail(req.body.email);
     if (!email) return res.status(400).json({ message: 'Email wajib diisi' });
 
+    // Pesan generik yang sama untuk email terdaftar maupun tidak,
+    // agar tidak membocorkan apakah sebuah email terdaftar (anti-enumeration).
+    const genericMessage = 'Jika email terdaftar, kode OTP reset sandi telah dikirim ke email tersebut.';
     try {
         await ensureOtpSchema();
         const [rows] = await pool.query(
@@ -764,12 +767,15 @@ const forgotPassword = async (req, res) => {
             [email]
         );
 
-        if (rows.length === 0) {
-            return res.json({ message: 'Jika email terdaftar, kode OTP reset sandi akan dikirim.' });
+        if (rows.length > 0) {
+            try {
+                await sendOtp({ userId: rows[0].id, email, purpose: 'password_reset' });
+            } catch (sendErr) {
+                // Jangan bocorkan keberadaan email lewat error (mis. cooldown OTP).
+                console.error('[Forgot Password]', sendErr.code || 'OTP_SEND_FAILED', sendErr.message);
+            }
         }
-
-        await sendOtp({ userId: rows[0].id, email, purpose: 'password_reset' });
-        res.json({ message: 'Kode OTP reset sandi telah dikirim ke email.' });
+        return res.json({ message: genericMessage });
     } catch (err) {
         return authError(res, err);
     }
