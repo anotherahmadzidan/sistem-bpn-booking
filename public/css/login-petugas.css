@@ -4,6 +4,11 @@ Hanya elemen khas halaman login petugas: kartu "Akses Terbatas"
 (info-card) dan tab peran Petugas/Admin (tab-*).
 ============================================================ */
 
+/* Kartu login petugas tanpa aksen "yellow blob" di pojok. */
+.card-accent-corner {
+    display: none;
+}
+
 .info-card {
     width: 100%;
     display: flex;
