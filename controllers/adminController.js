@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
+const uploadDir = require('../config/uploadDir');
 const { ensureNotificationSchema } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
 const {
@@ -547,7 +548,7 @@ const hapusBerkas = async (req, res) => {
         await conn.commit();
 
         await Promise.all(filesToDelete.map(async (file) => {
-            const uploadPath = path.join(__dirname, '..', 'public', 'uploads', path.basename(file));
+            const uploadPath = path.join(uploadDir, path.basename(file));
             try {
                 await fs.promises.unlink(uploadPath);
             } catch {

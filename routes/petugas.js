@@ -5,10 +5,8 @@ const { getTugas, konfirmasiJadwal, tolakJadwal, inputHasil, tolakBerkas } = req
 
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
-fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = require('../config/uploadDir');
 
 const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp']);

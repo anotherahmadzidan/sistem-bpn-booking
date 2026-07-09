@@ -44,6 +44,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+// Sajikan folder upload dari lokasi persisten (env UPLOAD_DIR). Default-nya
+// tetap public/uploads sehingga aman di lokal, tapi di produksi bisa diarahkan
+// ke folder di luar direktori deploy agar foto tidak hilang saat redeploy.
+app.use('/uploads', express.static(require('./config/uploadDir')));
 
 const configuredSlowRequestMs = Number(process.env.SLOW_REQUEST_MS);
 const slowRequestMs = Number.isFinite(configuredSlowRequestMs) && configuredSlowRequestMs > 0
