@@ -37,6 +37,9 @@ Satu sistem responsif untuk login petugas dan administrator.
     --hero-gutter: clamp(24px, 7vw, 44px);
     --card-gutter: clamp(16px, 5.5vw, 26px);
     --card-max: 390px;
+    /* Padding samping isi kartu; juga dipakai margin alert login utama
+       (yang berada di luar .form-fields) agar lebarnya = input & tombol. */
+    --form-pad: 24px;
 }
 
 html {
@@ -211,7 +214,7 @@ FORM
 
 .form-fields,
 .button-group {
-    padding-inline: 24px;
+    padding-inline: var(--form-pad);
 }
 
 .form-fields label {
@@ -351,6 +354,13 @@ FORM
     color: var(--login-danger);
 }
 
+/* Alert login utama berada DI LUAR .form-fields (lihat login.html),
+   jadi lebarnya diatur margin yang mengikuti padding form. */
+#login-success,
+#login-error {
+    margin: 0 var(--form-pad) 16px;
+}
+
 /* ============================================================
 SMALL PHONE: 320-380
 ============================================================ */
@@ -387,9 +397,8 @@ SMALL PHONE: 320-380
         border-radius: 17px;
     }
 
-    .form-fields,
-    .button-group {
-        padding-inline: 18px;
+    :root {
+        --form-pad: 18px;
     }
 
     .form-fields label {
@@ -476,15 +485,14 @@ SHORT PHONE
 */
 
 @media (max-width: 425px) and (max-height: 560px) {
+    :root {
+        --form-pad: 16px;
+    }
+
     .target-card {
         width: 100%;
         padding-bottom: 12px;
         border-radius: 16px;
-    }
-
-    .form-fields,
-    .button-group {
-        padding-inline: 16px;
     }
 
     .form-fields label {
@@ -578,14 +586,13 @@ diklasifikasikan sebagai laptop.
         padding-block: clamp(28px, 5svh, 56px);
     }
 
+    :root {
+        --form-pad: 30px;
+    }
+
     .target-card {
         width: 100%;
         border-radius: 24px;
-    }
-
-    .form-fields,
-    .button-group {
-        padding-inline: 30px;
     }
 
     .form-fields label {
@@ -763,16 +770,15 @@ LAPTOP: 900-1199
         margin-top: 14px;
     }
 
+    :root {
+        --form-pad: 30px;
+    }
+
     .target-subtitle {
         max-width: 100%;
         margin-top: 13px;
         font-size: clamp(14px, 1.5vw, 17px);
         line-height: 1.38;
-    }
-
-    .form-fields,
-    .button-group {
-        padding-inline: 30px;
     }
 }
 
@@ -799,13 +805,12 @@ DESKTOP: 1200+
         line-height: 1.42;
     }
 
-    .login-column {
-        --ls-card-max: 460px;
+    :root {
+        --form-pad: 32px;
     }
 
-    .form-fields,
-    .button-group {
-        padding-inline: 32px;
+    .login-column {
+        --ls-card-max: 460px;
     }
 }
 
@@ -853,6 +858,98 @@ SHORT DESKTOP
     .btn-masuk {
         min-height: 41px;
         padding-block: 9px;
+    }
+}
+
+/* ============================================================
+ULTRA-WIDE: 1600+
+Layar sangat lebar: kartu, form, dan tipografi hero ikut membesar
+(fluid via vw) supaya kedua panel tidak dipenuhi ruang kosong.
+Nilai clamp dipilih menyambung mulus dari breakpoint 1200+.
+============================================================ */
+
+@media (min-width: 1600px) and (orientation: landscape) {
+    .header-area {
+        padding:
+            clamp(32px, 7svh, 72px)
+            clamp(180px, 13vw, 340px)
+            clamp(32px, 7svh, 72px)
+            clamp(88px, 7vw, 190px);
+    }
+
+    .target-logo {
+        width: clamp(88px, 4.6vw, 118px);
+        margin-bottom: 24px;
+    }
+
+    .target-title {
+        font-size: clamp(48px, 3vw, 66px);
+    }
+
+    .title-line {
+        width: clamp(88px, 5.5vw, 132px);
+        height: 5px;
+        margin-top: 18px;
+    }
+
+    .target-subtitle {
+        margin-top: 20px;
+        font-size: clamp(21px, 1.25vw, 27px);
+    }
+
+    .login-column {
+        --ls-card-max: clamp(480px, 30vw, 780px);
+        padding:
+            clamp(32px, 7svh, 72px)
+            clamp(64px, 5vw, 120px)
+            clamp(32px, 7svh, 72px)
+            clamp(110px, 7vw, 180px);
+    }
+
+    :root {
+        --form-pad: clamp(32px, 2.2vw, 56px);
+    }
+
+    .form-fields label {
+        margin-bottom: 8px;
+        font-size: clamp(12px, 0.82vw, 16px);
+    }
+
+    .input-wrapper {
+        margin-bottom: clamp(13px, 1vw, 20px);
+    }
+
+    .form-fields input {
+        min-height: clamp(42px, 2.4vw, 60px);
+        padding-inline: clamp(42px, 2.2vw, 52px);
+        border-radius: 12px;
+        font-size: clamp(13px, 0.9vw, 17px);
+    }
+
+    .input-wrapper .icon-left,
+    .input-wrapper .icon-right {
+        width: clamp(18px, 1vw, 22px);
+        height: clamp(18px, 1vw, 22px);
+    }
+
+    .input-wrapper .icon-left {
+        left: clamp(14px, 0.8vw, 18px);
+    }
+
+    .input-wrapper .icon-right {
+        right: clamp(14px, 0.8vw, 18px);
+    }
+
+    .btn-masuk {
+        min-height: clamp(44px, 2.5vw, 62px);
+        border-radius: 12px;
+        font-size: clamp(14px, 0.95vw, 18px);
+    }
+
+    .alert {
+        padding: clamp(10px, 0.85vw, 16px) clamp(13px, 1.1vw, 22px);
+        border-radius: clamp(8px, 0.6vw, 11px);
+        font-size: clamp(12px, 0.82vw, 16px);
     }
 }
 

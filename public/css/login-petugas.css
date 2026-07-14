@@ -330,3 +330,60 @@ ROLE TABS
         max-width: var(--ls-card-max, 420px);
     }
 }
+
+/* ============================================================
+ULTRA-WIDE: 1600+ — skala tab & kartu info mengikuti login-core
+============================================================ */
+
+@media (min-width: 1600px) and (orientation: landscape) {
+    .info-card {
+        gap: clamp(14px, 1vw, 20px);
+        padding: clamp(14px, 1.2vw, 26px) clamp(20px, 1.6vw, 34px) clamp(14px, 1.2vw, 26px) clamp(14px, 1.2vw, 26px);
+        border-radius: 18px;
+    }
+
+    .info-icon {
+        padding: clamp(9px, 0.65vw, 13px);
+    }
+
+    .info-icon svg {
+        width: clamp(24px, 1.5vw, 34px);
+        height: clamp(24px, 1.5vw, 34px);
+    }
+
+    .info-text {
+        font-size: clamp(11px, 0.8vw, 15.5px);
+    }
+
+    .info-text strong {
+        font-size: clamp(12px, 0.9vw, 17px);
+    }
+
+    .tab-container {
+        gap: clamp(10px, 0.9vw, 16px);
+        margin: clamp(32px, 2.4vw, 48px) 0 clamp(22px, 1.8vw, 34px);
+        padding-inline: clamp(32px, 2.2vw, 56px);
+    }
+
+    .tab-btn {
+        min-height: clamp(54px, 3.3vw, 78px);
+        gap: clamp(9px, 0.8vw, 15px);
+        padding: clamp(10px, 0.9vw, 17px) clamp(11px, 1vw, 19px);
+        border-radius: 14px;
+    }
+
+    .tab-icon {
+        width: clamp(22px, 1.5vw, 31px);
+        height: clamp(22px, 1.5vw, 31px);
+        flex-basis: clamp(22px, 1.5vw, 31px);
+    }
+
+    .tab-text strong {
+        font-size: clamp(12px, 0.88vw, 16.5px);
+    }
+
+    .tab-text span {
+        margin-top: 4px;
+        font-size: clamp(9px, 0.68vw, 13px);
+    }
+}
