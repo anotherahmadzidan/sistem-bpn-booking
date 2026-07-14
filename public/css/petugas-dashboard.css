@@ -9,7 +9,9 @@
     --petugas-blue: #1677ff;
     --petugas-gold: #f6b300;
     --petugas-line: #dce6f5;
-    background: url("/img/admin-bg.svg") center center / cover no-repeat fixed;
+    /* Latar konten tanpa pita navy (lihat catatan di admin.css). Navy sidebar
+       kini digambar oleh elemen .sidebar sendiri, bukan menumpang gambar ini. */
+    background: url("/img/admin-bg-main.png") center center / cover no-repeat fixed;
     color: var(--petugas-ink);
     scrollbar-gutter: stable;
 }
@@ -21,8 +23,12 @@
 .petugas-dashboard .sidebar {
     width: 286px;
     padding: 24px 18px;
-    background: transparent;
-    box-shadow: none;
+    overflow-x: hidden;
+    background:
+        linear-gradient(180deg, rgba(2, 27, 72, 0.1), rgba(3, 55, 126, 0.06)),
+        url("/img/admin-bg-dashboard.svg") center center / cover no-repeat,
+        #052d70;
+    box-shadow: 8px 0 26px rgba(5, 35, 82, 0.12);
 }
 
 .petugas-dashboard .sidebar-header {
@@ -1469,7 +1475,7 @@
         padding: 18px 12px 30px;
         background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(238, 245, 255, 0.94)),
-            url("/img/admin-bg.svg") center top / cover no-repeat;
+            url("/img/admin-bg-main.png") center top / cover no-repeat;
     }
 
     body.petugas-dashboard .petugas-welcome-header {
@@ -1589,7 +1595,7 @@
         overflow-x: hidden;
         background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(238, 245, 255, 0.96)),
-            url("/img/admin-bg.svg") center top / cover no-repeat,
+            url("/img/admin-bg-main.png") center top / cover no-repeat,
             #eef5ff;
     }
 

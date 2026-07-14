@@ -12,7 +12,10 @@
     --admin-surface: rgba(255, 255, 255, 0.92);
     --admin-blue: #1677ff;
     --admin-yellow: #f6b300;
-    background: url("/img/admin-bg.svg") center center / cover no-repeat fixed;
+    /* admin-bg-main.png = admin-bg.svg tanpa pita navy kiri. Pita lama ikut
+       melebar proporsional (20% lebar layar) sehingga meluber melewati sidebar
+       di layar lebar; kini navy sepenuhnya milik elemen .sidebar. */
+    background: url("/img/admin-bg-main.png") center center / cover no-repeat fixed;
     color: var(--admin-ink);
 }
 
@@ -2196,7 +2199,7 @@
         overflow-x: hidden;
         background:
             linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(238, 245, 255, 0.96)),
-            url("/img/admin-bg.svg") center top / cover no-repeat,
+            url("/img/admin-bg-main.png") center top / cover no-repeat,
             #eef5ff;
     }
 
