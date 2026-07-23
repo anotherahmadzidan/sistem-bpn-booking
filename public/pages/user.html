@@ -260,7 +260,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Desa / Kelurahan <span class="req">*</span></label>
+                                <label>Kelurahan/Desa<span class="req">*</span></label>
                                 <div class="input-icon-wrapper">
                                     <svg class="input-inside-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                         stroke-width="2">
@@ -268,7 +268,7 @@
                                         <polyline points="9 22 9 12 15 12 15 22"></polyline>
                                     </svg>
                                     <select id="kelurahan_id">
-                                        <option value="">-- Pilih Kelurahan --</option>
+                                        <option value="">-- Pilih Kelurahan/Desa --</option>
                                     </select>
                                 </div>
                             </div>
@@ -1107,7 +1107,7 @@
         function loadKelurahan() {
             const kecId = document.getElementById('kecamatan_id').value;
             const selKel = document.getElementById('kelurahan_id');
-            selKel.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+            selKel.innerHTML = '<option value="">-- Pilih Kelurahan/Desa --</option>';
             if (!kecId) {
                 setMapLocation(MAP_DEFAULT_CENTER.lat, MAP_DEFAULT_CENTER.lng, MAP_DEFAULT_CENTER.zoom);
                 return;

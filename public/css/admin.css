@@ -1086,9 +1086,12 @@
 }
 
 .admin-dashboard #page-berkas .col-pemohon,
-.admin-dashboard #page-berkas .col-kecamatan,
-.admin-dashboard #page-berkas .col-kelurahan {
+.admin-dashboard #page-berkas .col-kecamatan{
     width: 10%;
+}
+
+.admin-dashboard #page-berkas .col-kelurahan{
+    width: 12%;
 }
 
 .admin-dashboard #page-berkas .col-petugas {
@@ -1111,6 +1114,14 @@
     width: 13%;
 }
 
+
+.admin-dashboard #page-berkas thead th:nth-child(4) {
+    min-width: 130px;
+    white-space: normal;
+}
+.admin-dashboard #page-berkas thead th:nth-child(5) {
+    min-width: 120px;
+}
 .admin-dashboard #page-berkas th:nth-child(6),
 .admin-dashboard #page-berkas td:nth-child(6),
 .admin-dashboard #page-berkas th:nth-child(7),
@@ -2041,7 +2052,7 @@
 
     .admin-dashboard #tabel-dashboard td:nth-child(4)::before,
     .admin-dashboard #tabel-berkas td:nth-child(4)::before {
-        content: "Kelurahan";
+        content: "Kelurahan/Desa";
     }
 
     .admin-dashboard #tabel-dashboard td:nth-child(5)::before,
