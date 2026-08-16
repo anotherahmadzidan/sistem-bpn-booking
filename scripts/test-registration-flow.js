@@ -403,8 +403,12 @@ async function runRegistration(currentScenario, email, cookie = '') {
     }, completeResponse);
     assert.strictEqual(completeResponse.statusCode, 201);
     assert.strictEqual(completeResponse.body.status, 'active');
-    assert.ok(completeResponse.body.token);
     assert.strictEqual(completeResponse.body.role, 'user');
+    // Token sesi TIDAK boleh ikut di badan respons: tempatnya di cookie
+    // httpOnly supaya tidak bisa dibaca JavaScript.
+    assert.strictEqual(completeResponse.body.token, undefined);
+    assert.ok(completeResponse.cookies.has('bpn_session'), 'cookie sesi harus dipasang');
+    assert.ok(completeResponse.cookies.has('bpn_csrf'), 'cookie CSRF harus dipasang');
     assert.strictEqual(insertedUserCount, 1);
     assert.strictEqual(insertedPhone, '6281200000071');
     assert.strictEqual(pendingDeletedCount, 1);

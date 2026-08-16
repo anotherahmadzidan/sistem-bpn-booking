@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const {
+    logout,
     registerUser,
     loginUser,
     verifyEmailOtp,
@@ -37,5 +38,9 @@ router.patch('/notifications/read', verifyToken(['user', 'petugas', 'admin']), m
 
 router.post('/login-petugas', authLimiter, loginPetugas);
 router.post('/login-admin', authLimiter, loginAdmin);
+
+// Menghapus cookie sesi di sisi server. Tanpa ini, "keluar" hanya
+// membersihkan browser sementara tokennya tetap sah sampai kedaluwarsa.
+router.post('/logout', logout);
 
 module.exports = router;

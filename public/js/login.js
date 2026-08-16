@@ -3,7 +3,7 @@
    Skrip klasik (bukan module) agar fungsi tetap global untuk onclick="...". */
 
 // Redirect kalau sudah login
-if (localStorage.getItem('token') && localStorage.getItem('role') === 'user') {
+if (localStorage.getItem('role') === 'user') {
   window.location.href = '/user';
 }
 
@@ -119,7 +119,6 @@ function showCompleteProfile(data = {}) {
 }
 
 function enterUserPage(data) {
-  localStorage.setItem('token', data.token);
   localStorage.setItem('nama', data.nama);
   localStorage.setItem('role', data.role);
   sessionStorage.removeItem('registration_completion_token');
@@ -139,7 +138,11 @@ function followRegistrationStatus(data, fallbackEmail) {
     return true;
   }
   if (data.status === 'active') {
-    if (data.token) {
+    // Penanda sesi baru adalah adanya `role` pada respons - server sudah
+    // memasang cookie sesi. Dulu penandanya `data.token`, tetapi token kini
+    // tidak lagi dikirim di badan respons. Respons "email sudah terdaftar"
+    // juga berstatus 'active' namun tanpa role, sehingga tetap terbedakan.
+    if (data.role) {
       enterUserPage(data);
       return true;
     }
@@ -190,7 +193,7 @@ async function login(button) {
   try {
     const res = await AppAsync.fetchWithTimeout('/api/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
       body: JSON.stringify({ identifier, password })
     });
     const data = await res.json();
@@ -203,8 +206,7 @@ async function login(button) {
       showAlert('login-error', data.message);
       return;
     }
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('nama', data.nama);
+      localStorage.setItem('nama', data.nama);
     localStorage.setItem('role', data.role);
     window.location.href = '/user';
   } catch (error) {
@@ -226,7 +228,7 @@ async function register(button) {
   try {
     const res = await AppAsync.fetchWithTimeout('/api/auth/register', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
       body: JSON.stringify({ email })
     });
     const data = await res.json();
@@ -262,7 +264,7 @@ async function verifyEmailOtp(button) {
   try {
     const res = await AppAsync.fetchWithTimeout('/api/auth/verify-email', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
       body: JSON.stringify({ email, otp })
     });
     const data = await res.json();
@@ -273,7 +275,9 @@ async function verifyEmailOtp(button) {
     if (followRegistrationStatus(data, email)) {
       return;
     }
-    if (data.token) {
+    // Sama seperti di followRegistrationStatus: penanda sesi baru adalah
+    // `role`, bukan `token` - token ada di cookie httpOnly.
+    if (data.role) {
       enterUserPage(data);
       return;
     }
@@ -317,7 +321,7 @@ async function completeRegistration(button) {
   try {
     const res = await AppAsync.fetchWithTimeout('/api/auth/complete-registration', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
       body: JSON.stringify({
         registration_token: registrationCompletionToken,
         nama_lengkap,
@@ -356,7 +360,7 @@ async function resendVerificationOtp(button) {
   try {
     const res = await AppAsync.fetchWithTimeout('/api/auth/resend-verification', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
       body: JSON.stringify({ email })
     });
     const data = await res.json();
@@ -390,7 +394,7 @@ async function requestPasswordReset(button) {
   try {
     const res = await AppAsync.fetchWithTimeout('/api/auth/forgot-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
       body: JSON.stringify({ email })
     });
     const data = await res.json();
@@ -422,7 +426,7 @@ async function submitPasswordReset(button) {
   try {
     const res = await AppAsync.fetchWithTimeout('/api/auth/reset-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
       body: JSON.stringify({ email, otp, password })
     });
     const data = await res.json();

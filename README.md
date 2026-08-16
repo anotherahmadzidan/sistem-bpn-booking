@@ -90,6 +90,8 @@ docs/                  catatan audit dan deploy
 npm run dev       # jalankan dengan auto-reload
 npm start         # jalankan biasa
 npm test          # lint + semua pemeriksaan
+npm run test:xss  # regresi escaping XSS
+npm run test:sesi # sesi cookie & proteksi CSRF
 npm run lint      # ESLint saja
 npm run test:db   # cek koneksi database
 npm run test:email # cek pengiriman email
@@ -114,3 +116,13 @@ punya batas waktu antrean.
 
 **JavaScript halaman adalah skrip klasik, bukan module.** Fungsinya sengaja
 global supaya atribut `onclick="..."` di HTML tetap berfungsi.
+
+**Token JWT tidak pernah menyentuh JavaScript.** Sesi disimpan di cookie
+`httpOnly` (`bpn_session`) sehingga celah XSS tidak bisa membacanya. Yang ada di
+`localStorage` hanya nama dan peran untuk keperluan tampilan — bukan otorisasi.
+
+**Setiap permintaan yang mengubah data wajib menyertakan header
+`X-CSRF-Token`.** Nilainya dibaca dari cookie `bpn_csrf` lewat `csrfToken()` di
+`common.js`; `headerSesi(method)` sudah melakukannya otomatis. Ini diperlukan
+karena cookie dikirim browser secara otomatis, termasuk pada permintaan yang
+dipicu situs lain. `npm run test:sesi` menjaga keduanya tetap terpasang.

@@ -61,7 +61,10 @@ const browserGlobals = {
     formatDateTime: 'readonly',
     formatWaktu: 'readonly',
     safeMapsUrl: 'readonly',
-    safeWhatsAppUrl: 'readonly'
+    safeWhatsAppUrl: 'readonly',
+    csrfToken: 'readonly',
+    headerSesi: 'readonly',
+    akhiriSesi: 'readonly'
 };
 
 const sharedRules = {

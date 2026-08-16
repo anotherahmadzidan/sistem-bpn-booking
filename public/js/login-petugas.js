@@ -36,7 +36,7 @@ async function loginPetugas(button) {
     try {
         const res = await AppAsync.fetchWithTimeout('/api/auth/login-petugas', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
             body: JSON.stringify({ nip, password })
         });
         const data = await res.json();
@@ -45,7 +45,6 @@ async function loginPetugas(button) {
             errEl.style.display = 'flex';
             return;
         }
-        localStorage.setItem('token', data.token);
         localStorage.setItem('nama', data.nama);
         localStorage.setItem('role', 'petugas');
         window.location.href = '/petugas';
@@ -72,7 +71,7 @@ async function loginAdmin(button) {
     try {
         const res = await AppAsync.fetchWithTimeout('/api/auth/login-admin', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
             body: JSON.stringify({ username, password })
         });
         const data = await res.json();
@@ -81,7 +80,6 @@ async function loginAdmin(button) {
             errEl.style.display = 'flex';
             return;
         }
-        localStorage.setItem('token', data.token);
         localStorage.setItem('nama', data.nama);
         localStorage.setItem('role', data.role);
         window.location.href = '/admin';

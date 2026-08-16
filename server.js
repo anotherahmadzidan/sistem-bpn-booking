@@ -118,6 +118,11 @@ app.get('/api/health', async (req, res) => {
 // per router (authLimiter, writeLimiter).
 app.use('/api', require('./middleware/rateLimit').apiLimiter);
 
+// Sesi kini memakai cookie, yang dikirim browser secara otomatis. Pemeriksaan
+// token CSRF wajib ada agar situs lain tidak bisa memicu aksi atas nama
+// pengguna yang sedang login.
+app.use('/api', require('./middleware/csrf').verifyCsrf);
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/booking', require('./routes/booking'));

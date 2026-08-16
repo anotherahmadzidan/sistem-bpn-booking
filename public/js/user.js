@@ -2,11 +2,12 @@
    bisa di-lint, di-cache browser, dan di-review terpisah dari markup.
    Skrip klasik (bukan module) agar fungsi tetap global untuk onclick="...". */
 
-const token = localStorage.getItem('token');
 const nama = localStorage.getItem('nama');
 const role = localStorage.getItem('role');
 
-if (!token || role !== 'user') {
+// Penjaga tampilan saja - otorisasi sesungguhnya ada di cookie sesi yang
+// diperiksa server. Nilai di localStorage tidak lagi memuat token.
+if (role !== 'user') {
     localStorage.clear();
     window.location.href = '/';
 }
@@ -480,9 +481,10 @@ function showPage(page) {
 async function apiFetch(url, options = {}) {
     const res = await AppAsync.fetchWithTimeout(url, {
         ...options,
+        credentials: 'same-origin',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token,
+            ...headerSesi(options.method),
             ...(options.headers || {})
         }
     });
@@ -910,12 +912,11 @@ async function submitReschedule() {
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+// Sesi berada di cookie httpOnly, jadi keluar harus dilakukan server.
+// Menghapus localStorage saja tidak membatalkan sesi apa pun.
 function logout(button) {
     setButtonLoading(button || document.getElementById('btn-logout'), true, 'Keluar...');
-    setTimeout(() => {
-        localStorage.clear();
-        window.location.href = '/';
-    }, 120);
+    akhiriSesi('/');
 }
 
 function dateOnly(d) {

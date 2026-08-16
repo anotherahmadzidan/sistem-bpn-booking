@@ -92,6 +92,55 @@ function safeMapsUrl(koordinat) {
     return 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng);
 }
 
+/* ------------------------------------------------------------------ *
+ * Sesi
+ *
+ * Token JWT TIDAK lagi disimpan di localStorage. Token berada di cookie
+ * httpOnly yang tidak dapat dibaca JavaScript, sehingga celah XSS tidak
+ * bisa mencurinya. Browser mengirim cookie itu otomatis, jadi tidak ada
+ * header Authorization yang perlu disusun di sini.
+ *
+ * Yang tersisa di localStorage hanya nama dan peran - dipakai untuk
+ * menampilkan sapaan dan memilih halaman, bukan untuk otorisasi. Otorisasi
+ * sepenuhnya dilakukan server; kalau nilai itu dipalsukan, API tetap 401.
+ * ------------------------------------------------------------------ */
+
+/** Membaca cookie CSRF yang dipasang server saat login. */
+function csrfToken() {
+    var found = String(document.cookie || '')
+        .split(';')
+        .map(function (part) { return part.trim(); })
+        .find(function (part) { return part.indexOf('bpn_csrf=') === 0; });
+    return found ? decodeURIComponent(found.slice('bpn_csrf='.length)) : '';
+}
+
+var METODE_AMAN = ['GET', 'HEAD', 'OPTIONS'];
+
+/**
+ * Header yang harus menyertai setiap permintaan API.
+ * Token CSRF hanya diperlukan untuk metode yang mengubah data.
+ */
+function headerSesi(method) {
+    var upper = String(method || 'GET').toUpperCase();
+    if (METODE_AMAN.indexOf(upper) !== -1) return {};
+    return { 'X-CSRF-Token': csrfToken() };
+}
+
+/** Menghapus sesi di server lalu membersihkan data tampilan di browser. */
+async function akhiriSesi(tujuan) {
+    try {
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRF-Token': csrfToken() }
+        });
+    } catch {
+        // Kegagalan jaringan tidak boleh menahan pengguna di halaman.
+    }
+    localStorage.clear();
+    window.location.href = tujuan;
+}
+
 /** Tautan WhatsApp dari nomor HP Indonesia; null bila nomornya tidak layak. */
 function safeWhatsAppUrl(noTelepon) {
     var digits = String(noTelepon == null ? '' : noTelepon)

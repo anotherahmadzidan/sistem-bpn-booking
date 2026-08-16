@@ -139,16 +139,19 @@ assert.strictEqual(
     'completion-token'
 );
 
+// Respons login tidak lagi memuat token: sesi dipasang server sebagai cookie
+// httpOnly. Halaman hanya menyimpan data tampilan.
 vm.runInContext(
     `followRegistrationStatus({
         status: 'active',
-        token: 'user-token',
         nama: 'Pemohon Test',
         role: 'user'
     });`,
     context
 );
-assert.strictEqual(localValues.get('token'), 'user-token');
+assert.strictEqual(localValues.get('token'), undefined,
+    'token tidak boleh disimpan di localStorage');
+assert.strictEqual(localValues.get('nama'), 'Pemohon Test');
 assert.strictEqual(localValues.get('role'), 'user');
 assert.strictEqual(context.window.location.href, '/user');
 

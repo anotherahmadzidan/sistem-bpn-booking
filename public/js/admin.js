@@ -2,11 +2,12 @@
    bisa di-lint, di-cache browser, dan di-review terpisah dari markup.
    Skrip klasik (bukan module) agar fungsi tetap global untuk onclick="...". */
 
-    const token = localStorage.getItem('token');
     const nama = localStorage.getItem('nama');
     const role = localStorage.getItem('role');
 
-    if (!token || role !== 'admin') {
+    // Penjaga tampilan saja - otorisasi sesungguhnya ada di cookie sesi yang
+    // diperiksa server. Nilai di localStorage tidak lagi memuat token.
+    if (role !== 'admin') {
         localStorage.clear();
         window.location.href = '/login-petugas';
     }
@@ -84,9 +85,10 @@
     async function apiFetch(url, options = {}) {
         const res = await AppAsync.fetchWithTimeout(url, {
             ...options,
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token,
+                ...headerSesi(options.method),
                 ...(options.headers || {})
             }
         });
@@ -1276,12 +1278,11 @@
     }
 
     function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    // Sesi berada di cookie httpOnly, jadi keluar harus dilakukan server.
+    // Menghapus localStorage saja tidak membatalkan sesi apa pun.
     function logout(button) {
         if (!setAdminButtonLoading(button || document.getElementById('btn-admin-logout'), true, 'Keluar...')) return;
-        window.setTimeout(() => {
-            localStorage.clear();
-            window.location.href = '/login-petugas';
-        }, 100);
+        akhiriSesi('/login-petugas');
     }
 
     function badgeStatus(status) {

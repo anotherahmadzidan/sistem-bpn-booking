@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { readAuthToken } = require('../utils/sesi');
 require('dotenv').config();
 
 // Peran istimewa yang statusnya harus diperiksa ulang ke database.
@@ -55,8 +56,9 @@ async function isAccountUsable(role, id) {
 }
 
 const verifyToken = (role) => async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    // Sumber utama adalah cookie httpOnly; header Authorization tetap
+    // diterima untuk klien non-browser.
+    const { token } = readAuthToken(req);
 
     if (!token) return res.status(401).json({ message: 'Token tidak ditemukan' });
 

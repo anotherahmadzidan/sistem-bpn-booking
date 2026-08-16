@@ -4,6 +4,11 @@ const jwt = require('jsonwebtoken');
 const { ensureNotificationSchema } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
 const {
+    parseCookies,
+    setSessionCookies,
+    clearSessionCookies
+} = require('../utils/sesi');
+const {
     normalizeIndonesianPhone,
     requireIndonesianPhone,
     assertPhoneAvailable,
@@ -44,6 +49,13 @@ const generateRegistrationToken = (pendingRegistrationId, email) =>
 
 const registrationResumeCookieName = 'bpn_registration_resume';
 
+// Membalas login: token dipasang sebagai cookie httpOnly, TIDAK dikirim di
+// badan respons. Frontend tidak perlu - dan tidak boleh - menyentuh token.
+function balasSesiBaru(res, { token, nama, role, status = 200, extra = {} }) {
+    setSessionCookies(res, token);
+    return res.status(status).json({ nama, role, ...extra });
+}
+
 const MIN_PASSWORD_LENGTH = 8;
 const KREDENSIAL_SALAH = 'Email/No. HP atau kata sandi salah.';
 const KREDENSIAL_ADMIN_SALAH = 'Username atau kata sandi salah.';
@@ -61,20 +73,6 @@ const generateRegistrationResumeToken = (pendingRegistrationId, email) =>
         process.env.JWT_SECRET,
         { expiresIn: `${profileCompletionTrustHours}h` }
     );
-
-function parseCookies(req) {
-    return String(req.headers?.cookie || '')
-        .split(';')
-        .map(part => part.trim())
-        .filter(Boolean)
-        .reduce((cookies, part) => {
-            const separator = part.indexOf('=');
-            if (separator <= 0) return cookies;
-            const key = decodeURIComponent(part.slice(0, separator));
-            cookies[key] = decodeURIComponent(part.slice(separator + 1));
-            return cookies;
-        }, {});
-}
 
 function hasValidRegistrationResume(req, pendingRegistration) {
     const token = parseCookies(req)[registrationResumeCookieName];
@@ -455,8 +453,11 @@ const loginUser = async (req, res) => {
             });
         }
 
-        const token = generateToken({ id: user.id, nama: user.nama_lengkap, role: 'user' });
-        res.json({ token, nama: user.nama_lengkap, role: 'user' });
+        return balasSesiBaru(res, {
+            token: generateToken({ id: user.id, nama: user.nama_lengkap, role: 'user' }),
+            nama: user.nama_lengkap,
+            role: 'user'
+        });
     } catch (err) {
         return authError(res, err);
     }
@@ -488,13 +489,15 @@ const verifyEmailOtp = async (req, res) => {
             if (!user) {
                 return res.status(400).json({ message: 'Akun tidak ditemukan. Silakan daftar ulang.' });
             }
-            return res.json({
-                status: 'active',
-                code: 'ACCOUNT_COMPLETED',
-                message: 'Email berhasil diverifikasi.',
+            return balasSesiBaru(res, {
                 token: generateToken({ id: user.id, nama: user.nama_lengkap, role: 'user' }),
                 nama: user.nama_lengkap,
-                role: 'user'
+                role: 'user',
+                extra: {
+                    status: 'active',
+                    code: 'ACCOUNT_COMPLETED',
+                    message: 'Email berhasil diverifikasi.'
+                }
             });
         }
 
@@ -645,18 +648,20 @@ const completeRegistration = async (req, res) => {
         await connection.commit();
         clearRegistrationResumeCookie(res);
 
-        const token = generateToken({
-            id: insertResult.insertId,
+        return balasSesiBaru(res, {
+            token: generateToken({
+                id: insertResult.insertId,
+                nama: nama_lengkap,
+                role: 'user'
+            }),
             nama: nama_lengkap,
-            role: 'user'
-        });
-        return res.status(201).json({
-            status: 'active',
-            code: 'ACCOUNT_COMPLETED',
-            message: 'Akun berhasil dibuat.',
-            token,
-            nama: nama_lengkap,
-            role: 'user'
+            role: 'user',
+            status: 201,
+            extra: {
+                status: 'active',
+                code: 'ACCOUNT_COMPLETED',
+                message: 'Akun berhasil dibuat.'
+            }
         });
     } catch (err) {
         if (connection) {
@@ -846,8 +851,11 @@ const loginPetugas = async (req, res) => {
         if (!petugas || !valid)
             return res.status(401).json({ message: 'NIP atau password salah, atau akun nonaktif.' });
 
-        const token = generateToken({ id: petugas.id, nama: petugas.nama_lengkap, role: 'petugas' });
-        res.json({ token, nama: petugas.nama_lengkap, role: 'petugas' });
+        return balasSesiBaru(res, {
+            token: generateToken({ id: petugas.id, nama: petugas.nama_lengkap, role: 'petugas' }),
+            nama: petugas.nama_lengkap,
+            role: 'petugas'
+        });
     } catch (err) {
         return serverError(res, err);
     }
@@ -870,8 +878,11 @@ const loginAdmin = async (req, res) => {
         if (!admin || !valid)
             return res.status(401).json({ message: KREDENSIAL_ADMIN_SALAH });
 
-        const token = generateToken({ id: admin.id, nama: admin.nama_lengkap, role: 'admin' });
-        res.json({ token, nama: admin.nama_lengkap, role: 'admin' });
+        return balasSesiBaru(res, {
+            token: generateToken({ id: admin.id, nama: admin.nama_lengkap, role: 'admin' }),
+            nama: admin.nama_lengkap,
+            role: 'admin'
+        });
     } catch (err) {
         return serverError(res, err);
     }
@@ -940,7 +951,17 @@ const markAllRead = async (req, res) => {
     }
 };
 
+// Sebelumnya logout hanya menghapus localStorage di browser; tokennya sendiri
+// tetap sah sampai kedaluwarsa. Dengan cookie httpOnly, penghapusan harus
+// dilakukan server.
+const logout = async (req, res) => {
+    clearSessionCookies(res);
+    clearRegistrationResumeCookie(res);
+    return res.json({ message: 'Anda telah keluar.' });
+};
+
 module.exports = {
+    logout,
     registerUser,
     loginUser,
     verifyEmailOtp,

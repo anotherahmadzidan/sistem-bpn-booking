@@ -2,11 +2,12 @@
    bisa di-lint, di-cache browser, dan di-review terpisah dari markup.
    Skrip klasik (bukan module) agar fungsi tetap global untuk onclick="...". */
 
-const token = localStorage.getItem('token');
 const nama = localStorage.getItem('nama');
 const role = localStorage.getItem('role');
 
-if (!token || role !== 'petugas') {
+// Penjaga tampilan saja - otorisasi sesungguhnya ada di cookie sesi yang
+// diperiksa server. Nilai di localStorage tidak lagi memuat token.
+if (role !== 'petugas') {
     localStorage.clear();
     window.location.href = '/login-petugas';
 }
@@ -64,7 +65,8 @@ function showPage(page) {
 async function apiFetch(url, options = {}) {
     const res = await AppAsync.fetchWithTimeout(url, {
         ...options,
-        headers: { 'Authorization': 'Bearer ' + token, ...(options.headers || {}) }
+        credentials: 'same-origin',
+        headers: { ...headerSesi(options.method), ...(options.headers || {}) }
     });
     if (res.status === 401) {
         localStorage.clear();
@@ -543,7 +545,7 @@ async function submitHasil() {
     try {
         const result = await AppAsync.uploadWithProgress('/api/petugas/hasil/' + bookingId, {
             method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token },
+            headers: { 'X-CSRF-Token': csrfToken() },
             body: formData,
             onProgress: percent => {
                 progressBar.style.width = percent + '%';
@@ -584,11 +586,12 @@ function closeModal(id, force = false) {
     if (AppAsync.isBusy() && !force) return;
     document.getElementById(id).classList.remove('show');
 }
+// Sesi berada di cookie httpOnly, jadi keluar harus dilakukan server.
+// Menghapus localStorage saja tidak membatalkan sesi apa pun.
 function logout(button) {
     const btn = button || document.getElementById('btn-petugas-logout');
     if (!setPetugasButtonLoading(btn, true, 'Keluar...')) return;
-    localStorage.clear();
-    window.location.href = '/login-petugas';
+    akhiriSesi('/login-petugas');
 }
 
 function dateOnly(d) {
