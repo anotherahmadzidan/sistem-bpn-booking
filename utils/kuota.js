@@ -32,6 +32,14 @@ const QUOTA_TYPES = {
 
 let quotaSchemaPromise = null;
 
+// Penanda baris kuota yang dibuat otomatis hanya untuk MENCATAT pemakaian,
+// bukan untuk membatasi. Baris seperti ini muncul ketika sebuah booking masuk
+// pada tanggal yang belum pernah diatur kuotanya oleh admin, dan diperlakukan
+// sebagai "tanpa batas" sampai admin benar-benar mengisi kuota.
+const UNCONFIGURED_SOURCE = 'belum_diatur';
+
+const isUnconfiguredRow = (row) => Boolean(row) && row.source === UNCONFIGURED_SOURCE;
+
 const isDateOnly = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
 
 const dateRange = (start, end) => {
@@ -223,8 +231,8 @@ async function getEffectiveKuota({ tipe, id, tanggal }) {
     await ensureQuotaSchema();
     const config = getQuotaType(tipe);
     const fields = config.supportsUnlimited
-        ? 'kuota_max, terisi, is_unlimited, set_order'
-        : 'kuota_max, terisi, 0 AS is_unlimited, set_order';
+        ? 'kuota_max, terisi, is_unlimited, source, set_order'
+        : 'kuota_max, terisi, 0 AS is_unlimited, source, set_order';
 
     const [rows] = await pool.query(
         `SELECT ${fields}
@@ -233,7 +241,9 @@ async function getEffectiveKuota({ tipe, id, tanggal }) {
         [id, tanggal]
     );
 
-    const dateQuota = rows[0] || null;
+    // Baris pencatat pemakaian belum mewakili batas apa pun, jadi diabaikan
+    // saat menghitung kuota efektif (tetap dianggap belum dikonfigurasi).
+    const dateQuota = isUnconfiguredRow(rows[0]) ? null : (rows[0] || null);
     const defaultQuota = await getDefaultQuota(tipe, id);
     const kuota = pickEffectiveQuota({
         dateQuota,
@@ -259,16 +269,19 @@ async function getEffectiveKuota({ tipe, id, tanggal }) {
 
 const ensureAndLockKuota = async (conn, { tipe, table, column, id, tanggal, supportsUnlimited }) => {
     const fields = supportsUnlimited
-        ? 'kuota_max, terisi, is_unlimited, set_order'
-        : 'kuota_max, terisi, 0 AS is_unlimited, set_order';
+        ? 'kuota_max, terisi, is_unlimited, source, set_order'
+        : 'kuota_max, terisi, 0 AS is_unlimited, source, set_order';
 
-    let [rows] = await conn.query(
-        `SELECT ${fields} FROM ${table}
-         WHERE ${column} = ? AND tanggal = ? FOR UPDATE`,
-        [id, tanggal]
-    );
+    const selectLocked = async () => {
+        const [found] = await conn.query(
+            `SELECT ${fields} FROM ${table}
+             WHERE ${column} = ? AND tanggal = ? FOR UPDATE`,
+            [id, tanggal]
+        );
+        return found[0] || null;
+    };
 
-    const dateQuota = rows[0] || null;
+    let row = await selectLocked();
 
     const [defaults] = await conn.query(
         `SELECT kuota_max, is_unlimited, set_order
@@ -277,6 +290,35 @@ const ensureAndLockKuota = async (conn, { tipe, table, column, id, tanggal, supp
         [tipe, id]
     );
     const defaultQuota = defaults[0];
+
+    // Belum ada kuota tanggal MAUPUN kuota default: perilakunya tetap "tanpa
+    // batas" seperti sebelumnya, tetapi barisnya kini dibuat lebih dulu.
+    //
+    // Sebelum perbaikan ini baris tersebut tidak pernah ada, sehingga UPDATE
+    // penambah `terisi` di reserveKuotaAktif tidak mengenai baris mana pun dan
+    // pemakaian tidak tercatat sama sekali. Akibatnya, begitu admin akhirnya
+    // mengisi kuota untuk tanggal itu, hitungan `terisi` mulai dari nol padahal
+    // booking sudah masuk - kuota terlampaui tanpa peringatan (overbooking).
+    if (!defaultQuota && (!row || isUnconfiguredRow(row))) {
+        if (!row) {
+            const columnList = supportsUnlimited
+                ? `${column}, tanggal, kuota_max, terisi, is_unlimited, source, set_order`
+                : `${column}, tanggal, kuota_max, terisi, source, set_order`;
+            const placeholders = supportsUnlimited ? '?, ?, 0, 0, 1, ?, 0' : '?, ?, 0, 0, ?, 0';
+            await conn.query(
+                `INSERT INTO ${table} (${columnList})
+                 VALUES (${placeholders})
+                 ON DUPLICATE KEY UPDATE ${column} = VALUES(${column})`,
+                [id, tanggal, UNCONFIGURED_SOURCE]
+            );
+            row = await selectLocked();
+        }
+        // is_unlimited dipaksa 1: tabel kuota_petugas tidak punya kolom itu,
+        // dan tanpa ini baris pencatat (kuota_max = 0) akan terbaca "penuh".
+        return row ? { ...row, is_unlimited: 1 } : null;
+    }
+
+    const dateQuota = isUnconfiguredRow(row) ? null : row;
     const effective = pickEffectiveQuota({
         dateQuota,
         defaultQuota,
@@ -309,13 +351,10 @@ const ensureAndLockKuota = async (conn, { tipe, table, column, id, tanggal, supp
         values
     );
 
-    [rows] = await conn.query(
-        `SELECT ${fields} FROM ${table}
-         WHERE ${column} = ? AND tanggal = ? FOR UPDATE`,
-        [id, tanggal]
-    );
-
-    return rows[0] || null;
+    // `terisi` sengaja tidak ikut ditimpa di ON DUPLICATE KEY UPDATE di atas,
+    // sehingga pemakaian yang sudah tercatat tetap terbawa saat kuota default
+    // mulai berlaku pada tanggal ini.
+    return selectLocked();
 };
 
 const reserveKuotaAktif = async (conn, booking, tanggal) => {
@@ -379,65 +418,48 @@ async function setKuotaHarian({ tipe, id, kuota_max, is_unlimited }) {
     const max = normalizeQuotaMax(kuota_max, Boolean(unlimited));
     const setOrder = newSetOrder();
 
-    await pool.query(
-        `INSERT INTO kuota_default (tipe, target_id, kuota_max, is_unlimited, set_order)
-         VALUES (?, ?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE
-            kuota_max = VALUES(kuota_max),
-            is_unlimited = VALUES(is_unlimited),
-            set_order = VALUES(set_order),
-            updated_at = NOW()`,
-        [tipe, id, max, unlimited, setOrder]
-    );
+    // Kedua penulisan di bawah harus jadi satu kesatuan: bila hanya salah satu
+    // yang berhasil, kuota default dan baris tanggal jadi tidak sinkron.
+    const conn = await pool.getConnection();
+    try {
+        await conn.beginTransaction();
 
-    if (config.supportsUnlimited) {
-        await pool.query(
-            `UPDATE ${config.table}
-             SET kuota_max = ?, is_unlimited = ?, set_order = ?
-             WHERE ${config.column} = ? AND source = 'setiap_hari'`,
-            [max, unlimited, setOrder, id]
-        );
-        return;
-    }
-
-    await pool.query(
-        `UPDATE ${config.table}
-         SET kuota_max = ?, set_order = ?
-         WHERE ${config.column} = ? AND source = 'setiap_hari'`,
-        [max, setOrder, id]
-    );
-}
-
-async function setKuotaTanggal({ tipe, id, tanggal, kuota_max, is_unlimited, set_order, conn = pool }) {
-    const config = getQuotaType(tipe);
-    const unlimited = config.supportsUnlimited && is_unlimited ? 1 : 0;
-    const max = normalizeQuotaMax(kuota_max, Boolean(unlimited));
-    const setOrder = set_order || newSetOrder();
-
-    if (config.supportsUnlimited) {
         await conn.query(
-            `INSERT INTO ${config.table} (${config.column}, tanggal, kuota_max, terisi, is_unlimited, source, set_order)
-             VALUES (?, ?, ?, 0, ?, 'tanggal', ?)
+            `INSERT INTO kuota_default (tipe, target_id, kuota_max, is_unlimited, set_order)
+             VALUES (?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 kuota_max = VALUES(kuota_max),
                 is_unlimited = VALUES(is_unlimited),
-                source = 'tanggal',
-                set_order = VALUES(set_order)`,
-            [id, tanggal, max, unlimited, setOrder]
+                set_order = VALUES(set_order),
+                updated_at = NOW()`,
+            [tipe, id, max, unlimited, setOrder]
         );
-        return;
-    }
 
-    await conn.query(
-        `INSERT INTO ${config.table} (${config.column}, tanggal, kuota_max, terisi, source, set_order)
-         VALUES (?, ?, ?, 0, 'tanggal', ?)
-         ON DUPLICATE KEY UPDATE
-            kuota_max = VALUES(kuota_max),
-            source = 'tanggal',
-            set_order = VALUES(set_order)`,
-        [id, tanggal, max, setOrder]
-    );
+        if (config.supportsUnlimited) {
+            await conn.query(
+                `UPDATE ${config.table}
+                 SET kuota_max = ?, is_unlimited = ?, set_order = ?
+                 WHERE ${config.column} = ? AND source = 'setiap_hari'`,
+                [max, unlimited, setOrder, id]
+            );
+        } else {
+            await conn.query(
+                `UPDATE ${config.table}
+                 SET kuota_max = ?, set_order = ?
+                 WHERE ${config.column} = ? AND source = 'setiap_hari'`,
+                [max, setOrder, id]
+            );
+        }
+
+        await conn.commit();
+    } catch (err) {
+        try { await conn.rollback(); } catch {}
+        throw err;
+    } finally {
+        conn.release();
+    }
 }
+
 
 async function setKuotaRentang({ tipe, id, tanggal_mulai, tanggal_selesai, kuota_max, is_unlimited }) {
     await ensureQuotaSchema();
@@ -504,6 +526,8 @@ async function setKuotaRentang({ tipe, id, tanggal_mulai, tanggal_selesai, kuota
 
 module.exports = {
     QUOTA_TYPES,
+    UNCONFIGURED_SOURCE,
+    isUnconfiguredRow,
     ensureQuotaSchema,
     getEffectiveKuota,
     reserveKuotaAktif,

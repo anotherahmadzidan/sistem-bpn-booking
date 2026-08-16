@@ -1,9 +1,12 @@
 const pool = require('../config/db');
-const { kirimNotifikasi, kirimNotifikasiAdmin } = require('../utils/notifikasi');
+const { kirimNotifikasi, kirimNotifikasiAdmin, kirimNotifikasiAman } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
 const { reserveKuotaAktif, kurangiKuotaAktif } = require('../utils/kuota');
 
+// Zona waktu wajib eksplisit: tanpa timeZone, Node memakai zona waktu OS server
+// sehingga tanggal di notifikasi bisa meleset satu hari dari jadwal sebenarnya.
 const formatTgl = (d) => new Date(d).toLocaleDateString('id-ID', {
+    timeZone: 'Asia/Makassar',
     day: '2-digit', month: 'long', year: 'numeric'
 });
 
@@ -43,6 +46,11 @@ const todayWita = () => new Intl.DateTimeFormat('en-CA', {
 
 const isPastDate = (value) => isDateOnly(value) && value < todayWita();
 
+// Batas panjang input teks bebas, agar kiriman panjang tidak memicu
+// ER_DATA_TOO_LONG (500) atau terpotong diam-diam di mode non-strict.
+const MAX_ALASAN_LENGTH = 500;
+const MAX_CATATAN_LENGTH = 2000;
+
 // LIHAT DAFTAR TUGAS MASUK
 const getTugas = async (req, res) => {
     const petugas_id = req.user.id;
@@ -69,6 +77,7 @@ const getTugas = async (req, res) => {
 const konfirmasiJadwal = async (req, res) => {
     const { id } = req.params;
     const petugas_id = req.user.id;
+    let booking;
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
@@ -80,7 +89,7 @@ const konfirmasiJadwal = async (req, res) => {
             return res.status(404).json({ message: 'Booking tidak ditemukan' });
         }
 
-        const booking = rows[0];
+        booking = rows[0];
         if (!['pending', 'rescheduled_by_user'].includes(booking.status)) {
             await conn.rollback();
             return res.status(403).json({ message: 'Status tidak memungkinkan konfirmasi' });
@@ -91,8 +100,18 @@ const konfirmasiJadwal = async (req, res) => {
        updated_at = NOW() WHERE id = ?`, [id]
         );
         await conn.commit();
+    } catch (err) {
+        try { await conn.rollback(); } catch {}
+        return serverError(res, err);
+    } finally {
+        conn.release();
+    }
 
-        // Kirim notifikasi
+    // Notifikasi memakai pool.query lagi, jadi harus dijalankan setelah koneksi
+    // transaksi dilepas agar pool tidak terkunci saat ada request bersamaan.
+    await kirimNotifikasiAman(async () => {
+        const nomorAman = escapeHTML(booking.nomor_berkas);
+        const tglAman = formatTgl(booking.tanggal_diminta);
         const [userRows] = await pool.query(
             `SELECT u.email FROM users u WHERE u.id = ?`, [booking.user_id]
         );
@@ -100,23 +119,18 @@ const konfirmasiJadwal = async (req, res) => {
             user_id: booking.user_id,
             booking_id: parseInt(id),
             judul: 'Jadwal Pemeriksaan Dikonfirmasi',
-            pesan: `Jadwal pemeriksaan berkas <strong>${booking.nomor_berkas}</strong> telah dikonfirmasi. Peninjauan dilakukan pada <strong>${formatTgl(booking.tanggal_diminta)}</strong>.`,
+            pesan: `Jadwal pemeriksaan berkas <strong>${nomorAman}</strong> telah dikonfirmasi. Peninjauan dilakukan pada <strong>${tglAman}</strong>.`,
             email_user: userRows[0]?.email,
             nomor_berkas: booking.nomor_berkas
         }), kirimNotifikasiAdmin({
             booking_id: parseInt(id),
             judul: 'Jadwal Pemeriksaan Dikonfirmasi',
-            pesan: `Petugas mengonfirmasi jadwal pemeriksaan berkas <strong>${booking.nomor_berkas}</strong> pada <strong>${formatTgl(booking.tanggal_diminta)}</strong>.`,
+            pesan: `Petugas mengonfirmasi jadwal pemeriksaan berkas <strong>${nomorAman}</strong> pada <strong>${tglAman}</strong>.`,
             nomor_berkas: booking.nomor_berkas
         })]);
+    });
 
-        res.json({ message: 'Jadwal dikonfirmasi' });
-    } catch (err) {
-        try { await conn.rollback(); } catch {}
-        return serverError(res, err);
-    } finally {
-        conn.release();
-    }
+    res.json({ message: 'Jadwal dikonfirmasi' });
 };
 
 // TOLAK & GANTI JADWAL OLEH PETUGAS
@@ -134,7 +148,10 @@ const tolakJadwal = async (req, res) => {
         return res.status(400).json({ message: 'Tanggal baru tidak boleh tanggal yang sudah lewat' });
     if (!alasan)
         return res.status(400).json({ message: 'Alasan penggantian jadwal wajib diisi' });
+    if (alasan.length > MAX_ALASAN_LENGTH)
+        return res.status(400).json({ message: `Alasan maksimal ${MAX_ALASAN_LENGTH} karakter` });
 
+    let booking;
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
@@ -148,7 +165,7 @@ const tolakJadwal = async (req, res) => {
             return res.status(404).json({ message: 'Booking tidak ditemukan' });
         }
 
-        const booking = rows[0];
+        booking = rows[0];
         if (!['pending', 'rescheduled_by_user'].includes(booking.status)) {
             await conn.rollback();
             return res.status(403).json({ message: 'Status tidak memungkinkan perubahan jadwal' });
@@ -182,33 +199,36 @@ const tolakJadwal = async (req, res) => {
         );
 
         await conn.commit();
+    } catch (err) {
+        try { await conn.rollback(); } catch {}
+        return serverError(res, err);
+    } finally {
+        conn.release();
+    }
 
-        // Kirim notifikasi (setelah commit berhasil)
+    await kirimNotifikasiAman(async () => {
         const [userRows] = await pool.query(
             'SELECT email FROM users WHERE id = ?', [booking.user_id]
         );
         const alasanAman = escapeHTML(alasan);
+        const nomorAman = escapeHTML(booking.nomor_berkas);
+        const tglAman = formatTgl(tanggal_baru);
         await Promise.all([kirimNotifikasi({
             user_id: booking.user_id,
             booking_id: parseInt(id),
             judul: 'Jadwal Diubah Petugas',
-            pesan: `Petugas mengusulkan jadwal baru untuk berkas <strong>${booking.nomor_berkas}</strong> menjadi <strong>${formatTgl(tanggal_baru)}</strong>. Silakan setujui jadwal atau ajukan jadwal lain. Alasan: <strong>${alasanAman}</strong>.`,
+            pesan: `Petugas mengusulkan jadwal baru untuk berkas <strong>${nomorAman}</strong> menjadi <strong>${tglAman}</strong>. Silakan setujui jadwal atau ajukan jadwal lain. Alasan: <strong>${alasanAman}</strong>.`,
             email_user: userRows[0]?.email,
             nomor_berkas: booking.nomor_berkas
         }), kirimNotifikasiAdmin({
             booking_id: parseInt(id),
             judul: 'Jadwal Diubah Petugas',
-            pesan: `Petugas mengusulkan jadwal baru untuk berkas <strong>${booking.nomor_berkas}</strong> menjadi <strong>${formatTgl(tanggal_baru)}</strong>. Alasan: <strong>${alasanAman}</strong>.`,
+            pesan: `Petugas mengusulkan jadwal baru untuk berkas <strong>${nomorAman}</strong> menjadi <strong>${tglAman}</strong>. Alasan: <strong>${alasanAman}</strong>.`,
             nomor_berkas: booking.nomor_berkas
         })]);
+    });
 
-        res.json({ message: 'Jadwal baru telah dikirim ke pemohon untuk disetujui' });
-    } catch (err) {
-        await conn.rollback();
-        return serverError(res, err);
-    } finally {
-        conn.release();
-    }
+    res.json({ message: 'Jadwal baru telah dikirim ke pemohon untuk disetujui' });
 };
 
 // TOLAK BERKAS PERMANEN
@@ -219,7 +239,10 @@ const tolakBerkas = async (req, res) => {
 
     if (!alasan || !alasan.trim())
         return res.status(400).json({ message: 'Alasan penolakan wajib diisi' });
+    if (String(alasan).length > MAX_ALASAN_LENGTH)
+        return res.status(400).json({ message: `Alasan maksimal ${MAX_ALASAN_LENGTH} karakter` });
 
+    let booking;
     const conn = await pool.getConnection();
     try {
         await conn.beginTransaction();
@@ -233,7 +256,7 @@ const tolakBerkas = async (req, res) => {
             return res.status(404).json({ message: 'Berkas tidak ditemukan' });
         }
 
-        const booking = rows[0];
+        booking = rows[0];
         if (!['pending', 'rescheduled_by_user'].includes(booking.status)) {
             await conn.rollback();
             return res.status(403).json({ message: 'Berkas tidak dapat ditolak pada status ini' });
@@ -263,33 +286,35 @@ const tolakBerkas = async (req, res) => {
         );
 
         await conn.commit();
+    } catch (err) {
+        try { await conn.rollback(); } catch {}
+        return serverError(res, err);
+    } finally {
+        conn.release();
+    }
 
-        // Kirim notifikasi (setelah commit berhasil)
+    await kirimNotifikasiAman(async () => {
         const [userRows] = await pool.query(
             'SELECT email FROM users WHERE id = ?', [booking.user_id]
         );
         const alasanAman = escapeHTML(alasan);
+        const nomorAman = escapeHTML(booking.nomor_berkas);
         await Promise.all([kirimNotifikasi({
             user_id: booking.user_id,
             booking_id: parseInt(id),
             judul: 'Permohonan Berkas Ditolak',
-            pesan: `Permohonan berkas <strong>${booking.nomor_berkas}</strong> ditolak oleh petugas. Alasan: <strong>${alasanAman}</strong>. Silakan ajukan permohonan baru.`,
+            pesan: `Permohonan berkas <strong>${nomorAman}</strong> ditolak oleh petugas. Alasan: <strong>${alasanAman}</strong>. Silakan ajukan permohonan baru.`,
             email_user: userRows[0]?.email,
             nomor_berkas: booking.nomor_berkas
         }), kirimNotifikasiAdmin({
             booking_id: parseInt(id),
             judul: 'Permohonan Berkas Ditolak',
-            pesan: `Petugas menolak berkas <strong>${booking.nomor_berkas}</strong>. Alasan: <strong>${alasanAman}</strong>.`,
+            pesan: `Petugas menolak berkas <strong>${nomorAman}</strong>. Alasan: <strong>${alasanAman}</strong>.`,
             nomor_berkas: booking.nomor_berkas
         })]);
+    });
 
-        res.json({ message: 'Berkas berhasil ditolak' });
-    } catch (err) {
-        await conn.rollback();
-        return serverError(res, err);
-    } finally {
-        conn.release();
-    }
+    res.json({ message: 'Berkas berhasil ditolak' });
 };
 
 // INPUT HASIL PEMERIKSAAN
@@ -297,6 +322,12 @@ const inputHasil = async (req, res) => {
     const { id } = req.params;
     const { catatan_lapangan } = req.body;
     const petugas_id = req.user.id;
+
+    if (String(catatan_lapangan || '').length > MAX_CATATAN_LENGTH) {
+        return res.status(400).json({ message: `Catatan lapangan maksimal ${MAX_CATATAN_LENGTH} karakter` });
+    }
+
+    let booking;
     const conn = await pool.getConnection();
 
     try {
@@ -309,7 +340,7 @@ const inputHasil = async (req, res) => {
             return res.status(404).json({ message: 'Booking tidak ditemukan' });
         }
 
-        const booking = rows[0];
+        booking = rows[0];
         if (booking.status !== 'jadwal_fix') {
             await conn.rollback();
             return res.status(403).json({ message: 'Pemeriksaan belum bisa diinput, jadwal belum fix' });
@@ -334,8 +365,15 @@ const inputHasil = async (req, res) => {
             `UPDATE bookings SET status = 'selesai', updated_at = NOW() WHERE id = ?`, [id]
         );
         await conn.commit();
+    } catch (err) {
+        try { await conn.rollback(); } catch {}
+        return serverError(res, err);
+    } finally {
+        conn.release();
+    }
 
-        // Kirim notifikasi
+    await kirimNotifikasiAman(async () => {
+        const nomorAman = escapeHTML(booking.nomor_berkas);
         const [userRows] = await pool.query(
             'SELECT email FROM users WHERE id = ?', [booking.user_id]
         );
@@ -343,23 +381,18 @@ const inputHasil = async (req, res) => {
             user_id: booking.user_id,
             booking_id: parseInt(id),
             judul: 'Pemeriksaan Tanah Selesai',
-            pesan: `Pemeriksaan tanah berkas <strong>${booking.nomor_berkas}</strong> telah selesai dilakukan. Hasil sudah tersimpan di sistem.`,
+            pesan: `Pemeriksaan tanah berkas <strong>${nomorAman}</strong> telah selesai dilakukan. Hasil sudah tersimpan di sistem.`,
             email_user: userRows[0]?.email,
             nomor_berkas: booking.nomor_berkas
         }), kirimNotifikasiAdmin({
             booking_id: parseInt(id),
             judul: 'Pemeriksaan Tanah Selesai',
-            pesan: `Petugas menyelesaikan pemeriksaan tanah untuk berkas <strong>${booking.nomor_berkas}</strong>.`,
+            pesan: `Petugas menyelesaikan pemeriksaan tanah untuk berkas <strong>${nomorAman}</strong>.`,
             nomor_berkas: booking.nomor_berkas
         })]);
+    });
 
-        res.json({ message: 'Hasil pemeriksaan berhasil disimpan' });
-    } catch (err) {
-        try { await conn.rollback(); } catch {}
-        return serverError(res, err);
-    } finally {
-        conn.release();
-    }
+    res.json({ message: 'Hasil pemeriksaan berhasil disimpan' });
 };
 
 module.exports = { getTugas, konfirmasiJadwal, tolakJadwal, inputHasil, tolakBerkas };

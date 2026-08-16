@@ -34,8 +34,13 @@ const config = {
     password: process.env.MYSQL_ADDON_PASSWORD || process.env.MYSQLPASSWORD || process.env.MYSQL_PASSWORD || fromUri.password || process.env.DB_PASSWORD,
     database: process.env.MYSQL_ADDON_DB || process.env.MYSQLDATABASE || process.env.MYSQL_DATABASE || fromUri.database || process.env.DB_NAME,
     timezone: process.env.DB_TIMEZONE || '+08:00',
+    // Kolom DATE dikembalikan apa adanya sebagai string 'YYYY-MM-DD'.
+    // Tanpa ini mysql2 membuatnya menjadi objek Date pada zona waktu OS server,
+    // lalu mengirimnya kembali dengan konversi zona - tanggal bisa bergeser
+    // satu hari saat dipakai sebagai parameter pencocokan kuota.
+    dateStrings: ['DATE'],
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: Number(process.env.DB_CONNECTION_LIMIT || 10),
     queueLimit: Number(process.env.DB_QUEUE_LIMIT || 100),
     connectTimeout: connectionTimeout,
     enableKeepAlive: true,
