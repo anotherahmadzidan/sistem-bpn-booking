@@ -5,6 +5,7 @@ const path = require('path');
 const uploadDir = require('../config/uploadDir');
 const { ensureNotificationSchema } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
+const { invalidateAccountStatus } = require('../middleware/auth');
 const {
     requireIndonesianPhone,
     assertPhoneAvailable,
@@ -16,23 +17,51 @@ const {
     ensureQuotaSchema,
     setKuotaHarian,
     setKuotaRentang,
-    isDateOnly
+    isDateOnly,
+    isUnconfiguredRow
 } = require('../utils/kuota');
 
 // Validasi sisi server untuk data petugas (defense-in-depth, tidak hanya klien).
 const NIP_REGEX = /^\d{18}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-function validatePetugasInput({ nip, nama_lengkap, email, password, requirePassword }) {
-    if (!NIP_REGEX.test(String(nip || '')))
-        return 'NIP harus terdiri dari 18 digit angka';
+const MIN_PASSWORD_LENGTH = 8;
+
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const normalizeNip = (value) => String(value || '').replace(/\s/g, '');
+
+// Menormalkan nip/email di `req.body` lalu memvalidasinya. Mengembalikan null
+// (dan sudah mengirim respons) bila ada yang tidak valid.
+function normalizePetugasIdentity(req, res) {
+    const nip = normalizeNip(req.body.nip);
+    const email = normalizeEmail(req.body.email);
+
+    if (!NIP_REGEX.test(nip)) {
+        res.status(400).json({
+            message: 'NIP harus terdiri dari tepat 18 digit angka.',
+            code: 'INVALID_NIP'
+        });
+        return null;
+    }
+    if (!EMAIL_REGEX.test(email)) {
+        res.status(400).json({
+            message: 'Format email petugas tidak valid.',
+            code: 'INVALID_EMAIL'
+        });
+        return null;
+    }
+
+    req.body.nip = nip;
+    req.body.email = email;
+    return { nip, email };
+}
+
+function validatePetugasInput({ nama_lengkap, password, requirePassword }) {
     if (String(nama_lengkap || '').trim().length < 3)
         return 'Nama lengkap minimal 3 karakter';
-    if (!EMAIL_REGEX.test(String(email || '').trim()))
-        return 'Format email tidak valid';
-    if (requirePassword && String(password || '').length < 6)
-        return 'Password minimal 6 karakter';
-    if (!requirePassword && password && String(password).length < 6)
-        return 'Password minimal 6 karakter';
+    if (requirePassword && String(password || '').length < MIN_PASSWORD_LENGTH)
+        return `Password minimal ${MIN_PASSWORD_LENGTH} karakter`;
+    if (!requirePassword && password && String(password).length < MIN_PASSWORD_LENGTH)
+        return `Password minimal ${MIN_PASSWORD_LENGTH} karakter`;
     return null;
 }
 
@@ -71,11 +100,13 @@ const getAllPetugas = async (req, res) => {
 
 // TAMBAH PETUGAS
 const tambahPetugas = async (req, res) => {
-    const { nip, nama_lengkap, email, password } = req.body;
-    if (!nip || !nama_lengkap || !email || !req.body.no_hp || !password)
+    if (!req.body.nip || !req.body.nama_lengkap || !req.body.email || !req.body.no_hp || !req.body.password)
         return res.status(400).json({ message: 'Semua field wajib diisi' });
 
-    const validationError = validatePetugasInput({ nip, nama_lengkap, email, password, requirePassword: true });
+    if (!normalizePetugasIdentity(req, res)) return;
+
+    const { nip, nama_lengkap, email, password } = req.body;
+    const validationError = validatePetugasInput({ nama_lengkap, password, requirePassword: true });
     if (validationError)
         return res.status(400).json({ message: validationError });
 
@@ -145,13 +176,17 @@ const tambahPetugas = async (req, res) => {
 // EDIT PETUGAS
 const editPetugas = async (req, res) => {
     const { id } = req.params;
-    const { nip, nama_lengkap, email, password } = req.body;
 
-    if (!nip || !nama_lengkap || !email || !req.body.no_hp) {
+    if (!req.body.nip || !req.body.nama_lengkap || !req.body.email || !req.body.no_hp) {
         return res.status(400).json({ message: 'NIP, nama, email, dan nomor HP wajib diisi' });
     }
 
-    const validationError = validatePetugasInput({ nip, nama_lengkap, email, password, requirePassword: false });
+    const identity = normalizePetugasIdentity(req, res);
+    if (!identity) return;
+
+    const nama_lengkap = String(req.body.nama_lengkap || '').trim();
+    const password = String(req.body.password || '');
+    const validationError = validatePetugasInput({ nama_lengkap, password, requirePassword: false });
     if (validationError)
         return res.status(400).json({ message: validationError });
 
@@ -170,13 +205,28 @@ const editPetugas = async (req, res) => {
         phoneLockName = await acquirePhoneLock(connection, no_hp);
         await connection.beginTransaction();
 
+        const [petugasRows] = await connection.query(
+            'SELECT id FROM petugas WHERE id = ? LIMIT 1',
+            [id]
+        );
+        if (petugasRows.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: 'Petugas tidak ditemukan.' });
+        }
+
+        // LOWER(email) agar bentrokan tetap terdeteksi walau data lama tersimpan
+        // dengan huruf kapital yang berbeda.
         const [conflict] = await connection.query(
-            'SELECT id, nip, email FROM petugas WHERE (email = ? OR nip = ?) AND id <> ? LIMIT 1',
-            [email, nip, id]
+            `SELECT id, nip, email
+             FROM petugas
+             WHERE (nip = ? OR LOWER(email) = ?)
+               AND id <> ?
+             LIMIT 1`,
+            [identity.nip, identity.email, id]
         );
         if (conflict.length > 0) {
             await connection.rollback();
-            const message = String(conflict[0].nip) === String(nip)
+            const message = String(conflict[0].nip) === identity.nip
                 ? 'NIP sudah digunakan petugas lain.'
                 : 'Email sudah digunakan petugas lain.';
             return res.status(409).json({ message });
@@ -187,18 +237,24 @@ const editPetugas = async (req, res) => {
             const hash = await bcrypt.hash(password, 10);
             await connection.query(
                 'UPDATE petugas SET nip=?, nama_lengkap=?, email=?, no_hp=?, password=?, updated_at=NOW() WHERE id=?',
-                [nip, nama_lengkap, email, no_hp, hash, id]
+                [identity.nip, nama_lengkap, identity.email, no_hp, hash, id]
             );
         } else {
             await connection.query(
                 'UPDATE petugas SET nip=?, nama_lengkap=?, email=?, no_hp=?, updated_at=NOW() WHERE id=?',
-                [nip, nama_lengkap, email, no_hp, id]
+                [identity.nip, nama_lengkap, identity.email, no_hp, id]
             );
         }
         await connection.commit();
         res.json({
             message: 'Data petugas berhasil diupdate',
-            petugas: { id: Number(id), nip, nama_lengkap, email, no_hp }
+            petugas: {
+                id: Number(id),
+                nip: identity.nip,
+                nama_lengkap,
+                email: identity.email,
+                no_hp
+            }
         });
     } catch (err) {
         if (connection) {
@@ -226,9 +282,20 @@ const editPetugas = async (req, res) => {
 const togglePetugas = async (req, res) => {
     const { id } = req.params;
     try {
-        await pool.query(
+        const [result] = await pool.query(
             'UPDATE petugas SET is_active = NOT is_active, updated_at = NOW() WHERE id = ?', [id]
         );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                code: 'PETUGAS_NOT_FOUND',
+                message: 'Petugas tidak ditemukan.'
+            });
+        }
+
+        // Supaya penonaktifan langsung berlaku, tidak menunggu cache middleware
+        // kedaluwarsa lebih dulu.
+        invalidateAccountStatus('petugas', id);
+
         const [rows] = await pool.query(
             'SELECT id, is_active FROM petugas WHERE id = ?',
             [id]
@@ -247,17 +314,23 @@ function mapRowsBy(rows, key) {
 }
 
 function buildEffectiveQuotaRow(base, dateQuota, defaultQuota, supportsUnlimited) {
-    const dateOrder = Number(dateQuota?.set_order || 0);
+    // `terisi` selalu diambil dari baris tanggal, termasuk baris pencatat yang
+    // dibuat otomatis. Tetapi baris pencatat itu belum menetapkan batas apa pun,
+    // jadi tidak boleh ikut dihitung sebagai kuota yang dikonfigurasi.
+    const terisi = Number(dateQuota?.terisi || 0);
+    const configuredDateQuota = isUnconfiguredRow(dateQuota) ? null : dateQuota;
+
+    const dateOrder = Number(configuredDateQuota?.set_order || 0);
     const defaultOrder = Number(defaultQuota?.set_order || 0);
-    const defaultWins = defaultQuota && (!dateQuota || defaultOrder >= dateOrder);
-    const active = defaultWins ? defaultQuota : dateQuota;
+    const defaultWins = defaultQuota && (!configuredDateQuota || defaultOrder >= dateOrder);
+    const active = defaultWins ? defaultQuota : configuredDateQuota;
 
     if (!active) {
         return {
             ...base,
             configured: true,
             kuota_max: 0,
-            terisi: Number(dateQuota?.terisi || 0),
+            terisi,
             is_unlimited: 1
         };
     }
@@ -266,7 +339,7 @@ function buildEffectiveQuotaRow(base, dateQuota, defaultQuota, supportsUnlimited
         ...base,
         configured: true,
         kuota_max: active.kuota_max,
-        terisi: Number(dateQuota?.terisi || 0),
+        terisi,
         is_unlimited: supportsUnlimited && active.is_unlimited ? 1 : 0
     };
 }
@@ -303,7 +376,7 @@ const getKuota = async (req, res) => {
                  ORDER BY nama_kecamatan`
             ),
             pool.query(
-                `SELECT kecamatan_id, kuota_max, terisi, is_unlimited, set_order
+                `SELECT kecamatan_id, kuota_max, terisi, is_unlimited, source, set_order
                  FROM kuota_kecamatan
                  WHERE tanggal = ?`,
                 [tanggal]
@@ -326,7 +399,7 @@ const getKuota = async (req, res) => {
                 kelParams
             ),
             pool.query(
-                `SELECT kelurahan_id, kuota_max, terisi, is_unlimited, set_order
+                `SELECT kelurahan_id, kuota_max, terisi, is_unlimited, source, set_order
                  FROM kuota_kelurahan
                  WHERE tanggal = ?`,
                 [tanggal]
@@ -343,7 +416,7 @@ const getKuota = async (req, res) => {
                  ORDER BY nama_lengkap`
             ),
             pool.query(
-                `SELECT petugas_id, kuota_max, terisi, 0 AS is_unlimited, set_order
+                `SELECT petugas_id, kuota_max, terisi, 0 AS is_unlimited, source, set_order
                  FROM kuota_petugas
                  WHERE tanggal = ?`,
                 [tanggal]
@@ -500,6 +573,10 @@ const hapusBerkas = async (req, res) => {
         return res.status(400).json({ message: 'Konfirmasi wajib mengetik HAPUS dengan huruf besar' });
     }
 
+    // Disiapkan sebelum koneksi transaksi diambil: ensureNotificationSchema
+    // memakai pool.query, jadi tidak boleh dipanggil sambil memegang koneksi.
+    await ensureNotificationSchema();
+
     const conn = await pool.getConnection();
     let filesToDelete = [];
 
@@ -539,7 +616,6 @@ const hapusBerkas = async (req, res) => {
             );
         }
 
-        await ensureNotificationSchema();
         await conn.query('DELETE FROM notifications WHERE booking_id = ?', [id]);
         await conn.query('DELETE FROM hasil_pemeriksaan WHERE booking_id = ?', [id]);
         await conn.query('DELETE FROM reschedule_log WHERE booking_id = ?', [id]);
