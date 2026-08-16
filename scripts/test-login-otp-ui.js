@@ -3,14 +3,12 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const html = fs.readFileSync(
-    path.join(__dirname, '..', 'public', 'pages', 'login.html'),
+// Logika halaman login kini berada di berkas terpisah (dulu inline di
+// public/pages/login.html) agar bisa di-lint dan di-cache browser.
+const source = fs.readFileSync(
+    path.join(__dirname, '..', 'public', 'js', 'login.js'),
     'utf8'
 );
-const inlineScripts = [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)]
-    .map(match => match[1])
-    .filter(source => source.trim());
-const source = inlineScripts.at(-1);
 
 const ids = [
     'form-login',
