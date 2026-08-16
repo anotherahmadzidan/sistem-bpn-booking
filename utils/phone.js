@@ -156,92 +156,89 @@ async function releasePhoneLock(connection, lockName) {
 }
 
 let schemaPromise = null;
+let retryNotBefore = 0;
 
-async function ensurePhoneSchema() {
-    if (schemaPromise) return schemaPromise;
+// Nomor yang SUDAH berbentuk normal tidak perlu dibaca ke aplikasi sama sekali.
+// Sebelumnya seluruh isi users, petugas, dan bookings dimuat ke memori setiap
+// proses dimulai; dengan filter ini, boot berikutnya praktis tidak memindai apa
+// pun karena hampir semua baris sudah normal.
+const NORMALIZED_PATTERN = '^628[0-9]{7,12}$';
 
-    schemaPromise = (async () => {
-        const report = { normalized: [], invalid: [] };
-        const accountOwners = new Map();
+// Jeda sebelum migrasi boleh dicoba lagi setelah gagal. Tanpa ini, satu data
+// bermasalah membuat SETIAP permintaan login mengulang migrasi dari awal lalu
+// gagal lagi - beban database berlipat tanpa pernah selesai.
+const RETRY_COOLDOWN_MS = Number(process.env.PHONE_MIGRATION_RETRY_MS || 5 * 60 * 1000);
 
-        for (const table of ['users', 'petugas']) {
-            const [rows] = await pool.query(`SELECT id, no_hp FROM ${table} ORDER BY id`);
-            const normalizedOwners = new Map();
+async function normalizeTablePhones({ table, column, report }) {
+    const [rows] = await pool.query(
+        `SELECT id, ${column} AS phone
+         FROM ${table}
+         WHERE ${column} IS NOT NULL
+           AND ${column} <> ''
+           AND ${column} NOT REGEXP ?
+         ORDER BY id`,
+        [NORMALIZED_PATTERN]
+    );
 
-            for (const row of rows) {
-                const result = normalizeIndonesianPhone(row.no_hp);
-                if (!result.valid) {
-                    report.invalid.push({
-                        table,
-                        id: row.id,
-                        no_hp: row.no_hp,
-                        reason: result.message
-                    });
-                    continue;
-                }
-
-                const previousOwner = normalizedOwners.get(result.normalized);
-                if (previousOwner && previousOwner !== row.id) {
-                    throw phoneError(
-                        `Migrasi nomor HP menemukan duplikasi ${result.normalized} pada tabel ${table}.`,
-                        'PHONE_MIGRATION_DUPLICATE',
-                        500
-                    );
-                }
-                normalizedOwners.set(result.normalized, row.id);
-
-                const accountOwner = accountOwners.get(result.normalized);
-                if (accountOwner) {
-                    throw phoneError(
-                        `Nomor ${result.normalized} dipakai oleh ${accountOwner.table}#${accountOwner.id} dan ${table}#${row.id}.`,
-                        'PHONE_MIGRATION_CROSS_ACCOUNT_DUPLICATE',
-                        500
-                    );
-                }
-                accountOwners.set(result.normalized, { table, id: row.id });
-
-                if (String(row.no_hp) !== result.normalized) {
-                    await pool.query(
-                        `UPDATE ${table} SET no_hp = ? WHERE id = ?`,
-                        [result.normalized, row.id]
-                    );
-                    report.normalized.push({
-                        table,
-                        id: row.id,
-                        from: row.no_hp,
-                        to: result.normalized
-                    });
-                }
-            }
+    for (const row of rows) {
+        const result = normalizeIndonesianPhone(row.phone);
+        if (!result.valid) {
+            report.invalid.push({
+                table,
+                id: row.id,
+                no_hp: row.phone,
+                reason: result.message
+            });
+            continue;
         }
+        if (String(row.phone) === result.normalized) continue;
 
-        const [bookingRows] = await pool.query(
-            'SELECT id, no_telepon FROM bookings ORDER BY id'
-        );
-        for (const row of bookingRows) {
-            const result = normalizeIndonesianPhone(row.no_telepon);
-            if (!result.valid) {
+        try {
+            await pool.query(
+                `UPDATE ${table} SET ${column} = ? WHERE id = ?`,
+                [result.normalized, row.id]
+            );
+        } catch (err) {
+            // Bentrokan dilaporkan sebagai data yang perlu dikoreksi manual,
+            // bukan dilempar sebagai error - satu baris bermasalah tidak boleh
+            // menggagalkan seluruh migrasi (dan karenanya seluruh login).
+            if (err.code === 'ER_DUP_ENTRY') {
                 report.invalid.push({
-                    table: 'bookings',
+                    table,
                     id: row.id,
-                    no_hp: row.no_telepon,
-                    reason: result.message
+                    no_hp: row.phone,
+                    reason: `Nomor ${result.normalized} sudah dipakai akun lain.`
                 });
                 continue;
             }
-            if (String(row.no_telepon) !== result.normalized) {
-                await pool.query(
-                    'UPDATE bookings SET no_telepon = ? WHERE id = ?',
-                    [result.normalized, row.id]
-                );
-                report.normalized.push({
-                    table: 'bookings',
-                    id: row.id,
-                    from: row.no_telepon,
-                    to: result.normalized
-                });
-            }
+            throw err;
         }
+
+        report.normalized.push({
+            table,
+            id: row.id,
+            from: row.phone,
+            to: result.normalized
+        });
+    }
+}
+
+async function ensurePhoneSchema() {
+    if (schemaPromise) return schemaPromise;
+    if (Date.now() < retryNotBefore) {
+        throw phoneError(
+            'Migrasi nomor HP sedang dalam masa tunggu setelah gagal. Coba lagi beberapa saat.',
+            'PHONE_MIGRATION_COOLDOWN',
+            503
+        );
+    }
+
+    schemaPromise = (async () => {
+        const report = { normalized: [], invalid: [] };
+
+        await normalizeTablePhones({ table: 'users', column: 'no_hp', report });
+        await normalizeTablePhones({ table: 'petugas', column: 'no_hp', report });
+        await normalizeTablePhones({ table: 'bookings', column: 'no_telepon', report });
 
         for (const table of ['users', 'petugas']) {
             const [indexes] = await pool.query(`SHOW INDEX FROM ${table}`);
@@ -258,6 +255,7 @@ async function ensurePhoneSchema() {
         return report;
     })().catch(error => {
         schemaPromise = null;
+        retryNotBefore = Date.now() + RETRY_COOLDOWN_MS;
         throw error;
     });
 

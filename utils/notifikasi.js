@@ -14,6 +14,29 @@ function positiveNumber(value, fallback) {
     return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
+function escapeHTML(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Kegagalan notifikasi tidak boleh menggagalkan aksi yang transaksinya sudah
+// commit. Sebelumnya error di sini membuat respons 500 padahal data sudah
+// tersimpan, sehingga pemohon mengira gagal lalu mengirim ulang.
+//
+// Pemanggilnya WAJIB sudah melepas koneksi transaksi sebelum masuk ke sini,
+// karena isi task memakai pool.query lagi.
+async function kirimNotifikasiAman(task) {
+    try {
+        await task();
+    } catch (err) {
+        console.error('[Notifikasi] Gagal mengirim notifikasi:', err.message);
+    }
+}
+
 function buildEmailConfig() {
     const requestedProvider = String(process.env.EMAIL_PROVIDER || '').trim().toLowerCase();
     const resendApiKey = String(process.env.RESEND_API_KEY || '').trim();
@@ -231,7 +254,12 @@ function classifyEmailError(err, fallbackCode = 'EMAIL_SEND_FAILED') {
     return fallbackCode;
 }
 
+// `pesan` sengaja dibiarkan berisi HTML (pemanggil sudah meng-escape bagian
+// yang berasal dari input pengguna). `judul` dan `nomor_berkas` selalu di-escape
+// karena keduanya bisa memuat data mentah dari pemohon.
 function buildEmailHtml({ judul, pesan, nomor_berkas }) {
+    judul = escapeHTML(judul);
+    nomor_berkas = nomor_berkas ? escapeHTML(nomor_berkas) : nomor_berkas;
     return `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
         <div style="background:#0F4069;padding:24px 32px">
@@ -485,5 +513,6 @@ module.exports = {
     verifyEmailTransport,
     kirimEmail,
     kirimNotifikasi,
-    kirimNotifikasiAdmin
+    kirimNotifikasiAdmin,
+    kirimNotifikasiAman
 };

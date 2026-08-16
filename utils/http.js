@@ -37,9 +37,21 @@ const classifyServerError = (err) => {
         };
     }
 
+    // Data terlalu panjang untuk kolomnya adalah kesalahan input, bukan
+    // kesalahan server. Tanpa ini pengguna hanya melihat 500 tanpa penjelasan.
+    if (code === 'ER_DATA_TOO_LONG' || code === 'WARN_DATA_TRUNCATED') {
+        return {
+            status: 400,
+            code: 'INPUT_TOO_LONG',
+            message: 'Ada isian yang terlalu panjang. Persingkat lalu coba lagi.'
+        };
+    }
+
     return {
         status: Number(err?.status) || 500,
-        code: err?.code || 'SERVER_ERROR',
+        // Di production kode error internal database (mis. ER_BAD_FIELD_ERROR)
+        // tidak dibocorkan ke klien karena membuka detail struktur tabel.
+        code: isProduction() ? 'SERVER_ERROR' : (err?.code || 'SERVER_ERROR'),
         message: 'Server gagal memproses permintaan.'
     };
 };

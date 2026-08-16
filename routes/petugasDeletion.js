@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { serverError } = require('../utils/http');
+const { invalidateAccountStatus } = require('../middleware/auth');
 
 const hapusPetugas = async (req, res) => {
     const { id } = req.params;
@@ -39,6 +40,8 @@ const hapusPetugas = async (req, res) => {
             });
         }
 
+        // Token petugas yang sudah dihapus harus langsung berhenti berlaku.
+        invalidateAccountStatus('petugas', id);
         return res.json({ message: 'Petugas berhasil dihapus' });
     } catch (err) {
         if (err.code === 'ER_ROW_IS_REFERENCED_2' || err.errno === 1451) {

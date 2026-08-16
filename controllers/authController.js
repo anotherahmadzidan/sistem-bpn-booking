@@ -23,8 +23,13 @@ const {
 } = require('../utils/otp');
 require('dotenv').config();
 
+// jsonwebtoken melempar error bila `expiresIn` bernilai undefined (bukan
+// diabaikan), jadi env yang belum diisi akan membuat SEMUA login balas 500.
+// Fallback wajib ada agar satu variabel env yang terlewat tidak melumpuhkan login.
 const generateToken = (payload) =>
-    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+    jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: process.env.JWT_EXPIRES_IN || '1d'
+    });
 
 const generateRegistrationToken = (pendingRegistrationId, email) =>
     jwt.sign(
@@ -38,6 +43,13 @@ const generateRegistrationToken = (pendingRegistrationId, email) =>
     );
 
 const registrationResumeCookieName = 'bpn_registration_resume';
+
+const MIN_PASSWORD_LENGTH = 8;
+const KREDENSIAL_SALAH = 'Email/No. HP atau kata sandi salah.';
+const KREDENSIAL_ADMIN_SALAH = 'Username atau kata sandi salah.';
+// Hash bcrypt dari string acak, hanya dipakai sebagai pembanding tiruan supaya
+// login akun yang tidak ada memakan waktu setara dengan akun yang ada.
+const DUMMY_PASSWORD_HASH = '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy';
 
 const generateRegistrationResumeToken = (pendingRegistrationId, email) =>
     jwt.sign(
@@ -416,13 +428,16 @@ const loginUser = async (req, res) => {
             'SELECT * FROM users WHERE email = ? OR no_hp = ?',
             [lookupIdentifier, lookupIdentifier]
         );
-        if (rows.length === 0)
-            return res.status(401).json({ message: 'Akun tidak ditemukan' });
-
+        // Pesan yang sama untuk "akun tidak ada" dan "password salah" supaya
+        // tidak bisa dipakai memetakan email/nomor HP mana yang terdaftar.
+        // bcrypt.compare tetap dijalankan atas hash pengganti agar waktu respons
+        // kedua kasus itu tidak berbeda jauh.
         const user = rows[0];
-        const valid = await bcrypt.compare(password, user.password);
-        if (!valid)
-            return res.status(401).json({ message: 'Password salah' });
+        const valid = user
+            ? await bcrypt.compare(password, user.password)
+            : await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+        if (!user || !valid)
+            return res.status(401).json({ message: KREDENSIAL_SALAH });
 
         if (!user.email_verified_at) {
             const otpState = await getOtpState({
@@ -529,8 +544,8 @@ const completeRegistration = async (req, res) => {
     if (!registrationToken || !nama_lengkap || !req.body.no_hp || !password) {
         return res.status(400).json({ message: 'Semua data diri wajib diisi' });
     }
-    if (password.length < 6) {
-        return res.status(400).json({ message: 'Kata sandi minimal 6 karakter' });
+    if (password.length < MIN_PASSWORD_LENGTH) {
+        return res.status(400).json({ message: `Kata sandi minimal ${MIN_PASSWORD_LENGTH} karakter` });
     }
 
     let no_hp;
@@ -787,19 +802,27 @@ const resetPassword = async (req, res) => {
     if (!email || !otp || !password)
         return res.status(400).json({ message: 'Email, OTP, dan kata sandi baru wajib diisi' });
 
-    if (String(password).length < 6)
-        return res.status(400).json({ message: 'Kata sandi minimal 6 karakter' });
+    if (String(password).length < MIN_PASSWORD_LENGTH)
+        return res.status(400).json({ message: `Kata sandi minimal ${MIN_PASSWORD_LENGTH} karakter` });
 
     try {
         await ensureOtpSchema();
         const verified = await verifyOtp({ email, purpose: 'password_reset', otp });
         const hash = await bcrypt.hash(password, 10);
-        await pool.query(
+        const [result] = await pool.query(
             `UPDATE users
              SET password = ?, email_verified_at = COALESCE(email_verified_at, NOW())
              WHERE id = ? AND email = ?`,
             [hash, verified.userId, email]
         );
+        // Tanpa pemeriksaan ini, akun yang sudah terhapus di tengah alur OTP
+        // tetap dijawab "berhasil" padahal tidak ada yang berubah.
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                code: 'ACCOUNT_NOT_FOUND',
+                message: 'Akun tidak ditemukan. Silakan daftar ulang.'
+            });
+        }
         res.json({ message: 'Kata sandi berhasil diubah. Silakan login.' });
     } catch (err) {
         return authError(res, err);
@@ -816,13 +839,12 @@ const loginPetugas = async (req, res) => {
         const [rows] = await pool.query(
             'SELECT * FROM petugas WHERE nip = ? AND is_active = 1', [nip]
         );
-        if (rows.length === 0)
-            return res.status(401).json({ message: 'NIP tidak ditemukan atau akun nonaktif' });
-
         const petugas = rows[0];
-        const valid = await bcrypt.compare(password, petugas.password);
-        if (!valid)
-            return res.status(401).json({ message: 'Password salah' });
+        const valid = petugas
+            ? await bcrypt.compare(password, petugas.password)
+            : await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+        if (!petugas || !valid)
+            return res.status(401).json({ message: 'NIP atau password salah, atau akun nonaktif.' });
 
         const token = generateToken({ id: petugas.id, nama: petugas.nama_lengkap, role: 'petugas' });
         res.json({ token, nama: petugas.nama_lengkap, role: 'petugas' });
@@ -841,13 +863,12 @@ const loginAdmin = async (req, res) => {
         const [rows] = await pool.query(
             'SELECT * FROM admin WHERE username = ?', [username]
         );
-        if (rows.length === 0)
-            return res.status(401).json({ message: 'Username tidak ditemukan' });
-
         const admin = rows[0];
-        const valid = await bcrypt.compare(password, admin.password);
-        if (!valid)
-            return res.status(401).json({ message: 'Password salah' });
+        const valid = admin
+            ? await bcrypt.compare(password, admin.password)
+            : await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+        if (!admin || !valid)
+            return res.status(401).json({ message: KREDENSIAL_ADMIN_SALAH });
 
         const token = generateToken({ id: admin.id, nama: admin.nama_lengkap, role: 'admin' });
         res.json({ token, nama: admin.nama_lengkap, role: 'admin' });
@@ -857,10 +878,13 @@ const loginAdmin = async (req, res) => {
 };
 
 // GET PETUGAS AKTIF (publik, untuk dropdown form booking)
+//
+// NIP sengaja TIDAK dikembalikan: endpoint ini dapat diakses tanpa login,
+// sedangkan NIP adalah identitas ASN. Form booking hanya perlu id + nama.
 const getPetugasAktif = async (req, res) => {
     try {
         const [rows] = await pool.query(
-            'SELECT id, nip, nama_lengkap FROM petugas WHERE is_active = 1 ORDER BY nama_lengkap'
+            'SELECT id, nama_lengkap FROM petugas WHERE is_active = 1 ORDER BY nama_lengkap'
         );
         res.json(rows);
     } catch (err) {

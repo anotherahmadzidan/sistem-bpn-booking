@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const verify = require('../middleware/auth');
+const { writeLimiter } = require('../middleware/rateLimit');
 const {
     getAllBookings,
     getAllPetugas,
@@ -10,21 +11,21 @@ const {
     getKuota,
     setKuota,
     getWilayah,
-    hapusBerkas
+    hapusBerkas,
+    getDetailBerkas
 } = require('../controllers/adminController');
-const { getDetailBerkas } = require('../controllers/adminController');
 const { hapusPetugas } = require('./petugasDeletion');
 
 router.get('/berkas/:id', verify('admin'), getDetailBerkas);
-router.delete('/berkas/:id', verify('admin'), hapusBerkas);
+router.delete('/berkas/:id', writeLimiter, verify('admin'), hapusBerkas);
 router.get('/bookings', verify('admin'), getAllBookings);
 router.get('/petugas', verify('admin'), getAllPetugas);
-router.post('/petugas', verify('admin'), tambahPetugas);
-router.put('/petugas/:id', verify('admin'), editPetugas);
-router.patch('/petugas/:id/toggle', verify('admin'), togglePetugas);
-router.delete('/petugas/:id', verify('admin'), hapusPetugas);
+router.post('/petugas', writeLimiter, verify('admin'), tambahPetugas);
+router.put('/petugas/:id', writeLimiter, verify('admin'), editPetugas);
+router.patch('/petugas/:id/toggle', writeLimiter, verify('admin'), togglePetugas);
+router.delete('/petugas/:id', writeLimiter, verify('admin'), hapusPetugas);
 router.get('/kuota', verify('admin'), getKuota);
-router.post('/kuota', verify('admin'), setKuota);
+router.post('/kuota', writeLimiter, verify('admin'), setKuota);
 router.get('/wilayah', getWilayah);
 
 module.exports = router;

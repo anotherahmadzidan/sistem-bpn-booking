@@ -9,7 +9,6 @@ process.env.PENDING_REGISTRATION_RETENTION_DAYS = '30';
 
 let scenario = 'pending_otp_active';
 let sentEmailCount = 0;
-let insertedOtpCount = 0;
 let insertedUserCount = 0;
 let pendingDeletedCount = 0;
 let pendingResetCount = 0;
@@ -155,13 +154,8 @@ const fakePool = {
                 Non_unique: 0
             }]];
         }
-        if (sql.startsWith('SELECT id, no_hp FROM users ORDER BY id')) {
-            return [[]];
-        }
-        if (sql.startsWith('SELECT id, no_hp FROM petugas ORDER BY id')) {
-            return [[]];
-        }
-        if (sql.startsWith('SELECT id, no_telepon FROM bookings ORDER BY id')) {
+        // Migrasi nomor HP hanya membaca baris yang belum berbentuk normal.
+        if (/SELECT id, (?:no_hp|no_telepon) AS phone\s+FROM (?:users|petugas|bookings)/.test(sql)) {
             return [[]];
         }
         if (
@@ -240,7 +234,6 @@ const fakePool = {
             return [{ affectedRows: 1 }];
         }
         if (sql.startsWith('INSERT INTO otp_tokens')) {
-            insertedOtpCount += 1;
             return [{ insertId: 501, affectedRows: 1 }];
         }
         if (sql.startsWith('UPDATE otp_tokens SET used_at = NOW() WHERE id')) {

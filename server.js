@@ -26,8 +26,33 @@ if (process.env.TRUST_PROXY === '1') {
 }
 
 // Middleware
+//
+// CATATAN CSP: 'unsafe-inline' pada script-src masih diperlukan karena seluruh
+// JavaScript halaman admin/user/petugas ditulis inline di dalam <script>.
+// Selama itu ada, CSP TIDAK memblokir XSS — pertahanan utama tetap escapeHTML()
+// di sisi render. Nilai CSP di sini adalah membatasi ke mana data bisa dikirim
+// (script-src/connect-src/form-action), sehingga token lebih sulit diekstraksi
+// ke domain penyerang. Perketat menjadi nonce setelah JS inline dipindah ke file.
 app.use(helmet({
-    contentSecurityPolicy: false
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
+            // Default helmet adalah script-src-attr 'none', yang akan memblokir
+            // SELURUH atribut onclick= di halaman admin/user/petugas.
+            scriptSrcAttr: ["'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
+            fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+            imgSrc: ["'self'", 'data:', 'blob:', 'https://*.tile.openstreetmap.org', 'https://unpkg.com'],
+            connectSrc: ["'self'", 'https://nominatim.openstreetmap.org'],
+            formAction: ["'self'"],
+            frameAncestors: ["'none'"],
+            objectSrc: ["'none'"],
+            baseUri: ["'self'"],
+            upgradeInsecureRequests: isProduction ? [] : null
+        }
+    },
+    crossOriginEmbedderPolicy: false
 }));
 app.use(cors({
     origin: (origin, callback) => {
@@ -85,6 +110,10 @@ app.get('/api/health', async (req, res) => {
     }
 });
 
+// Jaring pengaman untuk seluruh /api. Limiter yang lebih ketat tetap dipasang
+// per router (authLimiter, writeLimiter).
+app.use('/api', require('./middleware/rateLimit').apiLimiter);
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/booking', require('./routes/booking'));
@@ -123,6 +152,16 @@ app.listen(PORT, () => {
     }
     if (isProduction && allowedOrigins.length === 0) {
         console.warn('[Security] CORS_ORIGINS belum diatur. Set domain resmi sebelum production.');
+    }
+    if (isProduction && process.env.TRUST_PROXY !== '1') {
+        console.warn(
+            '[Security] TRUST_PROXY belum diaktifkan. Di belakang reverse proxy, rate limit '
+            + 'akan membaca IP proxy untuk semua pengguna sehingga satu orang bisa mengunci '
+            + 'seluruh pengguna lain. Set TRUST_PROXY=1 bila aplikasi berada di balik proxy.'
+        );
+    }
+    if (!process.env.JWT_EXPIRES_IN) {
+        console.warn('[Security] JWT_EXPIRES_IN belum diatur, memakai default 1d.');
     }
     ensureNotificationSchema().catch(err => {
         console.error('Gagal menyiapkan schema notifikasi:', err.message);

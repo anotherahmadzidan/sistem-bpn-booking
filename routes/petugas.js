@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const verify = require('../middleware/auth');
+const { writeLimiter } = require('../middleware/rateLimit');
 const { getTugas, konfirmasiJadwal, tolakJadwal, inputHasil, tolakBerkas } = require('../controllers/petugasController');
 
 const multer = require('multer');
@@ -34,10 +35,10 @@ const upload = multer({
 });
 
 router.get('/tugas', verify('petugas'), getTugas);
-router.post('/konfirmasi/:id', verify('petugas'), konfirmasiJadwal);
-router.post('/tolak/:id', verify('petugas'), tolakJadwal);
-router.post('/tolak-berkas/:id', verify('petugas'), tolakBerkas);
-router.post('/hasil/:id', verify('petugas'),
+router.post('/konfirmasi/:id', writeLimiter, verify('petugas'), konfirmasiJadwal);
+router.post('/tolak/:id', writeLimiter, verify('petugas'), tolakJadwal);
+router.post('/tolak-berkas/:id', writeLimiter, verify('petugas'), tolakBerkas);
+router.post('/hasil/:id', writeLimiter, verify('petugas'),
     upload.fields([{ name: 'foto_lokasi', maxCount: 1 }, { name: 'foto_risalah', maxCount: 1 }]),
     inputHasil
 );
