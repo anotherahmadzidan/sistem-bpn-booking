@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Seluruh pemeriksaan berjalan tanpa database maupun SMTP:
+      # skrip di scripts/ memakai pool dan pengirim email tiruan.
+      - name: Lint dan uji
+        run: npm test
+        env:
+          JWT_SECRET: secret-khusus-ci-minimal-32-karakter-panjang
+          JWT_EXPIRES_IN: 1d
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      # Memantau kerentanan dependensi. Tidak menggagalkan build supaya
+      # advisory baru tidak memblokir rilis, tetapi tetap terlihat di log.
+      - name: Audit dependensi
+        run: npm audit --audit-level=high || true
