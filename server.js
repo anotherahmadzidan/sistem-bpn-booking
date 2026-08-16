@@ -27,19 +27,23 @@ if (process.env.TRUST_PROXY === '1') {
 
 // Middleware
 //
-// CATATAN CSP: 'unsafe-inline' pada script-src masih diperlukan karena seluruh
-// JavaScript halaman admin/user/petugas ditulis inline di dalam <script>.
-// Selama itu ada, CSP TIDAK memblokir XSS — pertahanan utama tetap escapeHTML()
-// di sisi render. Nilai CSP di sini adalah membatasi ke mana data bisa dikirim
-// (script-src/connect-src/form-action), sehingga token lebih sulit diekstraksi
-// ke domain penyerang. Perketat menjadi nonce setelah JS inline dipindah ke file.
+// CATATAN CSP
+//
+// script-src TIDAK lagi memuat 'unsafe-inline': seluruh JavaScript halaman
+// sudah berada di berkas terpisah, sehingga skrip yang disuntikkan sebagai
+// blok <script> atau URL javascript: kini benar-benar diblokir browser.
+//
+// Yang masih terbuka adalah script-src-attr. Halaman memakai ~125 atribut
+// onclick=, dan default helmet ('none') akan mematikan semuanya. Selama
+// atribut itu belum diubah menjadi addEventListener, penyerang yang berhasil
+// menyuntikkan atribut event (mis. onerror=) tetap bisa menjalankan kode.
+// Karena itu pertahanan utama tetap escapeHTML() di sisi render, dijaga oleh
+// scripts/test-xss-escaping.js.
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com'],
-            // Default helmet adalah script-src-attr 'none', yang akan memblokir
-            // SELURUH atribut onclick= di halaman admin/user/petugas.
+            scriptSrc: ["'self'", 'https://unpkg.com'],
             scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
