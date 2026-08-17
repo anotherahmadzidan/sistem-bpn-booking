@@ -6,7 +6,7 @@
  * celah XSS bertahan di halaman petugas setelah halaman admin diperbaiki.
  *
  * Berkas ini adalah skrip klasik (bukan module) supaya fungsinya tetap global
- * dan atribut onclick="..." di HTML tetap berfungsi.
+ * dan dapat dipanggil penghubung aksi lewat atribut data-*.
  */
 
 var WITA_TIME_ZONE = 'Asia/Makassar';
@@ -91,6 +91,75 @@ function safeMapsUrl(koordinat) {
     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
     return 'https://www.google.com/maps?q=' + encodeURIComponent(lat + ',' + lng);
 }
+
+/* ------------------------------------------------------------------ *
+ * Penghubung aksi (pengganti atribut onclick=)
+ *
+ * Atribut event inline memaksa CSP mengizinkan script-src-attr
+ * 'unsafe-inline'. Selama itu terbuka, penyerang yang berhasil menyisipkan
+ * atribut seperti onerror= tetap dapat menjalankan kode.
+ *
+ * Sebagai gantinya markup hanya MENYEBUT nama fungsi lewat atribut data-*,
+ * dan berkas ini yang memanggilnya. Nama dicari di daftar fungsi global -
+ * tidak ada eval, tidak ada string yang dieksekusi.
+ *
+ *   <button data-click="filterTugas" data-click-args='["pending"]'>
+ *   <input  data-input="cariBerkas"  data-input-args='["$val"]'>
+ *
+ * Token khusus di dalam args:
+ *   "$el"  -> elemen itu sendiri (dulu ditulis `this`)
+ *   "$val" -> nilai elemen       (dulu `this.value`)
+ *   "$ev"  -> objek event
+ *
+ * data-stop="1" menjalankan event.stopPropagation() sebelum fungsi dipanggil.
+ * ------------------------------------------------------------------ */
+
+var JENIS_AKSI = ['click', 'change', 'input'];
+
+function _argsAksi(el, jenis, ev) {
+    var mentah = el.getAttribute('data-' + jenis + '-args');
+    if (!mentah) return [];
+    var daftar;
+    try {
+        daftar = JSON.parse(mentah);
+    } catch {
+        console.error('[Aksi] data-' + jenis + '-args bukan JSON yang sah:', mentah);
+        return [];
+    }
+    return daftar.map(function (nilai) {
+        if (nilai === '$el') return el;
+        if (nilai === '$val') return el.value;
+        if (nilai === '$ev') return ev;
+        return nilai;
+    });
+}
+
+function _tanganiAksi(jenis, ev) {
+    var el = ev.target.closest ? ev.target.closest('[data-' + jenis + ']') : null;
+    if (!el) return;
+
+    if (el.getAttribute('data-stop') === '1') ev.stopPropagation();
+
+    var nama = el.getAttribute('data-' + jenis);
+    var fungsi = window[nama];
+    if (typeof fungsi !== 'function') {
+        console.error('[Aksi] fungsi tidak ditemukan:', nama);
+        return;
+    }
+    fungsi.apply(null, _argsAksi(el, jenis, ev));
+}
+
+JENIS_AKSI.forEach(function (jenis) {
+    document.addEventListener(jenis, function (ev) { _tanganiAksi(jenis, ev); });
+});
+
+// Gambar yang gagal dimuat disembunyikan. Peristiwa `error` pada <img> tidak
+// merambat naik, jadi tidak bisa didelegasikan seperti di atas.
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('img[data-sembunyi-bila-gagal]').forEach(function (img) {
+        img.addEventListener('error', function () { img.style.display = 'none'; });
+    });
+});
 
 /* ------------------------------------------------------------------ *
  * Sesi

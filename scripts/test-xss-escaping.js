@@ -16,8 +16,17 @@ const vm = require('vm');
 
 const root = path.join(__dirname, '..');
 
-// Muat common.js apa adanya, seperti browser memuatnya.
-const sandbox = { console };
+// Muat common.js apa adanya, seperti browser memuatnya. `document` dan
+// `window` cukup distub: yang diuji di sini fungsi murninya, sedangkan
+// pendaftaran listener penghubung aksi hanya perlu tidak melempar error.
+const sandbox = {
+    console,
+    document: {
+        addEventListener() {},
+        querySelectorAll: () => []
+    },
+    window: {}
+};
 vm.createContext(sandbox);
 vm.runInContext(
     fs.readFileSync(path.join(root, 'public/js/common.js'), 'utf8'),
@@ -129,8 +138,49 @@ function testTidakAdaInterpolasiMentah() {
     );
 }
 
+/**
+ * Penjaga: atribut event inline tidak boleh kembali.
+ *
+ * Selama halaman memakai onclick=, CSP harus mengizinkan script-src-attr
+ * 'unsafe-inline', dan atribut event yang berhasil disuntikkan penyerang akan
+ * ikut dieksekusi. Handler kini dinyatakan lewat atribut data-* yang
+ * dihubungkan public/js/common.js.
+ */
+function testTidakAdaHandlerInline() {
+    const dir = path.join(root, 'public');
+    const temuan = [];
+    const polaHandler = /\son(click|change|input|error|submit|load|mouse[a-z]+|key[a-z]+|focus|blur)\s*=\s*"/i;
+
+    const telusuri = (folder) => {
+        for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
+            const penuh = path.join(folder, entry.name);
+            if (entry.isDirectory()) { telusuri(penuh); continue; }
+            if (!/\.(html|js)$/.test(entry.name)) continue;
+
+            fs.readFileSync(penuh, 'utf8').split('\n').forEach((baris, index) => {
+                // Lewati komentar dokumentasi yang menyebut onclick sebagai contoh.
+                const dipangkas = baris.trim();
+                if (dipangkas.startsWith('//') || dipangkas.startsWith('*')) return;
+                if (polaHandler.test(baris)) {
+                    temuan.push(
+                        `${path.relative(root, penuh).split(path.sep).join('/')}:${index + 1}  ${dipangkas.slice(0, 90)}`
+                    );
+                }
+            });
+        }
+    };
+    telusuri(dir);
+
+    assert.deepStrictEqual(
+        temuan, [],
+        'Atribut event inline tidak boleh dipakai lagi; pakai data-click/data-change/data-input:\n'
+        + temuan.join('\n')
+    );
+}
+
 testEscapeHTML();
 testStripHTML();
+testTidakAdaHandlerInline();
 testSafeMapsUrl();
 testSafeWhatsAppUrl();
 testFormatDateTidakBergeser();

@@ -23,7 +23,7 @@
 
             <div class="header-area">
                 <div class="logo-text-container">
-                    <img src="/img/logo-bpn.svg" alt="BPN" class="target-logo" onerror="this.style.display='none'">
+                    <img src="/img/logo-bpn.svg" alt="BPN" class="target-logo" data-sembunyi-bila-gagal>
                     <h1 class="target-title">Sistem Permohonan <br><span class="text-yellow">Jadwal Pemeriksaan Tanah</span>
                     </h1>
                     <div class="title-line"></div>
@@ -53,7 +53,7 @@
                 <div class="card-accent-corner"></div>
 
                 <div class="tab-container">
-                    <button class="tab-btn active" id="btn-tab-petugas" onclick="switchTab('petugas')">
+                    <button class="tab-btn active" id="btn-tab-petugas" data-click="switchTab" data-click-args='["petugas"]'>
                         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -64,7 +64,7 @@
                             <span>Pegawai Lapangan</span>
                         </div>
                     </button>
-                    <button class="tab-btn" id="btn-tab-admin" onclick="switchTab('admin')">
+                    <button class="tab-btn" id="btn-tab-admin" data-click="switchTab" data-click-args='["admin"]'>
                         <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -99,7 +99,7 @@
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
                             <input type="password" id="pet-password" placeholder="••••••••••••">
-                            <svg class="icon-right" onclick="togglePass('pet-password')" width="18" height="18"
+                            <svg class="icon-right" data-click="togglePass" data-click-args='["pet-password"]' width="18" height="18"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" style="cursor: pointer;">
                                 <path
@@ -112,7 +112,7 @@
 
                     <div class="button-group">
                         <div id="pet-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
-                        <button class="btn-masuk" id="btn-login-petugas" type="button" onclick="loginPetugas(this)">
+                        <button class="btn-masuk" id="btn-login-petugas" type="button" data-click="loginPetugas" data-click-args='["$el"]'>
                             Masuk ke Portal
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -144,7 +144,7 @@
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
                             <input type="password" id="adm-password" placeholder="••••••••••••">
-                            <svg class="icon-right" onclick="togglePass('adm-password')" width="18" height="18"
+                            <svg class="icon-right" data-click="togglePass" data-click-args='["adm-password"]' width="18" height="18"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" style="cursor: pointer;">
                                 <path
@@ -157,7 +157,7 @@
 
                     <div class="button-group">
                         <div id="adm-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
-                        <button class="btn-masuk" id="btn-login-admin" type="button" onclick="loginAdmin(this)">
+                        <button class="btn-masuk" id="btn-login-admin" type="button" data-click="loginAdmin" data-click-args='["$el"]'>
                             Masuk ke Portal
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"

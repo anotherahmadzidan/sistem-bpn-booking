@@ -1,6 +1,7 @@
 /* Logika halaman petugas. Dipindah dari public/pages/petugas.html supaya
    bisa di-lint, di-cache browser, dan di-review terpisah dari markup.
-   Skrip klasik (bukan module) agar fungsi tetap global untuk onclick="...". */
+   Skrip klasik (bukan module): fungsi sengaja global agar dapat dipanggil
+   penghubung aksi di common.js lewat atribut data-click/data-change/data-input. */
 
 const nama = localStorage.getItem('nama');
 const role = localStorage.getItem('role');
@@ -309,13 +310,13 @@ function renderTugas(data) {
             <section class="tugas-action-panel">
                 <div class="action-panel-title">Tindak Lanjut Berkas</div>
                 ${perluKonfirmasi ? `
-                <button class="action-row action-confirm" onclick="openKonfirmasi(${b.id})">
+                <button class="action-row action-confirm" data-click="openKonfirmasi" data-click-args='[${b.id}]'>
                     ${actionIcon('confirm')}<strong>Konfirmasi</strong><small>Tetapkan jadwal pemeriksaan</small>
                 </button>
-                <button class="action-row action-reschedule" onclick="openTolak(${b.id})">
+                <button class="action-row action-reschedule" data-click="openTolak" data-click-args='[${b.id}]'>
                     ${actionIcon('reschedule')}<strong>Ubah Jadwal</strong><small>Ubah tanggal pemeriksaan</small>
                 </button>
-                <button class="action-row action-reject" onclick="openTolakBerkas(${b.id})">
+                <button class="action-row action-reject" data-click="openTolakBerkas" data-click-args='[${b.id}]'>
                     ${actionIcon('reject')}<strong>Tolak Berkas</strong><small>Tolak permohonan berkas</small>
                 </button>` : ''}
                 ${bisaInputHasil ? `
@@ -325,7 +326,7 @@ function renderTugas(data) {
                 ${waUrl
                 ? `<a href="${waUrl}" target="_blank" class="action-row action-contact">${actionIcon('contact')}<strong>Hubungi Pemohon</strong><small>Kirim pesan WhatsApp</small></a>`
                 : `<button class="action-row action-contact" disabled>${actionIcon('contact')}<strong>Hubungi Pemohon</strong><small>No. HP belum tersedia</small></button>`}
-                <button class="action-row action-result" onclick="goToInputHasil(${Number(b.id)})">
+                <button class="action-row action-result" data-click="goToInputHasil" data-click-args='[${Number(b.id)}]'>
                     ${actionIcon('result')}<strong>Input Hasil</strong><small>Simpan hasil pemeriksaan</small>
                 </button>` : ''}
                 ${!perluKonfirmasi && !bisaInputHasil && b.status !== 'rescheduled_by_petugas' && b.status !== 'selesai' && b.status !== 'dibatalkan' ? `

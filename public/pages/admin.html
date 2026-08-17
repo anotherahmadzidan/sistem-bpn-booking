@@ -15,8 +15,7 @@
 
     <header class="admin-mobile-topbar" aria-label="Header admin mobile">
         <button class="admin-sidebar-toggle" id="admin-sidebar-toggle" type="button"
-            aria-label="Buka menu admin" aria-controls="admin-sidebar" aria-expanded="false"
-            onclick="toggleAdminSidebar()">
+            aria-label="Buka menu admin" aria-controls="admin-sidebar" aria-expanded="false" data-click="toggleAdminSidebar">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path class="admin-menu-line-1" d="M4 7h16"></path>
                 <path class="admin-menu-line-2" d="M4 12h16"></path>
@@ -32,7 +31,7 @@
         </div>
     </header>
 
-    <div class="admin-sidebar-backdrop" id="admin-sidebar-backdrop" onclick="closeAdminSidebar()"
+    <div class="admin-sidebar-backdrop" id="admin-sidebar-backdrop" data-click="closeAdminSidebar"
         aria-hidden="true"></div>
 
     <!-- SIDEBAR -->
@@ -60,7 +59,7 @@
         </div>
                 <nav class="sidebar-nav">
             <div class="nav-section-label">Main Menu</div>
-            <button class="nav-item active" onclick="showPage('dashboard')">
+            <button class="nav-item active" data-click="showPage" data-click-args='["dashboard"]'>
                 <span class="icon menu-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
                         <path d="M3 11.5 12 4l9 7.5"></path>
@@ -70,7 +69,7 @@
                 </span>
                 Dashboard
             </button>
-            <button class="nav-item" onclick="showPage('berkas')">
+            <button class="nav-item" data-click="showPage" data-click-args='["berkas"]'>
                 <span class="icon menu-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
                         <path d="M3.5 7.5h6l2 3h10v8.5a2 2 0 0 1-2 2h-16Z"></path>
@@ -79,7 +78,7 @@
                 </span>
                 Semua Berkas
             </button>
-            <button class="nav-item" onclick="showPage('petugas')">
+            <button class="nav-item" data-click="showPage" data-click-args='["petugas"]'>
                 <span class="icon menu-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -90,7 +89,7 @@
                 </span>
                 Kelola Petugas
             </button>
-            <button class="nav-item" onclick="showPage('kuota')">
+            <button class="nav-item" data-click="showPage" data-click-args='["kuota"]'>
                 <span class="icon menu-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
                         <path d="M4 20V4"></path>
@@ -104,7 +103,7 @@
             </button>
         </nav>
         <div class="sidebar-footer">
-            <button class="btn btn-secondary btn-block admin-logout" id="btn-admin-logout" onclick="logout(this)">
+            <button class="btn btn-secondary btn-block admin-logout" id="btn-admin-logout" data-click="logout" data-click-args='["$el"]'>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -213,7 +212,7 @@
             <div class="card dashboard-table-card">
                 <div class="card-header">
                     <h3>Berkas Terbaru</h3>
-                    <button class="btn btn-primary btn-sm" onclick="showPage('berkas')">Lihat Semua <span>-&gt;</span></button>
+                    <button class="btn btn-primary btn-sm" data-click="showPage" data-click-args='["berkas"]'>Lihat Semua <span>-&gt;</span></button>
                 </div>
                 <div class="card-body">
                     <div class="table-wrap">
@@ -263,10 +262,9 @@
                         <circle cx="11" cy="11" r="7"></circle>
                         <path d="m16.5 16.5 4 4"></path>
                     </svg>
-                    <input type="text" id="search-berkas" placeholder="Cari nomor berkas / pemohon..."
-                        oninput="filterBerkas()">
+                    <input type="text" id="search-berkas" placeholder="Cari nomor berkas / pemohon..." data-input="filterBerkas">
                 </div>
-                <select id="filter-status" onchange="filterBerkas()"
+                <select id="filter-status" data-change="filterBerkas"
                     class="admin-berkas-status">
                     <option value="">Semua Status</option>
                     <option value="pending">Menunggu Konfirmasi</option>
@@ -375,7 +373,7 @@
                     </div>
                     <div id="petugas-error" class="alert alert-error" style="display:none"></div>
                     <div id="petugas-success" class="alert alert-success" style="display:none"></div>
-                    <button class="btn btn-primary" id="btn-add-petugas" onclick="tambahPetugas()">+ Tambah Petugas</button>
+                    <button class="btn btn-primary" id="btn-add-petugas" data-click="tambahPetugas">+ Tambah Petugas</button>
                 </div>
             </div>
 
@@ -424,7 +422,7 @@
 
             <!-- Tab kuota -->
             <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid #e2e8f0;padding-bottom:0">
-                <button class="kuota-tab active" id="ktab-kecamatan" onclick="switchKuotaTab('kecamatan')">
+                <button class="kuota-tab active" id="ktab-kecamatan" data-click="switchKuotaTab" data-click-args='["kecamatan"]'>
                     <span class="kuota-tab-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                             <path d="M4 10h16"></path>
@@ -438,7 +436,7 @@
                     </span>
                     Kecamatan
                 </button>
-                <button class="kuota-tab" id="ktab-kelurahan" onclick="switchKuotaTab('kelurahan')">
+                <button class="kuota-tab" id="ktab-kelurahan" data-click="switchKuotaTab" data-click-args='["kelurahan"]'>
                     <span class="kuota-tab-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                             <path d="M3.5 11.5 12 4l8.5 7.5"></path>
@@ -448,7 +446,7 @@
                     </span>
                     Kelurahan/Desa
                 </button>
-                <button class="kuota-tab" id="ktab-petugas" onclick="switchKuotaTab('petugas')">
+                <button class="kuota-tab" id="ktab-petugas" data-click="switchKuotaTab" data-click-args='["petugas"]'>
                     <span class="kuota-tab-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                             <circle cx="12" cy="7.5" r="3.5"></circle>
@@ -475,7 +473,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Jenis Pengaturan</label>
-                                <select id="kec-mode" onchange="toggleKuotaMode('kecamatan')">
+                                <select id="kec-mode" data-change="toggleKuotaMode" data-change-args='["kecamatan"]'>
                                     <option value="range">Rentang Tanggal</option>
                                     <option value="daily">Setiap Hari</option>
                                 </select>
@@ -483,7 +481,7 @@
                             <div class="form-row kuota-range-fields" id="kec-range-fields">
                                 <div class="form-group">
                                     <label>Tanggal Mulai</label>
-                                    <input type="date" id="kec-tanggal" onchange="syncKuotaEndDate('kecamatan')">
+                                    <input type="date" id="kec-tanggal" data-change="syncKuotaEndDate" data-change-args='["kecamatan"]'>
                                 </div>
                                 <div class="form-group">
                                     <label>Tanggal Selesai</label>
@@ -496,14 +494,14 @@
                             </div>
                             <div class="form-group quota-check-group">
                                 <label class="quota-check">
-                                    <input type="checkbox" id="kec-unlimited" onchange="toggleUnlimitedKuota('kecamatan')">
+                                    <input type="checkbox" id="kec-unlimited" data-change="toggleUnlimitedKuota" data-change-args='["kecamatan"]'>
                                     <span>Bebaskan Kuota</span>
                                 </label>
                                 <p class="quota-check-note">Jika aktif, kuota maksimal tidak dibatasi.</p>
                             </div>
                             <div id="kec-error" class="alert alert-error" style="display:none"></div>
                             <div id="kec-success" class="alert alert-success" style="display:none"></div>
-                            <button class="btn btn-primary" id="btn-kuota-kecamatan" onclick="simpanKuota('kecamatan', this)">Simpan Kuota</button>
+                            <button class="btn btn-primary" id="btn-kuota-kecamatan" data-click="simpanKuota" data-click-args='["kecamatan","$el"]'>Simpan Kuota</button>
                         </div>
                     </div>
                     <!-- Daftar aktif -->
@@ -512,8 +510,7 @@
                             <h3>Kuota Aktif</h3>
                             <div class="quota-active-controls quota-active-controls-2">
                                 <input type="date" id="kec-lihat-tanggal" class="quota-active-input">
-                                <button class="btn btn-secondary btn-sm quota-active-button"
-                                    onclick="lihatKuota('kecamatan', true, this)">Tampilkan</button>
+                                <button class="btn btn-secondary btn-sm quota-active-button" data-click="lihatKuota" data-click-args='["kecamatan",true,"$el"]'>Tampilkan</button>
                             </div>
                         </div>
                         <div class="card-body" id="kec-result">
@@ -533,7 +530,7 @@
                         <div class="card-body">
                             <div class="form-group">
                                 <label>Filter Kecamatan</label>
-                                <select id="kel-filter-kec" onchange="filterKelurahanKuota()">
+                                <select id="kel-filter-kec" data-change="filterKelurahanKuota">
                                     <option value="">-- Semua Kecamatan --</option>
                                 </select>
                             </div>
@@ -543,7 +540,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Jenis Pengaturan</label>
-                                <select id="kel-mode" onchange="toggleKuotaMode('kelurahan')">
+                                <select id="kel-mode" data-change="toggleKuotaMode" data-change-args='["kelurahan"]'>
                                     <option value="range">Rentang Tanggal</option>
                                     <option value="daily">Setiap Hari</option>
                                 </select>
@@ -551,7 +548,7 @@
                             <div class="form-row kuota-range-fields" id="kel-range-fields">
                                 <div class="form-group">
                                     <label>Tanggal Mulai</label>
-                                    <input type="date" id="kel-tanggal" onchange="syncKuotaEndDate('kelurahan')">
+                                    <input type="date" id="kel-tanggal" data-change="syncKuotaEndDate" data-change-args='["kelurahan"]'>
                                 </div>
                                 <div class="form-group">
                                     <label>Tanggal Selesai</label>
@@ -564,27 +561,25 @@
                             </div>
                             <div class="form-group quota-check-group">
                                 <label class="quota-check">
-                                    <input type="checkbox" id="kel-unlimited" onchange="toggleUnlimitedKuota('kelurahan')">
+                                    <input type="checkbox" id="kel-unlimited" data-change="toggleUnlimitedKuota" data-change-args='["kelurahan"]'>
                                     <span>Bebaskan Kuota</span>
                                 </label>
                                 <p class="quota-check-note">Jika aktif, kuota maksimal tidak dibatasi.</p>
                             </div>
                             <div id="kel-error" class="alert alert-error" style="display:none"></div>
                             <div id="kel-success" class="alert alert-success" style="display:none"></div>
-                            <button class="btn btn-primary" id="btn-kuota-kelurahan" onclick="simpanKuota('kelurahan', this)">Simpan Kuota</button>
+                            <button class="btn btn-primary" id="btn-kuota-kelurahan" data-click="simpanKuota" data-click-args='["kelurahan","$el"]'>Simpan Kuota</button>
                         </div>
                     </div>
                     <div class="card quota-active-card">
                         <div class="card-header quota-active-header">
                             <h3>Kuota Aktif</h3>
                             <div class="quota-active-controls quota-active-controls-3">
-                                <select id="kel-lihat-kec" class="quota-active-input"
-                                    onchange="lihatKuota('kelurahan', true)">
+                                <select id="kel-lihat-kec" class="quota-active-input" data-change="lihatKuota" data-change-args='["kelurahan",true]'>
                                     <option value="">-- Pilih Kecamatan --</option>
                                 </select>
                                 <input type="date" id="kel-lihat-tanggal" class="quota-active-input">
-                                <button class="btn btn-secondary btn-sm quota-active-button"
-                                    onclick="lihatKuota('kelurahan', true, this)">Tampilkan</button>
+                                <button class="btn btn-secondary btn-sm quota-active-button" data-click="lihatKuota" data-click-args='["kelurahan",true,"$el"]'>Tampilkan</button>
                             </div>
                         </div>
                         <div class="card-body" id="kel-result">
@@ -608,7 +603,7 @@
                             </div>
                             <div class="form-group">
                                 <label>Jenis Pengaturan</label>
-                                <select id="pet-mode" onchange="toggleKuotaMode('petugas')">
+                                <select id="pet-mode" data-change="toggleKuotaMode" data-change-args='["petugas"]'>
                                     <option value="range">Rentang Tanggal</option>
                                     <option value="daily">Setiap Hari</option>
                                 </select>
@@ -616,7 +611,7 @@
                             <div class="form-row kuota-range-fields" id="pet-range-fields">
                                 <div class="form-group">
                                     <label>Tanggal Mulai</label>
-                                    <input type="date" id="pet-tanggal" onchange="syncKuotaEndDate('petugas')">
+                                    <input type="date" id="pet-tanggal" data-change="syncKuotaEndDate" data-change-args='["petugas"]'>
                                 </div>
                                 <div class="form-group">
                                     <label>Tanggal Selesai</label>
@@ -629,7 +624,7 @@
                             </div>
                             <div id="pet-kq-error" class="alert alert-error" style="display:none"></div>
                             <div id="pet-kq-success" class="alert alert-success" style="display:none"></div>
-                            <button class="btn btn-primary" id="btn-kuota-petugas" onclick="simpanKuota('petugas', this)">Simpan Kuota</button>
+                            <button class="btn btn-primary" id="btn-kuota-petugas" data-click="simpanKuota" data-click-args='["petugas","$el"]'>Simpan Kuota</button>
                         </div>
                     </div>
                     <div class="card quota-active-card">
@@ -637,8 +632,7 @@
                             <h3>Kuota Aktif</h3>
                             <div class="quota-active-controls quota-active-controls-2">
                                 <input type="date" id="pet-lihat-tanggal" class="quota-active-input">
-                                <button class="btn btn-secondary btn-sm quota-active-button"
-                                    onclick="lihatKuota('petugas', true, this)">Tampilkan</button>
+                                <button class="btn btn-secondary btn-sm quota-active-button" data-click="lihatKuota" data-click-args='["petugas",true,"$el"]'>Tampilkan</button>
                             </div>
                         </div>
                         <div class="card-body" id="pet-result">
@@ -656,7 +650,7 @@
         <div class="modal" style="max-width:640px">
             <div class="modal-header">
                 <h3>Detail Berkas</h3>
-                <button class="modal-close" onclick="closeModal('modal-detail')" aria-label="Tutup">
+                <button class="modal-close" data-click="closeModal" data-click-args='["modal-detail"]' aria-label="Tutup">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M18 6 6 18"></path>
                         <path d="m6 6 12 12"></path>
@@ -665,7 +659,7 @@
             </div>
             <div class="modal-body" id="modal-detail-body"></div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modal-detail')">Tutup</button>
+                <button class="btn btn-secondary" data-click="closeModal" data-click-args='["modal-detail"]'>Tutup</button>
             </div>
         </div>
     </div>
@@ -675,7 +669,7 @@
         <div class="modal modal-danger-confirm">
             <div class="modal-header">
                 <h3>Hapus Berkas Permanen</h3>
-                <button class="modal-close" onclick="closeModal('modal-hapus-berkas')" aria-label="Tutup">
+                <button class="modal-close" data-click="closeModal" data-click-args='["modal-hapus-berkas"]' aria-label="Tutup">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M18 6 6 18"></path>
                         <path d="m6 6 12 12"></path>
@@ -690,14 +684,13 @@
                 <div class="delete-berkas-summary" id="delete-berkas-summary"></div>
                 <div class="form-group">
                     <label>Ketik <strong>HAPUS</strong> untuk konfirmasi <span style="color:red">*</span></label>
-                    <input type="text" id="delete-berkas-confirm" placeholder="HAPUS" autocomplete="off"
-                        oninput="validateDeleteBerkasConfirm()">
+                    <input type="text" id="delete-berkas-confirm" placeholder="HAPUS" autocomplete="off" data-input="validateDeleteBerkasConfirm">
                 </div>
                 <div id="delete-berkas-error" class="alert alert-error" style="display:none"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modal-hapus-berkas')">Batal</button>
-                <button class="btn btn-danger" id="btn-confirm-delete-berkas" onclick="submitHapusBerkas()" disabled>
+                <button class="btn btn-secondary" data-click="closeModal" data-click-args='["modal-hapus-berkas"]'>Batal</button>
+                <button class="btn btn-danger" id="btn-confirm-delete-berkas" data-click="submitHapusBerkas" disabled>
                     Hapus Permanen
                 </button>
             </div>
@@ -709,7 +702,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>Edit Petugas</h3>
-                <button class="modal-close" onclick="closeModal('modal-edit-petugas')" aria-label="Tutup">
+                <button class="modal-close" data-click="closeModal" data-click-args='["modal-edit-petugas"]' aria-label="Tutup">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M18 6 6 18"></path>
                         <path d="m6 6 12 12"></path>
@@ -758,8 +751,7 @@
                             placeholder="Password baru">
                         <button type="button" class="petugas-password-toggle"
                             title="Tampilkan password" aria-label="Tampilkan password"
-                            aria-pressed="false"
-                            onclick="togglePetugasPassword('edit-password', this)">
+                            aria-pressed="false" data-click="togglePetugasPassword" data-click-args='["edit-password","$el"]'>
                             <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true">
                                 <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path>
                                 <circle cx="12" cy="12" r="2.5"></circle>
@@ -778,8 +770,8 @@
                 <div id="edit-error" class="alert alert-error" style="display:none"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modal-edit-petugas')">Batal</button>
-                <button class="btn btn-primary" id="btn-edit-petugas" onclick="submitEditPetugas()">Simpan</button>
+                <button class="btn btn-secondary" data-click="closeModal" data-click-args='["modal-edit-petugas"]'>Batal</button>
+                <button class="btn btn-primary" id="btn-edit-petugas" data-click="submitEditPetugas">Simpan</button>
             </div>
         </div>
     </div>
@@ -789,7 +781,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 id="status-petugas-title">Ubah Status Petugas</h3>
-                <button class="modal-close" onclick="closeModal('modal-status-petugas')" aria-label="Tutup">
+                <button class="modal-close" data-click="closeModal" data-click-args='["modal-status-petugas"]' aria-label="Tutup">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M18 6 6 18"></path>
                         <path d="m6 6 12 12"></path>
@@ -802,8 +794,8 @@
                 <div id="status-petugas-error" class="alert alert-error" style="display:none"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modal-status-petugas')">Batal</button>
-                <button class="btn btn-primary" id="btn-confirm-status-petugas" onclick="submitTogglePetugas()">
+                <button class="btn btn-secondary" data-click="closeModal" data-click-args='["modal-status-petugas"]'>Batal</button>
+                <button class="btn btn-primary" id="btn-confirm-status-petugas" data-click="submitTogglePetugas">
                     Konfirmasi
                 </button>
             </div>
@@ -815,7 +807,7 @@
         <div class="modal modal-danger-confirm">
             <div class="modal-header">
                 <h3>Hapus Petugas</h3>
-                <button class="modal-close" onclick="closeModal('modal-hapus-petugas')" aria-label="Tutup">
+                <button class="modal-close" data-click="closeModal" data-click-args='["modal-hapus-petugas"]' aria-label="Tutup">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M18 6 6 18"></path>
                         <path d="m6 6 12 12"></path>
@@ -830,14 +822,13 @@
                 <div class="delete-berkas-summary petugas-action-summary" id="delete-petugas-summary"></div>
                 <div class="form-group">
                     <label>Ketik <strong>HAPUS</strong> untuk konfirmasi <span style="color:red">*</span></label>
-                    <input type="text" id="delete-petugas-confirm" placeholder="HAPUS" autocomplete="off"
-                        oninput="validateDeletePetugasConfirm()">
+                    <input type="text" id="delete-petugas-confirm" placeholder="HAPUS" autocomplete="off" data-input="validateDeletePetugasConfirm">
                 </div>
                 <div id="delete-petugas-error" class="alert alert-error" style="display:none"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modal-hapus-petugas')">Batal</button>
-                <button class="btn btn-danger" id="btn-confirm-delete-petugas" onclick="submitHapusPetugas()" disabled>
+                <button class="btn btn-secondary" data-click="closeModal" data-click-args='["modal-hapus-petugas"]'>Batal</button>
+                <button class="btn btn-danger" id="btn-confirm-delete-petugas" data-click="submitHapusPetugas" disabled>
                     Hapus Petugas
                 </button>
             </div>

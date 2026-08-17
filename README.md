@@ -114,8 +114,22 @@ koneksinya (`conn.release()`) baru kirim notifikasi. Bila tidak, dua permintaan
 bersamaan akan saling menunggu koneksi dan pool terkunci permanen — mysql2 tidak
 punya batas waktu antrean.
 
+**Jangan memakai atribut event inline (`onclick=`, `onchange=`, ...).** CSP
+kini menetapkan `script-src-attr 'none'`, sehingga atribut seperti itu tidak
+akan dieksekusi browser — termasuk yang berhasil disuntikkan penyerang. Nyatakan
+handler lewat atribut data-*, yang dihubungkan `common.js`:
+
+```html
+<button data-click="filterTugas" data-click-args='["pending"]'>Menunggu</button>
+<input  data-input="cariBerkas"  data-input-args='["$val"]'>
+```
+
+Token `"$el"` (elemen, dulu `this`), `"$val"` (nilai elemen), dan `"$ev"` (objek
+event) tersedia di dalam args; `data-stop="1"` menjalankan `stopPropagation()`.
+`npm run test:xss` akan gagal bila atribut event inline muncul kembali.
+
 **JavaScript halaman adalah skrip klasik, bukan module.** Fungsinya sengaja
-global supaya atribut `onclick="..."` di HTML tetap berfungsi.
+global agar dapat dipanggil penghubung aksi tersebut.
 
 **Token JWT tidak pernah menyentuh JavaScript.** Sesi disimpan di cookie
 `httpOnly` (`bpn_session`) sehingga celah XSS tidak bisa membacanya. Yang ada di

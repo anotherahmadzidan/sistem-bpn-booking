@@ -20,8 +20,7 @@
 
     <header class="petugas-mobile-topbar" aria-label="Header petugas mobile">
         <button class="petugas-sidebar-toggle" id="petugas-sidebar-toggle" type="button"
-            aria-label="Buka menu petugas" aria-controls="petugas-sidebar" aria-expanded="false"
-            onclick="togglePetugasSidebar()">
+            aria-label="Buka menu petugas" aria-controls="petugas-sidebar" aria-expanded="false" data-click="togglePetugasSidebar">
             <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path class="petugas-menu-line-1" d="M4 7h16"></path>
                 <path class="petugas-menu-line-2" d="M4 12h16"></path>
@@ -37,7 +36,7 @@
         </div>
     </header>
 
-    <div class="petugas-sidebar-backdrop" id="petugas-sidebar-backdrop" onclick="closePetugasSidebar()"
+    <div class="petugas-sidebar-backdrop" id="petugas-sidebar-backdrop" data-click="closePetugasSidebar"
         aria-hidden="true"></div>
 
     <aside class="sidebar" id="petugas-sidebar">
@@ -64,7 +63,7 @@
         </div>
         <nav class="sidebar-nav">
             <div class="nav-section-label">Main Menu</div>
-            <button class="nav-item active" id="nav-tugas" onclick="showPage('tugas')">
+            <button class="nav-item active" id="nav-tugas" data-click="showPage" data-click-args='["tugas"]'>
                 <span class="icon menu-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
                         <rect x="4" y="4" width="16" height="18" rx="2"></rect>
@@ -76,7 +75,7 @@
                 </span>
                 Daftar Tugas
             </button>
-            <button class="nav-item" id="nav-hasil" onclick="showPage('hasil')">
+            <button class="nav-item" id="nav-hasil" data-click="showPage" data-click-args='["hasil"]'>
                 <span class="icon menu-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24">
                         <path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4Z"></path>
@@ -88,7 +87,7 @@
             </button>
         </nav>
         <div class="sidebar-footer">
-            <button class="btn btn-secondary btn-block petugas-logout" id="btn-petugas-logout" onclick="logout(this)">
+            <button class="btn btn-secondary btn-block petugas-logout" id="btn-petugas-logout" data-click="logout" data-click-args='["$el"]'>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -122,8 +121,7 @@
                         <strong id="petugas-header-date">-</strong>
                     </div>
                     <div class="role-notif-wrap" id="petugas-notif-wrap">
-                        <button class="petugas-notification-button" type="button" aria-label="Notifikasi"
-                            onclick="toggleNotifikasi()">
+                        <button class="petugas-notification-button" type="button" aria-label="Notifikasi" data-click="toggleNotifikasi">
                             <span class="petugas-bell-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
@@ -136,7 +134,7 @@
                         <div class="role-notif-dropdown" id="petugas-notif-dropdown" style="display:none">
                             <div class="role-notif-header">
                                 <span>Notifikasi</span>
-                                <button type="button" onclick="event.stopPropagation(); markAllNotifikasiRead()">Tandai dibaca</button>
+                                <button type="button" data-click="markAllNotifikasiRead" data-stop="1">Tandai dibaca</button>
                             </div>
                             <div id="petugas-notif-list">
                                 <div class="role-notif-empty">Belum ada notifikasi</div>
@@ -154,9 +152,8 @@
                     </svg>
                 </span>
                 <input type="search" id="petugas-search" placeholder="Cari nomor berkas atau pemohon..."
-                    autocomplete="off" oninput="handlePetugasSearch(this.value)">
-                <button class="petugas-search-clear" id="petugas-search-clear" type="button"
-                    onclick="clearPetugasSearch()" aria-label="Hapus pencarian" style="display:none">
+                    autocomplete="off" data-input="handlePetugasSearch" data-input-args='["$val"]'>
+                <button class="petugas-search-clear" id="petugas-search-clear" type="button" data-click="clearPetugasSearch" aria-label="Hapus pencarian" style="display:none">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M18 6 6 18"></path>
                         <path d="m6 6 12 12"></path>
@@ -166,24 +163,16 @@
 
             <div class="petugas-filter-shell">
                 <div class="petugas-filter-tabs" id="petugas-filter-tabs">
-                    <button class="petugas-filter-tab active" type="button" data-filter="semua"
-                        onclick="filterTugas('semua')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>Semua <b id="count-semua">(0)</b></button>
-                    <button class="petugas-filter-tab" type="button" data-filter="pending"
-                        onclick="filterTugas('pending')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>Menunggu Konfirmasi <b id="count-pending">(0)</b></button>
-                    <button class="petugas-filter-tab" type="button" data-filter="jadwal_fix"
-                        onclick="filterTugas('jadwal_fix')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect x="3" y="5" width="18" height="17" rx="2"></rect><path d="M3 10h18"></path></svg></span>Jadwal Ditetapkan <b id="count-jadwal_fix">(0)</b></button>
-                    <button class="petugas-filter-tab" type="button" data-filter="rescheduled_by_user"
-                        onclick="filterTugas('rescheduled_by_user')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h6.5"></path><path d="M16 2v4M8 2v4M3 9.5h18"></path><circle cx="17.5" cy="16.5" r="4.5"></circle><path d="M17.5 14.5v2l1.4 1"></path></svg></span>Jadwal Diubah Pemohon <b id="count-rescheduled_by_user">(0)</b></button>
-                    <button class="petugas-filter-tab" type="button" data-filter="rescheduled_by_petugas"
-                        onclick="filterTugas('rescheduled_by_petugas')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h6.5"></path><path d="M16 2v4M8 2v4M3 9.5h18"></path><path d="M21.7 16.4a4.5 4.5 0 1 1-1.2-3.1"></path><path d="M21.5 11.8v2.6H19"></path></svg></span>Jadwal Diubah Petugas <b id="count-rescheduled_by_petugas">(0)</b></button>
-                    <button class="petugas-filter-tab" type="button" data-filter="selesai"
-                        onclick="filterTugas('selesai')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg></span>Selesai <b id="count-selesai">(0)</b></button>
-                    <button class="petugas-filter-tab" type="button" data-filter="ditolak"
-                        onclick="filterTugas('ditolak')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></span>Ditolak <b id="count-ditolak">(0)</b></button>
-                    <button class="petugas-filter-tab" type="button" data-filter="dibatalkan"
-                        onclick="filterTugas('dibatalkan')"><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></span>Dibatalkan <b id="count-dibatalkan">(0)</b></button>
+                    <button class="petugas-filter-tab active" type="button" data-filter="semua" data-click="filterTugas" data-click-args='["semua"]'><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg></span>Semua <b id="count-semua">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="pending" data-click="filterTugas" data-click-args='["pending"]'><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></span>Menunggu Konfirmasi <b id="count-pending">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="jadwal_fix" data-click="filterTugas" data-click-args='["jadwal_fix"]'><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect x="3" y="5" width="18" height="17" rx="2"></rect><path d="M3 10h18"></path></svg></span>Jadwal Ditetapkan <b id="count-jadwal_fix">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="rescheduled_by_user" data-click="filterTugas" data-click-args='["rescheduled_by_user"]'><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h6.5"></path><path d="M16 2v4M8 2v4M3 9.5h18"></path><circle cx="17.5" cy="16.5" r="4.5"></circle><path d="M17.5 14.5v2l1.4 1"></path></svg></span>Jadwal Diubah Pemohon <b id="count-rescheduled_by_user">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="rescheduled_by_petugas" data-click="filterTugas" data-click-args='["rescheduled_by_petugas"]'><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h6.5"></path><path d="M16 2v4M8 2v4M3 9.5h18"></path><path d="M21.7 16.4a4.5 4.5 0 1 1-1.2-3.1"></path><path d="M21.5 11.8v2.6H19"></path></svg></span>Jadwal Diubah Petugas <b id="count-rescheduled_by_petugas">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="selesai" data-click="filterTugas" data-click-args='["selesai"]'><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg></span>Selesai <b id="count-selesai">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="ditolak" data-click="filterTugas" data-click-args='["ditolak"]'><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></span>Ditolak <b id="count-ditolak">(0)</b></button>
+                    <button class="petugas-filter-tab" type="button" data-filter="dibatalkan" data-click="filterTugas" data-click-args='["dibatalkan"]'><span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></span>Dibatalkan <b id="count-dibatalkan">(0)</b></button>
                 </div>
-                <select id="filter-dropdown" onchange="filterTugas(this.value)" aria-hidden="true" tabindex="-1">
+                <select id="filter-dropdown" data-change="filterTugas" data-change-args='["$val"]' aria-hidden="true" tabindex="-1">
                     <option value="semua">Semua</option>
                     <option value="pending">Menunggu Konfirmasi</option>
                     <option value="rescheduled_by_user">Jadwal Diubah Pemohon</option>
@@ -210,7 +199,7 @@
                 <div class="card-body">
                     <div class="form-group">
                         <label>Nomor Berkas</label>
-                        <select id="hasil-berkas-select" onchange="onBerkasChange()">
+                        <select id="hasil-berkas-select" data-change="onBerkasChange">
                             <option value="">-- Pilih Berkas (Jadwal Ditetapkan) --</option>
                         </select>
                     </div>
@@ -241,7 +230,7 @@
                         <span class="app-upload-progress__label" id="hasil-upload-progress-label">Mengunggah 0%</span>
                     </div>
                     <div style="display:flex;gap:10px;margin-top:8px">
-                        <button class="btn btn-primary" id="btn-submit-hasil" onclick="submitHasil()">
+                        <button class="btn btn-primary" id="btn-submit-hasil" data-click="submitHasil">
                             <span class="btn-icon" aria-hidden="true">
                                 <svg viewBox="0 0 24 24">
                                     <path d="M5 3h12l2 2v16H5Z"></path>
@@ -251,7 +240,7 @@
                             </span>
                             Simpan Hasil Pemeriksaan
                         </button>
-                        <button class="btn btn-secondary" onclick="resetHasil()">Reset</button>
+                        <button class="btn btn-secondary" data-click="resetHasil">Reset</button>
                     </div>
                 </div>
             </div>
@@ -264,7 +253,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>Konfirmasi Jadwal</h3>
-                <button class="modal-close" onclick="closeModal('modal-konfirmasi')" aria-label="Tutup">
+                <button class="modal-close" data-click="closeModal" data-click-args='["modal-konfirmasi"]' aria-label="Tutup">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
                 </button>
             </div>
@@ -276,8 +265,8 @@
                 <div id="konfirmasi-error" class="alert alert-error" style="display:none"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modal-konfirmasi')">Batal</button>
-                <button class="btn btn-success" id="btn-submit-konfirmasi" onclick="submitKonfirmasi()">
+                <button class="btn btn-secondary" data-click="closeModal" data-click-args='["modal-konfirmasi"]'>Batal</button>
+                <button class="btn btn-success" id="btn-submit-konfirmasi" data-click="submitKonfirmasi">
                     <span class="btn-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="9"></circle>
@@ -295,7 +284,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>Tetapkan Jadwal Baru</h3>
-                <button class="modal-close" onclick="closeModal('modal-tolak')" aria-label="Tutup">
+                <button class="modal-close" data-click="closeModal" data-click-args='["modal-tolak"]' aria-label="Tutup">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
                 </button>
             </div>
@@ -314,8 +303,8 @@
                 <div id="tolak-error" class="alert alert-error" style="display:none"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modal-tolak')">Batal</button>
-                <button class="btn btn-danger" id="btn-submit-tolak" onclick="submitTolak()">Tetapkan Jadwal Baru</button>
+                <button class="btn btn-secondary" data-click="closeModal" data-click-args='["modal-tolak"]'>Batal</button>
+                <button class="btn btn-danger" id="btn-submit-tolak" data-click="submitTolak">Tetapkan Jadwal Baru</button>
             </div>
         </div>
     </div>
@@ -325,7 +314,7 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>Tolak Berkas</h3>
-                <button class="modal-close" onclick="closeModal('modal-tolak-berkas')" aria-label="Tutup">
+                <button class="modal-close" data-click="closeModal" data-click-args='["modal-tolak-berkas"]' aria-label="Tutup">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
                 </button>
             </div>
@@ -350,8 +339,8 @@
                 <div id="tolak-berkas-error" class="alert alert-error" style="display:none"></div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('modal-tolak-berkas')">Batal</button>
-                <button class="btn btn-danger" id="btn-submit-tolak-berkas" onclick="submitTolakBerkas()">Tolak Berkas</button>
+                <button class="btn btn-secondary" data-click="closeModal" data-click-args='["modal-tolak-berkas"]'>Batal</button>
+                <button class="btn btn-danger" id="btn-submit-tolak-berkas" data-click="submitTolakBerkas">Tolak Berkas</button>
             </div>
         </div>
     </div>

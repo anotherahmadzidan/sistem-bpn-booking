@@ -1,6 +1,7 @@
 /* Logika halaman user. Dipindah dari public/pages/user.html supaya
    bisa di-lint, di-cache browser, dan di-review terpisah dari markup.
-   Skrip klasik (bukan module) agar fungsi tetap global untuk onclick="...". */
+   Skrip klasik (bukan module): fungsi sengaja global agar dapat dipanggil
+   penghubung aksi di common.js lewat atribut data-click/data-change/data-input. */
 
 const nama = localStorage.getItem('nama');
 const role = localStorage.getItem('role');
@@ -97,7 +98,7 @@ async function loadNotifikasi() {
             const isLong = pesan.length > 92;
             return `
     <div class="notif-item ${n.is_read ? '' : 'unread'} ${isLong ? 'is-expandable' : ''}"
-        data-index="${index}" onclick="${isLong ? `openNotifDetail(${index})` : ''}">
+        data-index="${index}"${isLong ? ` data-click="openNotifDetail" data-click-args='[${index}]'` : ''}>
         <div class="notif-item-judul">${escapeHTML(n.judul)}</div>
         <div class="notif-item-pesan">${escapeHTML(pesan)}</div>
         ${isLong ? '<button class="notif-more" type="button">Lihat lengkap</button>' : ''}
@@ -725,15 +726,15 @@ function renderRiwayat(data) {
                     <p>${escapeHTML(alasanPetugas)}</p>
                 </div>` : ''}
                 ${b.status === 'rescheduled_by_petugas' ? `
-                <button class="berkas-action-row action-confirm" onclick="approvePetugasSchedule(${b.id}, this)">
+                <button class="berkas-action-row action-confirm" data-click="approvePetugasSchedule" data-click-args='[${b.id},"$el"]'>
                     ${riwayatActionIcon('confirm')}<strong>Setujui Jadwal</strong><small>Gunakan jadwal dari petugas</small>
                 </button>
-                ${bisaAjukanJadwal ? `<button class="berkas-action-row action-reschedule" onclick="openReschedule(${b.id})">${riwayatActionIcon('reschedule')}<strong>Ajukan Jadwal Lain</strong><small>Ajukan perubahan satu kali</small></button>` : ''}
-                <button class="berkas-action-row action-cancel" onclick="openCancelBooking(${b.id})">
+                ${bisaAjukanJadwal ? `<button class="berkas-action-row action-reschedule" data-click="openReschedule" data-click-args='[${b.id}]'>${riwayatActionIcon('reschedule')}<strong>Ajukan Jadwal Lain</strong><small>Ajukan perubahan satu kali</small></button>` : ''}
+                <button class="berkas-action-row action-cancel" data-click="openCancelBooking" data-click-args='[${b.id}]'>
                     ${riwayatActionIcon('cancel')}<strong>Batalkan Permohonan</strong><small>Jika jadwal tidak bisa disepakati</small>
                 </button>` : ''}
                 ${b.status !== 'rescheduled_by_petugas' && bisaAjukanJadwal ? `
-                <button class="berkas-action-row action-reschedule" onclick="openReschedule(${b.id})">
+                <button class="berkas-action-row action-reschedule" data-click="openReschedule" data-click-args='[${b.id}]'>
                     ${riwayatActionIcon('reschedule')}<strong>Ajukan Reschedule</strong><small>Ajukan perubahan satu kali</small>
                 </button>` : ''}
                 ${!bisaAjukanJadwal && b.status !== 'rescheduled_by_petugas' ? `<p class="berkas-action-note">${riwayatStatusNote(b.status)}</p>` : ''}

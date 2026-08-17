@@ -1,6 +1,7 @@
 /* Logika halaman admin. Dipindah dari public/pages/admin.html supaya
    bisa di-lint, di-cache browser, dan di-review terpisah dari markup.
-   Skrip klasik (bukan module) agar fungsi tetap global untuk onclick="...". */
+   Skrip klasik (bukan module): fungsi sengaja global agar dapat dipanggil
+   penghubung aksi di common.js lewat atribut data-click/data-change/data-input. */
 
     const nama = localStorage.getItem('nama');
     const role = localStorage.getItem('role');
@@ -207,13 +208,11 @@
       <td>${badgeStatus(b.status)}</td>
       <td class="table-actions">
         <button type="button" class="berkas-icon-button berkas-icon-info"
-            title="Detail Berkas" aria-label="Detail Berkas"
-            onclick="lihatDetail(${b.id})">
+            title="Detail Berkas" aria-label="Detail Berkas" data-click="lihatDetail" data-click-args='[${b.id}]'>
             ${adminIcon('info', 'berkas-action-icon')}
         </button>
         <button type="button" class="berkas-icon-button berkas-icon-delete"
-            title="Hapus Berkas" aria-label="Hapus Berkas"
-            onclick="openHapusBerkas(${b.id})">
+            title="Hapus Berkas" aria-label="Hapus Berkas" data-click="openHapusBerkas" data-click-args='[${b.id}]'>
             ${adminIcon('trash', 'berkas-action-icon')}
         </button>
       </td>
@@ -625,20 +624,17 @@
                 <td class="petugas-action-cell">
                     <div class="petugas-action-row">
                     <button type="button" class="petugas-icon-button petugas-icon-edit"
-                        title="Edit Petugas" aria-label="Edit Petugas"
-                        onclick="openEditPetugas(${p.id})">
+                        title="Edit Petugas" aria-label="Edit Petugas" data-click="openEditPetugas" data-click-args='[${p.id}]'>
                         ${adminIcon('pencil', 'petugas-action-icon')}
                     </button>
                     <button type="button"
                         class="petugas-icon-button ${p.is_active ? 'petugas-icon-disable' : 'petugas-icon-enable'}"
                         title="${p.is_active ? 'Nonaktifkan Petugas' : 'Aktifkan Petugas'}"
-                        aria-label="${p.is_active ? 'Nonaktifkan Petugas' : 'Aktifkan Petugas'}"
-                        onclick="openTogglePetugas(${p.id}, ${p.is_active ? 1 : 0})">
+                        aria-label="${p.is_active ? 'Nonaktifkan Petugas' : 'Aktifkan Petugas'}" data-click="openTogglePetugas" data-click-args='[${p.id},${p.is_active ? 1 : 0}]'>
                         ${adminIcon('forbidden', 'petugas-action-icon')}
                     </button>
                     <button type="button" class="petugas-icon-button petugas-icon-delete"
-                        title="Hapus Petugas" aria-label="Hapus Petugas"
-                        onclick="openHapusPetugas(${p.id})">
+                        title="Hapus Petugas" aria-label="Hapus Petugas" data-click="openHapusPetugas" data-click-args='[${p.id}]'>
                         ${adminIcon('trash', 'petugas-action-icon')}
                     </button>
                     </div>

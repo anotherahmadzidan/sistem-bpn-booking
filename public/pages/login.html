@@ -24,7 +24,7 @@
 
       <div class="header-area">
         <div class="logo-text-container">
-          <img src="/img/logo-bpn.svg" alt="BPN" class="target-logo" onerror="this.style.display='none'">
+          <img src="/img/logo-bpn.svg" alt="BPN" class="target-logo" data-sembunyi-bila-gagal>
           <h1 class="target-title">Sistem Permohonan <br><span class="text-yellow">Jadwal Pemeriksaan Tanah</span></h1>
           <div class="title-line"></div>
           <p class="target-subtitle">Ajukan, pantau, dan atur jadwal peninjauan tanah anda secara online dengan mudah
@@ -70,7 +70,7 @@
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
             <input type="password" id="password" placeholder="••••••••••••">
-            <svg class="icon-right" onclick="togglePassword('password')" width="18" height="18" viewBox="0 0 24 24"
+            <svg class="icon-right" data-click="togglePassword" data-click-args='["password"]' width="18" height="18" viewBox="0 0 24 24"
               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
               style="cursor: pointer;">
               <path
@@ -81,12 +81,12 @@
           </div>
         </div>
         <div class="auth-help-row">
-          <button type="button" class="auth-link-button" onclick="showForgotPassword()">Lupa kata sandi?</button>
+          <button type="button" class="auth-link-button" data-click="showForgotPassword">Lupa kata sandi?</button>
         </div>
         <div id="login-success" class="alert alert-success" style="display:none;"></div>
         <div id="login-error" class="alert alert-error" style="display:none;"></div>
         <div class="button-group">
-          <button class="btn-masuk" onclick="login(this)">
+          <button class="btn-masuk" data-click="login" data-click-args='["$el"]'>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"></path>
@@ -96,7 +96,7 @@
 
           <div class="separator"><span>atau</span></div>
 
-          <button class="btn-buat-akun" onclick="showRegister()">
+          <button class="btn-buat-akun" data-click="showRegister">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -113,7 +113,7 @@
         <div class="card-accent-corner"></div>
 
         <div class="card-header-new">
-          <button class="btn-back-small" onclick="showLogin()" title="Kembali ke Login">
+          <button class="btn-back-small" data-click="showLogin" title="Kembali ke Login">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -137,7 +137,7 @@
         </div>
 
         <div class="button-group">
-          <button class="btn-daftar" onclick="register(this)">Kirim Kode OTP</button>
+          <button class="btn-daftar" data-click="register" data-click-args='["$el"]'>Kirim Kode OTP</button>
         </div>
       </div>
 
@@ -145,7 +145,7 @@
         <div class="card-accent-corner"></div>
 
         <div class="card-header-new">
-          <button class="btn-back-small" onclick="showLogin()" title="Kembali ke Login">
+          <button class="btn-back-small" data-click="showLogin" title="Kembali ke Login">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -179,7 +179,7 @@
           <label>Kata sandi <span style="color: #E74C3C;">*</span></label>
           <div class="input-wrapper">
             <input type="password" id="reg-password" placeholder="Minimal 6 karakter">
-            <svg class="icon-right" onclick="togglePassword('reg-password')" width="18" height="18" viewBox="0 0 24 24"
+            <svg class="icon-right" data-click="togglePassword" data-click-args='["reg-password"]' width="18" height="18" viewBox="0 0 24 24"
               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
               style="cursor: pointer;">
               <path
@@ -194,7 +194,7 @@
         </div>
 
         <div class="button-group">
-          <button class="btn-daftar" onclick="completeRegistration(this)">Selesaikan Pendaftaran</button>
+          <button class="btn-daftar" data-click="completeRegistration" data-click-args='["$el"]'>Selesaikan Pendaftaran</button>
         </div>
       </div>
 
@@ -202,7 +202,7 @@
         <div class="card-accent-corner"></div>
 
         <div class="card-header-new">
-          <button class="btn-back-small" onclick="showLogin()" title="Kembali ke Login">
+          <button class="btn-back-small" data-click="showLogin" title="Kembali ke Login">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -231,8 +231,8 @@
         </div>
 
         <div class="button-group">
-          <button class="btn-masuk" onclick="verifyEmailOtp(this)">Verifikasi Email</button>
-          <button id="verify-resend-btn" class="btn-buat-akun" onclick="resendVerificationOtp(this)">Kirim ulang OTP</button>
+          <button class="btn-masuk" data-click="verifyEmailOtp" data-click-args='["$el"]'>Verifikasi Email</button>
+          <button id="verify-resend-btn" class="btn-buat-akun" data-click="resendVerificationOtp" data-click-args='["$el"]'>Kirim ulang OTP</button>
           <div id="verify-resend-status" class="otp-resend-status" aria-live="polite"></div>
         </div>
       </div>
@@ -241,7 +241,7 @@
         <div class="card-accent-corner"></div>
 
         <div class="card-header-new">
-          <button class="btn-back-small" onclick="showLogin()" title="Kembali ke Login">
+          <button class="btn-back-small" data-click="showLogin" title="Kembali ke Login">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -265,7 +265,7 @@
         </div>
 
         <div class="button-group">
-          <button class="btn-masuk" onclick="requestPasswordReset(this)">Kirim OTP Reset</button>
+          <button class="btn-masuk" data-click="requestPasswordReset" data-click-args='["$el"]'>Kirim OTP Reset</button>
         </div>
       </div>
 
@@ -273,7 +273,7 @@
         <div class="card-accent-corner"></div>
 
         <div class="card-header-new">
-          <button class="btn-back-small" onclick="showForgotPassword()" title="Kembali">
+          <button class="btn-back-small" data-click="showForgotPassword" title="Kembali">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -300,7 +300,7 @@
           <label>Kata sandi baru <span style="color: #E74C3C;">*</span></label>
           <div class="input-wrapper">
             <input type="password" id="reset-password" placeholder="Minimal 6 karakter">
-            <svg class="icon-right" onclick="togglePassword('reset-password')" width="18" height="18"
+            <svg class="icon-right" data-click="togglePassword" data-click-args='["reset-password"]' width="18" height="18"
               viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round" style="cursor: pointer;">
               <path
@@ -315,7 +315,7 @@
         </div>
 
         <div class="button-group">
-          <button class="btn-daftar" onclick="submitPasswordReset(this)">Simpan Sandi Baru</button>
+          <button class="btn-daftar" data-click="submitPasswordReset" data-click-args='["$el"]'>Simpan Sandi Baru</button>
         </div>
       </div>
 

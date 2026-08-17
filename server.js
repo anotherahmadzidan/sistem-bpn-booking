@@ -29,22 +29,24 @@ if (process.env.TRUST_PROXY === '1') {
 //
 // CATATAN CSP
 //
-// script-src TIDAK lagi memuat 'unsafe-inline': seluruh JavaScript halaman
-// sudah berada di berkas terpisah, sehingga skrip yang disuntikkan sebagai
-// blok <script> atau URL javascript: kini benar-benar diblokir browser.
+// Kedua jalur eksekusi skrip kini tertutup:
 //
-// Yang masih terbuka adalah script-src-attr. Halaman memakai ~125 atribut
-// onclick=, dan default helmet ('none') akan mematikan semuanya. Selama
-// atribut itu belum diubah menjadi addEventListener, penyerang yang berhasil
-// menyuntikkan atribut event (mis. onerror=) tetap bisa menjalankan kode.
-// Karena itu pertahanan utama tetap escapeHTML() di sisi render, dijaga oleh
-// scripts/test-xss-escaping.js.
+// - script-src tanpa 'unsafe-inline': seluruh JavaScript halaman berada di
+//   berkas terpisah, sehingga blok <script> yang disuntikkan dan URL
+//   javascript: diblokir browser.
+// - script-src-attr 'none': halaman tidak lagi memakai atribut onclick=,
+//   melainkan atribut data-* yang dihubungkan public/js/common.js. Atribut
+//   event yang berhasil disuntikkan (mis. onerror=) tidak akan dieksekusi.
+//
+// Dengan begitu CSP menjadi pertahanan lapis kedua yang sesungguhnya, bukan
+// sekadar pembatas tujuan pengiriman data. Lapis pertama tetap escapeHTML()
+// di sisi render, dijaga scripts/test-xss-escaping.js.
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", 'https://unpkg.com'],
-            scriptSrcAttr: ["'unsafe-inline'"],
+            scriptSrcAttr: ["'none'"],
             styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
             fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
             imgSrc: ["'self'", 'data:', 'blob:', 'https://*.tile.openstreetmap.org', 'https://unpkg.com'],

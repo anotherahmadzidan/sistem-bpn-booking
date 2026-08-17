@@ -1,6 +1,7 @@
 /* Logika halaman login-petugas. Dipindah dari public/pages/login-petugas.html supaya
    bisa di-lint, di-cache browser, dan di-review terpisah dari markup.
-   Skrip klasik (bukan module) agar fungsi tetap global untuk onclick="...". */
+   Skrip klasik (bukan module): fungsi sengaja global agar dapat dipanggil
+   penghubung aksi di common.js lewat atribut data-click/data-change/data-input. */
 
 function switchTab(tab) {
     document.getElementById('form-petugas').style.display = tab === 'petugas' ? 'block' : 'none';
