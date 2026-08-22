@@ -112,6 +112,10 @@
 
                     <div class="button-group">
                         <div id="pet-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
+                        <button type="button" class="link-button" data-click="bukaLupaSandi"
+                            style="background:none;border:none;padding:0;margin-bottom:12px;color:#2e86c1;cursor:pointer;font-size:13px">
+                            Lupa kata sandi?
+                        </button>
                         <button class="btn-masuk" id="btn-login-petugas" type="button" data-click="loginPetugas" data-click-args='["$el"]'>
                             Masuk ke Portal
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -120,6 +124,65 @@
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="form-lupa" data-app-form style="display: none;">
+                    <div class="form-fields">
+                        <label>Nomor Induk Pegawai (NIP) <span style="color: #E74C3C;">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="text" id="lupa-nip" placeholder="18 digit NIP Anda" autocomplete="off" inputmode="numeric">
+                        </div>
+                        <p style="font-size:12px;color:#64748b;margin-top:8px">
+                            Kode OTP akan dikirim ke alamat email yang terdaftar untuk NIP tersebut.
+                        </p>
+                    </div>
+                    <div class="button-group">
+                        <div id="lupa-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
+                        <button class="btn-masuk" id="btn-kirim-otp" type="button" data-click="kirimOtpLupaSandi" data-click-args='["$el"]'>
+                            Kirim Kode OTP
+                        </button>
+                        <button type="button" class="link-button" data-click="kembaliKeLoginPetugas"
+                            style="background:none;border:none;padding:8px 0 0;color:#64748b;cursor:pointer;font-size:13px">
+                            Kembali ke halaman masuk
+                        </button>
+                    </div>
+                </div>
+
+                <div id="form-otp" data-app-form style="display: none;">
+                    <div class="form-fields">
+                        <div id="lupa-info" class="alert alert-success" style="margin-bottom:16px"></div>
+
+                        <label>Kode OTP <span style="color: #E74C3C;">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="text" id="otp-kode" placeholder="6 digit dari email" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+                        </div>
+
+                        <label>Kata Sandi Baru <span style="color: #E74C3C;">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="password" id="otp-sandi" placeholder="Minimal 8 karakter" autocomplete="new-password">
+                        </div>
+
+                        <label>Ulangi Kata Sandi Baru <span style="color: #E74C3C;">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="password" id="otp-sandi-ulang" placeholder="Ketik ulang kata sandi baru" autocomplete="new-password">
+                        </div>
+
+                        <p style="font-size:12px;color:#64748b;margin-top:12px;line-height:1.6">
+                            Belum menerima email? Pastikan NIP yang dimasukkan sudah benar dan periksa
+                            folder spam. Jika tetap tidak menerima, hubungi admin.
+                        </p>
+                    </div>
+                    <div class="button-group">
+                        <div id="otp-error" class="alert alert-error" style="display:none; margin-bottom: 16px;"></div>
+                        <div id="otp-sukses" class="alert alert-success" style="display:none; margin-bottom: 16px;"></div>
+                        <button class="btn-masuk" id="btn-simpan-otp" type="button" data-click="simpanSandiLewatOtp" data-click-args='["$el"]'>
+                            Simpan Kata Sandi Baru
+                        </button>
+                        <button type="button" class="link-button" data-click="kembaliKeLoginPetugas"
+                            style="background:none;border:none;padding:8px 0 0;color:#64748b;cursor:pointer;font-size:13px">
+                            Kembali ke halaman masuk
                         </button>
                     </div>
                 </div>

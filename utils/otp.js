@@ -3,7 +3,7 @@ const crypto = require('crypto');
 const pool = require('../config/db');
 const { kirimEmail } = require('./notifikasi');
 
-const OTP_PURPOSES = new Set(['verify_email', 'password_reset']);
+const OTP_PURPOSES = new Set(['verify_email', 'password_reset', 'reset_sandi_petugas']);
 
 function positiveNumber(value, fallback) {
     const number = Number(value);
@@ -271,6 +271,7 @@ function buildOtpMessage({ purpose, otp }) {
 
 async function sendOtp({
     userId = null,
+    petugasId = null,
     pendingRegistrationId = null,
     email,
     purpose,
@@ -278,7 +279,7 @@ async function sendOtp({
 }) {
     assertPurpose(purpose);
     const normalizedEmail = normalizeEmail(email);
-    if ((!userId && !pendingRegistrationId) || !normalizedEmail) {
+    if ((!userId && !petugasId && !pendingRegistrationId) || !normalizedEmail) {
         throw otpError(400, 'Data penerima OTP tidak lengkap', 'OTP_RECIPIENT_INVALID');
     }
 
@@ -324,9 +325,9 @@ async function sendOtp({
     const otpHash = await bcrypt.hash(otp, 10);
     const [result] = await pool.query(
         `INSERT INTO otp_tokens
-            (user_id, pending_registration_id, email, purpose, otp_hash, expires_at, max_attempts)
-         VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ${otpExpiresMinutes} MINUTE), ?)`,
-        [userId, pendingRegistrationId, normalizedEmail, purpose, otpHash, otpMaxAttempts]
+            (user_id, petugas_id, pending_registration_id, email, purpose, otp_hash, expires_at, max_attempts)
+         VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ${otpExpiresMinutes} MINUTE), ?)`,
+        [userId, petugasId, pendingRegistrationId, normalizedEmail, purpose, otpHash, otpMaxAttempts]
     );
 
     const emailResult = await kirimEmail({
@@ -350,20 +351,23 @@ async function sendOtp({
 
 async function getOtpState({
     userId = null,
+    petugasId = null,
     pendingRegistrationId = null,
     email,
     purpose
 }) {
     assertPurpose(purpose);
     const normalizedEmail = normalizeEmail(email);
-    if ((!userId && !pendingRegistrationId) || !normalizedEmail) {
+    if ((!userId && !petugasId && !pendingRegistrationId) || !normalizedEmail) {
         throw otpError(400, 'Data penerima OTP tidak lengkap', 'OTP_RECIPIENT_INVALID');
     }
 
     await ensureOtpSchema();
 
-    const ownerColumn = pendingRegistrationId ? 'pending_registration_id' : 'user_id';
-    const ownerId = pendingRegistrationId || userId;
+    const ownerColumn = pendingRegistrationId
+        ? 'pending_registration_id'
+        : (petugasId ? 'petugas_id' : 'user_id');
+    const ownerId = pendingRegistrationId || petugasId || userId;
     const [rows] = await pool.query(
         `SELECT id,
                 expires_at > NOW() AS is_active,
@@ -412,7 +416,7 @@ async function verifyOtp({ email, purpose, otp }) {
     await ensureOtpSchema();
 
     const [rows] = await pool.query(
-        `SELECT id, user_id, pending_registration_id, otp_hash, attempts, max_attempts,
+        `SELECT id, user_id, petugas_id, pending_registration_id, otp_hash, attempts, max_attempts,
                 expires_at <= NOW() AS is_expired
          FROM otp_tokens
          WHERE email = ? AND purpose = ? AND used_at IS NULL
@@ -455,6 +459,7 @@ async function verifyOtp({ email, purpose, otp }) {
 
     return {
         userId: token.user_id,
+        petugasId: token.petugas_id,
         pendingRegistrationId: token.pending_registration_id,
         email: normalizedEmail
     };

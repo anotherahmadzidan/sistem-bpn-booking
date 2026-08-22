@@ -69,6 +69,16 @@ async function apiFetch(url, options = {}) {
         credentials: 'same-origin',
         headers: { ...headerSesi(options.method), ...(options.headers || {}) }
     });
+        if (res.status === 403) {
+            const salinan = res.clone();
+            const data = await salinan.json().catch(() => ({}));
+            if (data.code === 'WAJIB_GANTI_SANDI') {
+                bukaGantiSandi(true);
+                throw new AppAsync.AppRequestError(data.message, {
+                    code: data.code, status: 403
+                });
+            }
+        }
     if (res.status === 401) {
         localStorage.clear();
         window.location.href = '/login-petugas';

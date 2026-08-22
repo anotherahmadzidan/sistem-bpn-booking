@@ -11,6 +11,27 @@ Nasional Kabupaten Luwu Timur.
 | **Petugas** | `/login-petugas` (NIP + kata sandi) | Melihat tugas masuk, mengonfirmasi atau mengganti jadwal, menolak berkas, mengunggah hasil pemeriksaan |
 | **Admin** | `/login-petugas` (username + kata sandi) | Memantau seluruh berkas, mengelola akun petugas, mengatur kuota per kecamatan/kelurahan/petugas |
 
+### Kata sandi
+
+| | Ganti sandi | Lupa sandi |
+|---|---|---|
+| **Pemohon** | Menu profil — wajib sandi lama | OTP ke email |
+| **Petugas** | Sidebar — wajib sandi lama | OTP ke email terdaftar, cukup masukkan NIP |
+| **Admin** | Sidebar — wajib sandi lama | `node scripts/reset-sandi-admin.js` di server |
+
+Sandi petugas yang dibuat admin bersifat **sementara**: petugas wajib
+menggantinya saat login pertama, dan sampai itu dilakukan server menolak seluruh
+endpoint lain. Setelah diganti, admin tidak lagi mengetahui sandi yang berlaku —
+ia masih bisa mereset, tetapi reset itu memicu email pemberitahuan ke petugas
+sehingga tindakannya tidak bisa dilakukan diam-diam.
+
+Admin **tidak** punya pemulihan lewat email: akun admin memegang kendali penuh
+atas sistem, sehingga membuatnya dapat dipulihkan lewat sebuah kotak surat
+berarti menurunkan keamanan sistem menjadi setara keamanan email itu. Yang jadi
+bukti identitas adalah akses ke server. Sangat disarankan menambah **admin
+kedua** agar keduanya bisa saling mereset dan sistem tidak lumpuh saat satu-
+satunya admin berhalangan.
+
 ## Alur status berkas
 
 ```
@@ -35,14 +56,30 @@ Kuota diperiksa dan dikunci per tanggal untuk tiga sasaran sekaligus
 
 ## Menjalankan di lokal
 
+Pakai database terpisah untuk pengembangan. **Jangan mengarahkan `.env` ke
+database produksi** — siapa pun yang menjalankan `npm run dev` akan langsung
+menyentuh data warga yang sebenarnya.
+
 ```bash
 git clone <url-repo> && cd bpn_booking
 npm install
-cp .env.example .env    # lalu isi nilainya, lihat tabel di bawah
-mysql -u root -p nama_database < db/schema.sql
-npm run dev
+
+# Siapkan database pengembangan
+mysql -u root -e "CREATE DATABASE bpn_booking_dev CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+mysql -u root bpn_booking_dev < db/schema.sql
+
+npm run seed:lokal   # isi data contoh + akun uji
+npm run dev:lokal    # jalankan terhadap database lokal
 ```
 
+`dev:lokal` menyetel sendiri koneksi ke `bpn_booking_dev` tanpa menyentuh
+`.env`, mematikan penjadwal reminder, dan mengalihkan email ke berkas di
+`tmp/email-keluar/` — jadi tidak ada email sungguhan yang terkirim dan kode OTP
+bisa dibaca langsung dari berkas itu saat menguji.
+
+`npm run seed:lokal` menolak berjalan bila `DB_HOST` bukan localhost.
+
+Untuk menjalankan terhadap `.env` apa adanya: `npm run dev`.
 Aplikasi berjalan di `http://localhost:3000`.
 
 ## Variabel environment
@@ -92,6 +129,9 @@ npm start         # jalankan biasa
 npm test          # lint + semua pemeriksaan
 npm run test:xss  # regresi escaping XSS
 npm run test:sesi # sesi cookie & proteksi CSRF
+npm run test:sandi # ganti & lupa sandi
+npm run dev:lokal  # jalankan terhadap database pengembangan
+npm run seed:lokal # isi database pengembangan dengan data contoh
 npm run lint      # ESLint saja
 npm run test:db   # cek koneksi database
 npm run test:email # cek pengiriman email
@@ -134,6 +174,12 @@ global agar dapat dipanggil penghubung aksi tersebut.
 **Token JWT tidak pernah menyentuh JavaScript.** Sesi disimpan di cookie
 `httpOnly` (`bpn_session`) sehingga celah XSS tidak bisa membacanya. Yang ada di
 `localStorage` hanya nama dan peran untuk keperluan tampilan — bukan otorisasi.
+
+**Setiap penulisan kolom `password` wajib ikut menyetel `password_changed_at`.**
+Middleware menolak token yang diterbitkan sebelum waktu itu — inilah yang membuat
+penggantian sandi benar-benar memutus sesi lama, termasuk sesi penyerang.
+Tanpanya, mengganti sandi karena curiga akun dibajak tidak mengusir siapa pun.
+`npm run test:sandi` gagal bila ada penulisan sandi yang melewatkannya.
 
 **Setiap permintaan yang mengubah data wajib menyertakan header
 `X-CSRF-Token`.** Nilainya dibaca dari cookie `bpn_csrf` lewat `csrfToken()` di

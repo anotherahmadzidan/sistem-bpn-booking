@@ -6,6 +6,8 @@ const uploadDir = require('../config/uploadDir');
 const { ensureNotificationSchema } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
 const { invalidateAccountStatus } = require('../middleware/auth');
+const { ensureSandiSchema } = require('../utils/sandi');
+const { beritahuPemilikAkun } = require('../controllers/sandiController');
 const {
     requireIndonesianPhone,
     assertPhoneAvailable,
@@ -121,6 +123,7 @@ const tambahPetugas = async (req, res) => {
     let phoneLockName = null;
     try {
         await ensurePhoneSchema();
+        await ensureSandiSchema();
         connection = await pool.getConnection();
         phoneLockName = await acquirePhoneLock(connection, no_hp);
         await connection.beginTransaction();
@@ -136,7 +139,9 @@ const tambahPetugas = async (req, res) => {
 
         const hash = await bcrypt.hash(password, 10);
         const [result] = await connection.query(
-            'INSERT INTO petugas (nip, nama_lengkap, email, no_hp, password) VALUES (?, ?, ?, ?, ?)',
+            `INSERT INTO petugas
+                (nip, nama_lengkap, email, no_hp, password, harus_ganti_sandi, password_changed_at)
+             VALUES (?, ?, ?, ?, ?, 1, NOW())`,
             [nip, nama_lengkap, email, no_hp, hash]
         );
         await connection.commit();
@@ -235,8 +240,14 @@ const editPetugas = async (req, res) => {
 
         if (password) {
             const hash = await bcrypt.hash(password, 10);
+            // Sandi yang dibuat admin selalu bersifat sementara: petugas wajib
+            // menggantinya saat login berikutnya, dan seluruh sesi lamanya
+            // diputus lewat password_changed_at.
             await connection.query(
-                'UPDATE petugas SET nip=?, nama_lengkap=?, email=?, no_hp=?, password=?, updated_at=NOW() WHERE id=?',
+                `UPDATE petugas
+                 SET nip=?, nama_lengkap=?, email=?, no_hp=?, password=?,
+                     harus_ganti_sandi=1, password_changed_at=NOW(), updated_at=NOW()
+                 WHERE id=?`,
                 [identity.nip, nama_lengkap, identity.email, no_hp, hash, id]
             );
         } else {
@@ -246,6 +257,19 @@ const editPetugas = async (req, res) => {
             );
         }
         await connection.commit();
+
+        if (password) {
+            // Membuat tindakan admin terlihat oleh pemilik akun. Tanpa email
+            // ini, admin bisa mereset sandi, memakai akunnya, lalu
+            // mengembalikannya tanpa petugas pernah tahu.
+            invalidateAccountStatus('petugas', id);
+            await beritahuPemilikAkun({
+                email: identity.email,
+                nama: nama_lengkap,
+                olehAdmin: true
+            });
+        }
+
         res.json({
             message: 'Data petugas berhasil diupdate',
             petugas: {

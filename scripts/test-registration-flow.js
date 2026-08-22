@@ -183,7 +183,7 @@ const fakePool = {
             const pending = pendingForScenario();
             return [pending ? [pending] : []];
         }
-        if (sql.includes('SELECT id, user_id, pending_registration_id, otp_hash')) {
+        if (sql.includes('FROM otp_tokens') && sql.includes('otp_hash') && sql.includes('is_expired')) {
             if (scenario === 'verify_otp') {
                 return [[{
                     id: 601,

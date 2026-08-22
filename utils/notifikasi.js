@@ -48,6 +48,20 @@ function buildEmailConfig() {
     const timeoutMs = positiveNumber(process.env.EMAIL_TIMEOUT_MS, 8000);
     const isGmail = service.toLowerCase() === 'gmail' || host.toLowerCase().includes('gmail');
     const pass = isGmail ? rawPass.replace(/\s/g, '') : rawPass.trim();
+    // Transport khusus pengembangan: email TIDAK dikirim ke mana pun, hanya
+    // ditulis ke berkas supaya isinya (mis. kode OTP) bisa dibaca saat menguji
+    // di komputer sendiri. Harus diaktifkan eksplisit lewat EMAIL_PROVIDER,
+    // jadi tidak mungkin aktif tanpa sengaja di produksi.
+    if (requestedProvider === 'berkas') {
+        return {
+            enabled: true,
+            provider: 'berkas',
+            from: process.env.EMAIL_FROM || 'BPN Luwu Timur <dev@localhost>',
+            folder: process.env.EMAIL_DEV_DIR || 'tmp/email-keluar',
+            timeoutMs
+        };
+    }
+
     const useResend = requestedProvider === 'resend' || (!requestedProvider && Boolean(resendApiKey));
 
     if (useResend) {
@@ -287,6 +301,28 @@ function buildEmailHtml({ judul, pesan, nomor_berkas }) {
     `;
 }
 
+// Menulis email ke berkas HTML alih-alih mengirimkannya. Hanya untuk
+// EMAIL_PROVIDER=berkas.
+async function tulisEmailKeBerkas({ email_user, judul, html }) {
+    const fs = require('fs');
+    const path = require('path');
+    const folder = path.resolve(emailConfig.folder);
+    fs.mkdirSync(folder, { recursive: true });
+
+    const stempel = new Date().toISOString().replace(/[:.]/g, '-');
+    const aman = String(email_user).replace(/[^\w.@-]/g, '_');
+    const berkas = path.join(folder, `${stempel}__${aman}.html`);
+    fs.writeFileSync(
+        berkas,
+        `<!-- kepada: ${email_user}
+     subjek: ${judul} -->
+${html}`,
+        'utf8'
+    );
+    console.log(`[Email/berkas] ${judul} -> ${berkas}`);
+    return { messageId: path.basename(berkas) };
+}
+
 async function sendWithResend({ email_user, judul, html, idempotency_key }) {
     const controller = new AbortController();
     const timeoutId = setTimeout(
@@ -341,6 +377,13 @@ async function verifyEmailTransport() {
         return { ok: false, reason };
     }
 
+    if (emailConfig.provider === 'berkas') {
+        console.warn(
+            `[Email] MODE PENGEMBANGAN: email tidak dikirim, hanya ditulis ke ${emailConfig.folder}`
+        );
+        return { ok: true, provider: 'berkas' };
+    }
+
     if (emailConfig.provider === 'resend') {
         console.log(`[Email] Resend HTTPS API siap dipakai dengan pengirim ${emailConfig.from}`);
         return { ok: true, provider: 'resend' };
@@ -379,7 +422,11 @@ async function kirimEmail({ email_user, judul, pesan, nomor_berkas, idempotency_
 
     try {
         const html = buildEmailHtml({ judul, pesan, nomor_berkas });
-        const info = emailConfig.provider === 'resend'
+        let info;
+        if (emailConfig.provider === 'berkas') {
+            info = await tulisEmailKeBerkas({ email_user, judul, html });
+        } else {
+            info = emailConfig.provider === 'resend'
             ? await sendWithResend({ email_user, judul, html, idempotency_key })
             : await transporter.sendMail({
                 from: emailConfig.from,
@@ -387,6 +434,7 @@ async function kirimEmail({ email_user, judul, pesan, nomor_berkas, idempotency_
                 subject: `[BPN Luwu Timur] ${judul}`,
                 html
             });
+        }
 
         if (String(process.env.EMAIL_DEBUG || '').toLowerCase() === 'true') {
             console.log(

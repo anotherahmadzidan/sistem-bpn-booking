@@ -64,7 +64,11 @@ const browserGlobals = {
     safeWhatsAppUrl: 'readonly',
     csrfToken: 'readonly',
     headerSesi: 'readonly',
-    akhiriSesi: 'readonly'
+    akhiriSesi: 'readonly',
+    // Disediakan public/js/ganti-sandi.js.
+    bukaGantiSandi: 'readonly',
+    tutupGantiSandi: 'readonly',
+    simpanGantiSandi: 'readonly'
 };
 
 const sharedRules = {

@@ -6,7 +6,7 @@ const vm = require('vm');
 // sebelumnya tertinggal saat ada berkas baru, sehingga sebagian kode tidak
 // pernah ikut diperiksa.
 const root = path.join(__dirname, '..');
-const SKIP_DIRS = new Set(['node_modules', '.git', 'uploads', 'coverage']);
+const SKIP_DIRS = new Set(['node_modules', '.git', 'uploads', 'coverage', 'tmp']);
 
 function walk(dir, matcher, found = []) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -19,6 +19,11 @@ const {
 } = require('../controllers/authController');
 
 const verifyToken = require('../middleware/auth');
+const {
+    gantiSandi,
+    lupaSandiPetugas,
+    resetSandiPetugas
+} = require('../controllers/sandiController');
 const { authLimiter } = require('../middleware/rateLimit');
 
 router.post('/register', authLimiter, registerUser);
@@ -42,5 +47,18 @@ router.post('/login-admin', authLimiter, loginAdmin);
 // Menghapus cookie sesi di sisi server. Tanpa ini, "keluar" hanya
 // membersihkan browser sementara tokennya tetap sah sampai kedaluwarsa.
 router.post('/logout', logout);
+
+// Ganti sandi berlaku untuk ketiga peran; tabel akun dipilih dari peran di
+// dalam token, bukan dari kiriman klien.
+router.post(
+    '/ganti-sandi',
+    authLimiter,
+    verifyToken(['user', 'petugas', 'admin']),
+    gantiSandi
+);
+
+// Lupa sandi khusus petugas: cukup NIP, OTP dikirim ke email tersimpan.
+router.post('/lupa-sandi-petugas', authLimiter, lupaSandiPetugas);
+router.post('/reset-sandi-petugas', authLimiter, resetSandiPetugas);
 
 module.exports = router;

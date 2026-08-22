@@ -854,7 +854,10 @@ const loginPetugas = async (req, res) => {
         return balasSesiBaru(res, {
             token: generateToken({ id: petugas.id, nama: petugas.nama_lengkap, role: 'petugas' }),
             nama: petugas.nama_lengkap,
-            role: 'petugas'
+            role: 'petugas',
+            // Sandi awal dibuatkan admin. Selama penanda ini menyala, petugas
+            // hanya boleh mengakses endpoint ganti sandi (lihat middleware).
+            extra: { harus_ganti_sandi: Number(petugas.harus_ganti_sandi || 0) === 1 }
         });
     } catch (err) {
         return serverError(res, err);

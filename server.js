@@ -7,6 +7,7 @@ const { ensureNotificationSchema, verifyEmailTransport } = require('./utils/noti
 const { ensureQuotaSchema } = require('./utils/kuota');
 const { ensureOtpSchema } = require('./utils/otp');
 const { ensurePhoneSchema } = require('./utils/phone');
+const { ensureSandiSchema } = require('./utils/sandi');
 const {
     ensurePetugasReminderSchema,
     startPetugasReminderScheduler
@@ -182,6 +183,9 @@ app.listen(PORT, () => {
     });
     ensureOtpSchema().catch(err => {
         console.error('Gagal menyiapkan schema OTP:', err.message);
+    });
+    ensureSandiSchema().catch(err => {
+        console.error('Gagal menyiapkan schema sandi:', err.message);
     });
     ensurePhoneSchema().then(report => {
         if (report.invalid.length > 0) {
