@@ -525,7 +525,7 @@ async function loadWilayahDanPetugas() {
     initialFormDataPromise = (async () => {
         try {
             const [resWilayah, resPetugas] = await Promise.all([
-                AppAsync.fetchWithTimeout('/api/admin/wilayah'),
+                AppAsync.fetchWithTimeout('/api/auth/wilayah'),
                 AppAsync.fetchWithTimeout('/api/auth/petugas-aktif')
             ]);
             if (!resWilayah.ok) throw await AppAsync.responseError(resWilayah, 'Gagal memuat wilayah.');

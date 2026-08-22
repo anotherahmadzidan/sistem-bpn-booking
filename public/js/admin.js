@@ -975,7 +975,7 @@
         try {
             const petugasCached = loadedAdminPages.petugas;
             const [resWilayah, resPetugas] = await Promise.all([
-                AppAsync.fetchWithTimeout('/api/admin/wilayah'),
+                AppAsync.fetchWithTimeout('/api/auth/wilayah'),
                 petugasCached ? Promise.resolve(null) : apiFetch('/api/admin/petugas')
             ]);
             if (!resWilayah.ok) throw await AppAsync.responseError(resWilayah, 'Gagal memuat wilayah.');

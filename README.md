@@ -117,6 +117,7 @@ public/pages/          markup halaman
 public/js/             common.js (helper bersama) + satu berkas per halaman
 public/css/            gaya per halaman
 db/schema.sql          struktur tabel (dihasilkan scripts/dump-schema.js)
+logs/                  catatan error harian (tidak ikut Git)
 scripts/               pemeriksaan dan uji tanpa dependensi eksternal
 docs/                  catatan audit dan deploy
 ```
@@ -137,6 +138,24 @@ npm run test:db   # cek koneksi database
 npm run test:email # cek pengiriman email
 node scripts/dump-schema.js   # perbarui db/schema.sql dari database
 ```
+
+## Jejak dan pemantauan
+
+**Audit log** (`audit_log`) mencatat tindakan yang mengubah status berkas:
+konfirmasi jadwal, penggantian jadwal, penolakan berkas, penyimpanan hasil
+pemeriksaan, penghapusan berkas, dan reset sandi petugas oleh admin. Sifatnya
+hanya-tambah — tidak ada endpoint yang mengubah atau menghapus barisnya.
+
+Catatan ini baru bermakna karena petugas kini memegang sandinya sendiri. Selama
+sandi petugas diketahui admin, baris "petugas X menolak berkas" tidak
+membuktikan apa pun.
+
+**Pemantauan error** menulis setiap kegagalan ke `logs/error-YYYY-MM-DD.log`,
+karena keluaran konsol di hosting hilang saat proses di-restart. Ringkasannya
+muncul di `GET /api/health` (`total_error`, `error_terakhir`), dan 20 error
+terakhir dapat dilihat admin lewat `GET /api/admin/diagnostik/error`. Promise
+yang ditolak tanpa penanganan ikut tertangkap, supaya proses tidak mati tanpa
+meninggalkan jejak. Atur lokasinya lewat env `LOG_DIR`.
 
 ## Catatan penting untuk pengembang
 

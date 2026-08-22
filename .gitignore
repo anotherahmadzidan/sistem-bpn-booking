@@ -4,3 +4,4 @@ node_modules/
 public/uploads/
 npm-debug.log*
 tmp/
+logs/

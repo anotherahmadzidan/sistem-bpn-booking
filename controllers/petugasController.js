@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const { kirimNotifikasi, kirimNotifikasiAdmin, kirimNotifikasiAman } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
 const { reserveKuotaAktif, kurangiKuotaAktif } = require('../utils/kuota');
+const { catatAudit } = require('../utils/auditLog');
 
 // Zona waktu wajib eksplisit: tanpa timeZone, Node memakai zona waktu OS server
 // sehingga tanggal di notifikasi bisa meleset satu hari dari jadwal sebenarnya.
@@ -130,6 +131,10 @@ const konfirmasiJadwal = async (req, res) => {
         })]);
     });
 
+    await catatAudit(req, {
+        aksi: 'konfirmasi_jadwal', sasaranJenis: 'booking', sasaranId: id,
+        keterangan: `Berkas ${booking.nomor_berkas} dikonfirmasi`
+    });
     res.json({ message: 'Jadwal dikonfirmasi' });
 };
 
@@ -228,6 +233,10 @@ const tolakJadwal = async (req, res) => {
         })]);
     });
 
+    await catatAudit(req, {
+        aksi: 'ganti_jadwal', sasaranJenis: 'booking', sasaranId: id,
+        keterangan: `Berkas ${booking.nomor_berkas} diusulkan ke ${tanggal_baru}. Alasan: ${alasan}`
+    });
     res.json({ message: 'Jadwal baru telah dikirim ke pemohon untuk disetujui' });
 };
 
@@ -314,6 +323,10 @@ const tolakBerkas = async (req, res) => {
         })]);
     });
 
+    await catatAudit(req, {
+        aksi: 'tolak_berkas', sasaranJenis: 'booking', sasaranId: id,
+        keterangan: `Berkas ${booking.nomor_berkas} ditolak. Alasan: ${alasan}`
+    });
     res.json({ message: 'Berkas berhasil ditolak' });
 };
 
@@ -392,6 +405,10 @@ const inputHasil = async (req, res) => {
         })]);
     });
 
+    await catatAudit(req, {
+        aksi: 'input_hasil', sasaranJenis: 'booking', sasaranId: id,
+        keterangan: `Hasil pemeriksaan berkas ${booking.nomor_berkas} disimpan`
+    });
     res.json({ message: 'Hasil pemeriksaan berhasil disimpan' });
 };
 

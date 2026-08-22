@@ -18,6 +18,7 @@ const {
     markAllRead
 } = require('../controllers/authController');
 
+const { getWilayah } = require('../controllers/adminController');
 const verifyToken = require('../middleware/auth');
 const {
     gantiSandi,
@@ -35,6 +36,12 @@ router.post('/forgot-password', authLimiter, forgotPassword);
 router.post('/reset-password', authLimiter, resetPassword);
 
 router.get('/petugas-aktif', getPetugasAktif); // untuk booking user
+
+// Daftar wilayah dipakai form booking pemohon sebelum login, jadi memang
+// publik. Sebelumnya endpoint ini menempel di router admin tanpa penjaga -
+// terlihat seperti kelalaian, padahal disengaja. Dipindah ke sini agar
+// router admin tidak lagi memuat endpoint tanpa autentikasi.
+router.get('/wilayah', getWilayah);
 
 router.get('/profile', verifyToken('user'), getProfile); // untuk profil user
 

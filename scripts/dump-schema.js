@@ -18,7 +18,7 @@ const TABLE_ORDER = [
     'bookings', 'hasil_pemeriksaan', 'reschedule_log',
     'notifications', 'otp_tokens', 'pending_registrations',
     'kuota_default', 'kuota_kecamatan', 'kuota_kelurahan', 'kuota_petugas',
-    'email_reminders'
+    'email_reminders', 'audit_log'
 ];
 
 (async () => {

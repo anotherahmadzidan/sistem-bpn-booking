@@ -211,6 +211,13 @@ async function ensureOtpSchema() {
             `);
         }
 
+        // Perbaikan data lama untuk baris yang memang belum sesuai.
+        //
+        // Sebelumnya pernyataan ini berjalan TANPA klausa WHERE, sehingga
+        // seluruh isi tabel ditulis ulang setiap kali server menyala - termasuk
+        // baris yang datanya sudah benar. WHERE di bawah membuat pekerjaannya
+        // sebanding dengan jumlah baris yang benar-benar perlu diperbaiki,
+        // yang pada boot berikutnya biasanya nol.
         await pool.query(`
             UPDATE pending_registrations
             SET email_verified_at = COALESCE(email_verified_at, verified_at),
@@ -226,6 +233,16 @@ async function ensureOtpSchema() {
                         INTERVAL ${pendingRegistrationRetentionDays} DAY
                     )
                 )
+            WHERE (email_verified_at IS NULL AND verified_at IS NOT NULL)
+               OR status <> CASE
+                    WHEN COALESCE(email_verified_at, verified_at) IS NOT NULL
+                        THEN 'pending_profile_completion'
+                    ELSE 'pending_email_verification'
+                  END
+               OR expires_at < DATE_ADD(
+                    COALESCE(email_verified_at, verified_at, created_at),
+                    INTERVAL ${pendingRegistrationRetentionDays} DAY
+                  )
         `);
 
         const [indexes] = await pool.query('SHOW INDEX FROM otp_tokens');

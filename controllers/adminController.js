@@ -7,6 +7,7 @@ const { ensureNotificationSchema } = require('../utils/notifikasi');
 const { serverError } = require('../utils/http');
 const { invalidateAccountStatus } = require('../middleware/auth');
 const { ensureSandiSchema } = require('../utils/sandi');
+const { catatAudit } = require('../utils/auditLog');
 const { beritahuPemilikAkun } = require('../controllers/sandiController');
 const {
     requireIndonesianPhone,
@@ -263,6 +264,10 @@ const editPetugas = async (req, res) => {
             // ini, admin bisa mereset sandi, memakai akunnya, lalu
             // mengembalikannya tanpa petugas pernah tahu.
             invalidateAccountStatus('petugas', id);
+            await catatAudit(req, {
+                aksi: 'reset_sandi_petugas', sasaranJenis: 'petugas', sasaranId: id,
+                keterangan: `Admin mereset sandi petugas ${nama_lengkap}`
+            });
             await beritahuPemilikAkun({
                 email: identity.email,
                 nama: nama_lengkap,
@@ -656,6 +661,10 @@ const hapusBerkas = async (req, res) => {
             }
         }));
 
+        await catatAudit(req, {
+            aksi: 'hapus_berkas', sasaranJenis: 'booking', sasaranId: id,
+            keterangan: `Berkas ${booking.nomor_berkas} dihapus permanen`
+        });
         res.json({ message: 'Berkas berhasil dihapus permanen' });
     } catch (err) {
         await conn.rollback();

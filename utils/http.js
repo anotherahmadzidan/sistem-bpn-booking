@@ -58,6 +58,11 @@ const classifyServerError = (err) => {
 
 const serverError = (res, err, message = 'Server error') => {
     console.error('[Server Error]', err);
+    // Dicatat ke berkas juga: keluaran konsol di hosting hilang saat restart,
+    // sehingga kegagalan tengah malam tidak meninggalkan jejak apa pun.
+    try {
+        require('./pemantauan').catatError(err, { jenis: 'server' });
+    } catch {}
     if (res.headersSent) return;
 
     const classified = classifyServerError(err);

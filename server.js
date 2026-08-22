@@ -8,12 +8,16 @@ const { ensureQuotaSchema } = require('./utils/kuota');
 const { ensureOtpSchema } = require('./utils/otp');
 const { ensurePhoneSchema } = require('./utils/phone');
 const { ensureSandiSchema } = require('./utils/sandi');
+const { ensureAuditSchema } = require('./utils/auditLog');
 const {
     ensurePetugasReminderSchema,
     startPetugasReminderScheduler
 } = require('./utils/petugasReminder');
 const pool = require('./config/db');
 const { serverError } = require('./utils/http');
+const pemantauan = require('./utils/pemantauan');
+
+pemantauan.pasangPenangkapGlobal();
 
 const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
@@ -104,6 +108,7 @@ app.get('/api/health', async (req, res) => {
             database: 'ok',
             environment: process.env.NODE_ENV || 'development',
             uptime: Math.round(process.uptime()),
+            ...pemantauan.ringkasan(),
             time: new Date().toISOString()
         });
     } catch (err) {
@@ -186,6 +191,9 @@ app.listen(PORT, () => {
     });
     ensureSandiSchema().catch(err => {
         console.error('Gagal menyiapkan schema sandi:', err.message);
+    });
+    ensureAuditSchema().catch(err => {
+        console.error('Gagal menyiapkan schema audit:', err.message);
     });
     ensurePhoneSchema().then(report => {
         if (report.invalid.length > 0) {
