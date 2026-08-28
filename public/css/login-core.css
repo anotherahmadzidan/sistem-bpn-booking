@@ -286,6 +286,50 @@ FORM
     opacity: 0.72;
 }
 
+/* Keterangan kecil di bawah kolom isian.
+   margin-bottom memberi jarak ke tombol di bawahnya: tanpa itu teksnya
+   menempel ke tombol dan terbaca seperti bagian dari tombol tersebut. */
+.form-hint {
+    margin: 8px 0 18px;
+    color: var(--login-muted);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+/* Tautan berbentuk tombol, mis. "Kembali ke halaman masuk".
+   Diberi garis bawah dan warna aksen supaya terlihat bisa ditekan - sebagai
+   teks abu-abu polos, elemen ini tidak terbaca sebagai kontrol. */
+.auth-link-button {
+    display: inline-block;
+    /* padding tegak dibuat lega agar area sentuhnya mendekati 44px yang
+       dianjurkan di layar kecil; margin dikurangi supaya jarak yang TERLIHAT
+       tetap sama. */
+    margin-top: 6px;
+    padding: 10px 2px;
+    border: 0;
+    background: transparent;
+    color: var(--login-navy);
+    font-family: var(--login-font-body);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    transition: color 160ms ease;
+}
+
+/* Varian untuk tautan yang berada di ATAS tombol. */
+.auth-link-button--atas {
+    margin-top: 0;
+    margin-bottom: 4px;
+}
+
+.auth-link-button:hover,
+.auth-link-button:focus-visible {
+    color: var(--login-navy-dark);
+    text-decoration-thickness: 2px;
+}
+
 .btn-masuk {
     width: 100%;
     min-height: 44px;
