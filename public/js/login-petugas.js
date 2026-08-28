@@ -6,15 +6,25 @@
 // Semua panel di halaman ini; hanya satu yang tampil pada satu waktu.
 const PANEL = ['form-petugas', 'form-admin', 'form-lupa', 'form-otp'];
 
+// Panel yang berada di bawah tab PETUGAS. Lupa sandi dan pengisian OTP adalah
+// sub-keadaan dari tab itu, bukan tab tersendiri.
+const PANEL_PETUGAS = ['form-petugas', 'form-lupa', 'form-otp'];
+
+// Panel terakhir yang dibuka di sisi petugas. Tanpa ini, berpindah sejenak ke
+// tab ADMIN lalu kembali akan membuang keadaan lupa sandi - termasuk saat
+// pengguna sudah berada di layar pengisian OTP.
+let panelPetugasTerakhir = 'form-petugas';
+
 function tampilkanPanel(id) {
     PANEL.forEach(function (nama) {
         const el = document.getElementById(nama);
         if (el) el.style.display = nama === id ? 'block' : 'none';
     });
+    if (PANEL_PETUGAS.indexOf(id) !== -1) panelPetugasTerakhir = id;
 }
 
 function switchTab(tab) {
-    tampilkanPanel(tab === 'petugas' ? 'form-petugas' : 'form-admin');
+    tampilkanPanel(tab === 'petugas' ? panelPetugasTerakhir : 'form-admin');
 
     if (tab === 'petugas') {
         document.getElementById('btn-tab-petugas').classList.add('active');
