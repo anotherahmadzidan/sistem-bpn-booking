@@ -4,7 +4,7 @@ const pool = require('../config/db');
 const { serverError } = require('../utils/http');
 const { setSessionCookies } = require('../utils/sesi');
 const { ensureSandiSchema, TABEL_AKUN } = require('../utils/sandi');
-const { ensureOtpSchema, sendOtp, verifyOtp } = require('../utils/otp');
+const { ensureOtpSchema, sendOtp, verifyOtp, tandaiOtpTerpakai } = require('../utils/otp');
 const { kirimEmail } = require('../utils/notifikasi');
 const { invalidateAccountStatus } = require('../middleware/auth');
 require('dotenv').config();
@@ -23,14 +23,34 @@ const generateToken = (payload) =>
         expiresIn: process.env.JWT_EXPIRES_IN || '1d'
     });
 
+const PESAN_SANDI_SAMA = 'Kata sandi baru harus berbeda dari kata sandi lama';
+
 function validasiSandiBaru(sandiBaru, sandiLama) {
     if (String(sandiBaru || '').length < MIN_PANJANG_SANDI) {
         return `Kata sandi baru minimal ${MIN_PANJANG_SANDI} karakter`;
     }
+    // Pemeriksaan cepat bila sandi lama memang diketik pengguna.
     if (sandiLama && sandiBaru === sandiLama) {
-        return 'Kata sandi baru harus berbeda dari kata sandi lama';
+        return PESAN_SANDI_SAMA;
     }
     return null;
+}
+
+/**
+ * Memastikan sandi baru benar-benar berbeda dari yang sedang berlaku.
+ *
+ * Membandingkan terhadap HASH TERSIMPAN, bukan terhadap teks yang diketik.
+ * Perbandingan teks saja tidak cukup: pada alur lupa sandi lewat OTP tidak ada
+ * sandi lama yang diketik, sehingga pemeriksaannya terlewat sama sekali dan
+ * pengguna bisa "mengganti" sandi menjadi sandi yang sama persis.
+ *
+ * Sengaja TIDAK dipakai pada reset oleh admin: admin tidak mengetahui sandi
+ * petugas, jadi penolakan "sandi sama" di sana akan berubah menjadi alat untuk
+ * menebak sandi petugas lewat formulir edit.
+ */
+async function sandiSamaDenganSekarang(sandiBaru, hashSekarang) {
+    if (!hashSekarang) return false;
+    return bcrypt.compare(sandiBaru, hashSekarang);
 }
 
 /** Menyimpan sandi baru dan memutus seluruh sesi lama akun tersebut. */
@@ -109,6 +129,13 @@ const gantiSandi = async (req, res) => {
             return res.status(401).json({
                 code: 'SANDI_LAMA_SALAH',
                 message: 'Kata sandi lama tidak sesuai'
+            });
+        }
+
+        if (await sandiSamaDenganSekarang(sandiBaru, akun.password)) {
+            return res.status(400).json({
+                code: 'SANDI_SAMA',
+                message: PESAN_SANDI_SAMA
             });
         }
 
@@ -198,7 +225,7 @@ const resetSandiPetugas = async (req, res) => {
         await ensureOtpSchema();
 
         const [rows] = await pool.query(
-            'SELECT id, email, nama_lengkap FROM petugas WHERE nip = ? AND is_active = 1 LIMIT 1',
+            'SELECT id, email, nama_lengkap, password FROM petugas WHERE nip = ? AND is_active = 1 LIMIT 1',
             [nip]
         );
         const petugas = rows[0];
@@ -210,7 +237,11 @@ const resetSandiPetugas = async (req, res) => {
             verified = await verifyOtp({
                 email: petugas.email,
                 purpose: 'reset_sandi_petugas',
-                otp
+                otp,
+                // Masih ada validasi setelah ini. Kode sekali-pakai milik
+                // pengguna tidak boleh hangus hanya karena sandi barunya
+                // kebetulan sama dengan yang sekarang.
+                tandaiTerpakai: false
             });
         } catch (otpErr) {
             // Batas percobaan tetap diberitahukan supaya pengguna tahu harus
@@ -227,6 +258,22 @@ const resetSandiPetugas = async (req, res) => {
         // kebetulan memakai alamat email sama.
         if (Number(verified.petugasId) !== Number(petugas.id)) return tolak();
 
+        // Diperiksa SETELAH OTP terbukti sah, supaya jawabannya tidak bisa
+        // dipakai menebak sandi petugas tanpa menguasai emailnya lebih dulu.
+        if (await sandiSamaDenganSekarang(sandiBaru, petugas.password)) {
+            // OTP sengaja dibiarkan tetap berlaku agar pengguna bisa langsung
+            // mencoba lagi dengan sandi lain, tanpa meminta kode baru.
+            return res.status(400).json({
+                code: 'SANDI_SAMA',
+                message: PESAN_SANDI_SAMA + '. Kode OTP Anda masih berlaku, silakan coba sandi lain.'
+            });
+        }
+
+        // Seluruh validasi lolos: baru sekarang kodenya dihanguskan, sebelum
+        // sandi ditulis - supaya tidak mungkin ada sandi tersimpan sementara
+        // kodenya masih bisa dipakai lagi.
+        await tandaiOtpTerpakai(verified.otpId);
+
         await simpanSandiBaru('petugas', petugas.id, sandiBaru, { hapusWajibGanti: true });
         await beritahuPemilikAkun({
             email: petugas.email,
@@ -242,6 +289,8 @@ const resetSandiPetugas = async (req, res) => {
 
 module.exports = {
     MIN_PANJANG_SANDI,
+    PESAN_SANDI_SAMA,
+    sandiSamaDenganSekarang,
     simpanSandiBaru,
     beritahuPemilikAkun,
     gantiSandi,

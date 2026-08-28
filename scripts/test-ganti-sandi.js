@@ -37,6 +37,7 @@ const akun = {
 };
 
 let otpBerikutnyaValid = true;
+const otpDitandaiTerpakai = [];
 
 const fakePool = {
     async query(sql, values = []) {
@@ -70,7 +71,10 @@ const fakeOtp = {
             err.code = 'OTP_INVALID';
             throw err;
         }
-        return { petugasId: akun.petugas.id, userId: null, pendingRegistrationId: null };
+        return { otpId: 501, petugasId: akun.petugas.id, userId: null, pendingRegistrationId: null };
+    },
+    async tandaiOtpTerpakai(id) {
+        otpDitandaiTerpakai.push(id);
     }
 };
 
@@ -103,7 +107,11 @@ function buatRes() {
     };
 }
 
-const bersihkan = () => { kueri.length = 0; emailTerkirim.length = 0; };
+const bersihkan = () => {
+    kueri.length = 0;
+    emailTerkirim.length = 0;
+    otpDitandaiTerpakai.length = 0;
+};
 
 // ------------------------------------------------------------------
 // Ganti sandi
@@ -260,6 +268,47 @@ function testSetiapPenulisanSandiMenyetelPenanda() {
     );
 }
 
+/**
+ * Regresi: "mengganti" sandi menjadi sandi yang sama persis sempat BERHASIL
+ * lewat alur lupa sandi. Penyebabnya, pemeriksaan membandingkan dua teks yang
+ * diketik pengguna - padahal di alur itu tidak ada sandi lama yang diketik,
+ * sehingga pemeriksaannya terlewat sama sekali. Pembandingnya kini hash
+ * tersimpan, bukan teks.
+ */
+async function testResetTolakSandiYangSama() {
+    bersihkan();
+    const res = buatRes();
+    await resetSandiPetugas(
+        // 'SandiLamaBenar1' adalah sandi yang sedang berlaku di akun tiruan.
+        { body: { nip: akun.petugas.nip, otp: '123456', sandi_baru: 'SandiLamaBenar1' } },
+        res
+    );
+
+    assert.strictEqual(res.statusCode, 400, 'sandi yang sama harus ditolak');
+    assert.strictEqual(res.body.code, 'SANDI_SAMA');
+    assert.ok(
+        !kueri.some((q) => /^UPDATE/i.test(q.teks)),
+        'tidak boleh ada penulisan sandi ketika sandi barunya sama'
+    );
+    assert.deepStrictEqual(
+        otpDitandaiTerpakai, [],
+        'OTP tidak boleh hangus oleh penolakan ini - pengguna harus bisa '
+        + 'langsung mencoba sandi lain tanpa meminta kode baru'
+    );
+}
+
+/** Setelah seluruh validasi lolos, OTP wajib ditandai terpakai. */
+async function testOtpHangusSetelahBerhasil() {
+    bersihkan();
+    const res = buatRes();
+    await resetSandiPetugas(
+        { body: { nip: akun.petugas.nip, otp: '123456', sandi_baru: 'SandiBenarBaru9' } },
+        res
+    );
+    assert.strictEqual(res.statusCode, 200, res.body && res.body.message);
+    assert.deepStrictEqual(otpDitandaiTerpakai, [501], 'OTP harus ditandai terpakai');
+}
+
 (async () => {
     await testSandiLamaWajibBenar();
     await testGantiSandiBerhasil();
@@ -267,6 +316,8 @@ function testSetiapPenulisanSandiMenyetelPenanda() {
     await testPesanSeragam();
     await testKegagalanResetSeragam();
     await testResetBerhasil();
+    await testResetTolakSandiYangSama();
+    await testOtpHangusSetelahBerhasil();
     testSkripAdminMenolakArgumenSandi();
     testSetiapPenulisanSandiMenyetelPenanda();
 

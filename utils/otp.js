@@ -421,7 +421,14 @@ async function getOtpState({
     };
 }
 
-async function verifyOtp({ email, purpose, otp }) {
+/**
+ * @param {boolean} tandaiTerpakai Bila false, OTP TIDAK ditandai terpakai walau
+ *   sudah terbukti benar. Dipakai ketika pemanggil masih punya validasi lain
+ *   setelah ini: kegagalan validasi tersebut tidak boleh menghanguskan kode
+ *   sekali-pakai milik pengguna. Pemanggil wajib memanggil tandaiOtpTerpakai()
+ *   setelah seluruh validasinya lolos.
+ */
+async function verifyOtp({ email, purpose, otp, tandaiTerpakai = true }) {
     assertPurpose(purpose);
     const normalizedEmail = normalizeEmail(email);
     const cleanOtp = String(otp || '').trim();
@@ -470,11 +477,14 @@ async function verifyOtp({ email, purpose, otp }) {
     }
 
     await pool.query(
-        'UPDATE otp_tokens SET attempts = attempts + 1, used_at = NOW() WHERE id = ?',
+        tandaiTerpakai
+            ? 'UPDATE otp_tokens SET attempts = attempts + 1, used_at = NOW() WHERE id = ?'
+            : 'UPDATE otp_tokens SET attempts = attempts + 1 WHERE id = ?',
         [token.id]
     );
 
     return {
+        otpId: token.id,
         userId: token.user_id,
         petugasId: token.petugas_id,
         pendingRegistrationId: token.pending_registration_id,
@@ -482,11 +492,18 @@ async function verifyOtp({ email, purpose, otp }) {
     };
 }
 
+/** Menandai OTP terpakai; dipanggil setelah seluruh validasi pemanggil lolos. */
+async function tandaiOtpTerpakai(otpId) {
+    if (!otpId) return;
+    await pool.query('UPDATE otp_tokens SET used_at = NOW() WHERE id = ?', [otpId]);
+}
+
 module.exports = {
     ensureOtpSchema,
     sendOtp,
     getOtpState,
     verifyOtp,
+    tandaiOtpTerpakai,
     normalizeEmail,
     maskEmail,
     pendingRegistrationRetentionDays,
