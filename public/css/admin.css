@@ -910,6 +910,10 @@
     padding: 13px 10px;
 }
 
+.admin-dashboard #page-dashboard thead th {
+    white-space: nowrap;
+}
+
 .admin-dashboard #page-dashboard .dash-col-berkas {
     width: 11%;
 }
@@ -978,8 +982,13 @@
     text-align: center;
 }
 
+/* Selalu auto: penggeser hanya muncul bila tabelnya memang lebih lebar dari
+   wadah. Sebelumnya nilainya `visible` di layar besar DAN di layar <=720px,
+   sehingga justru di ponsel kolom sebelah kanan terpotong permanen tanpa cara
+   apa pun untuk melihatnya. */
 .admin-dashboard .table-wrap {
-    overflow-x: visible;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .admin-berkas-filter {
@@ -1060,6 +1069,12 @@
 .admin-dashboard #page-berkas table {
     font-size: 12px;
     table-layout: fixed;
+    /* Tabel dijamin selebar ini agar setiap kolom punya ruang cukup untuk
+       judulnya tanpa perlu dipenggal. Bila layar lebih sempit, wadahnya yang
+       digeser ke samping - bukan kolomnya yang diperas.
+       Tata letak `auto` sempat dicoba, tetapi justru memeras kolom Status
+       hingga badge "Menunggu Konfirmasi" pecah jadi belasan baris. */
+    min-width: 1240px;
 }
 
 .admin-dashboard #page-berkas thead th,
@@ -1069,13 +1084,10 @@
 }
 
 .admin-dashboard #page-berkas thead th {
-    white-space: normal;
-    /* Judul kolom seperti "Kelurahan/Desa" adalah satu kata tanpa spasi.
-       Dengan overflow-wrap: normal ia tidak bisa dipenggal sama sekali dan
-       meluber menimpa kolom di sebelahnya. Titik penggal yang rapi disediakan
-       <wbr> di markup; break-word hanya jaring pengaman bila tetap tidak muat. */
-    overflow-wrap: break-word;
-    word-break: normal;
+    /* Judul kolom tidak pernah dipenggal - "Kecamatan" jangan sampai terbaca
+       "Kecamat-an". Konsekuensinya tabel bisa lebih lebar dari layar, dan itu
+       memang disengaja: wadahnya digeser ke samping. */
+    white-space: nowrap;
     text-align: left;
 }
 
@@ -1086,42 +1098,47 @@
 }
 
 .admin-dashboard #page-berkas .col-berkas {
-    width: 9%;
-}
-
-.admin-dashboard #page-berkas .col-pemohon,
-.admin-dashboard #page-berkas .col-kecamatan{
-    width: 10%;
-}
-
-.admin-dashboard #page-berkas .col-kelurahan{
-    width: 12%;
-}
-
-.admin-dashboard #page-berkas .col-petugas {
-    width: 10%;
-}
-
-.admin-dashboard #page-berkas .col-date {
     width: 8%;
 }
 
+.admin-dashboard #page-berkas .col-pemohon {
+    width: 11%;
+}
+
+.admin-dashboard #page-berkas .col-kecamatan {
+    width: 9%;
+}
+
+.admin-dashboard #page-berkas .col-kelurahan{
+    width: 11%;
+}
+
+.admin-dashboard #page-berkas .col-petugas {
+    width: 11%;
+}
+
+.admin-dashboard #page-berkas .col-date {
+    width: 9%;
+}
+
 .admin-dashboard #page-berkas .col-reschedule {
-    width: 7%;
+    width: 9%;
 }
 
 .admin-dashboard #page-berkas .col-status {
-    width: 13%;
+    width: 12%;
 }
 
 .admin-dashboard #page-berkas .col-aksi {
-    width: 13%;
+    width: 11%;
 }
 
 
+/* min-width tetap sebagai lantai; white-space: normal dihapus karena
+   bertentangan dengan aturan "judul tidak pernah dipenggal" di atas -
+   inilah yang dulu membuat "Kelurahan/Desa" pecah sendirian. */
 .admin-dashboard #page-berkas thead th:nth-child(4) {
     min-width: 130px;
-    white-space: normal;
 }
 .admin-dashboard #page-berkas thead th:nth-child(5) {
     min-width: 120px;
@@ -1458,14 +1475,17 @@
     line-height: 1.45;
 }
 
+/* JANGAN dijadikan flex container. Sebuah <td> yang di-flex keluar dari tata
+   letak tabel: tinggi dan vertical-align-nya tidak lagi mengikuti sel lain,
+   sehingga tombol aksi tampak tidak sejajar dengan baris di kolom lainnya. */
 .admin-dashboard #page-berkas .table-actions {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
+    text-align: center;
     white-space: nowrap;
+    vertical-align: middle;
+}
+
+.admin-dashboard #page-berkas .table-actions .berkas-icon-button + .berkas-icon-button {
+    margin-left: 8px;
 }
 
 .admin-dashboard #page-berkas .berkas-icon-button {
@@ -1474,7 +1494,7 @@
     min-width: 36px;
     display: inline-grid;
     place-items: center;
-    flex: 0 0 36px;
+    vertical-align: middle;
     margin: 0;
     padding: 0;
     border: 1px solid #d7e1ef;
@@ -1832,11 +1852,6 @@
         min-height: 92px;
     }
 
-    .admin-dashboard .table-wrap {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
     .admin-dashboard table {
         min-width: 820px;
     }
@@ -1976,10 +1991,6 @@
     .admin-berkas-filter {
         grid-template-columns: 1fr;
         margin-bottom: 12px;
-    }
-
-    .admin-dashboard .table-wrap {
-        overflow-x: visible;
     }
 
     .admin-dashboard table,
