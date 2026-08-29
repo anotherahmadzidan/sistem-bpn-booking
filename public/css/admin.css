@@ -864,6 +864,39 @@
     padding: 0 22px 22px;
 }
 
+/* Kartu yang isinya tabel diperlakukan khusus: tabel dibiarkan menyentuh tepi
+   kartu supaya bidang latar header ikut mengisi sudut melengkung. Dengan
+   padding 22px, tabel berhenti sebelum tepi sehingga tersisa celah putih di
+   kiri dan kanan - paling kentara tepat di keempat sudutnya.
+   overflow: hidden membuat sudut siku tabel terpotong mengikuti lengkungan
+   kartu, jadi tidak perlu meniru radius-nya di elemen tabel. */
+.admin-dashboard #page-berkas .card,
+.admin-dashboard .dashboard-table-card {
+    overflow: hidden;
+}
+
+.admin-dashboard #page-berkas .card > .card-body,
+.admin-dashboard .dashboard-table-card > .card-body {
+    padding-inline: 0;
+    padding-bottom: 0;
+}
+
+/* Jarak baca teks dari tepi kartu tetap dipertahankan lewat padding sel
+   pertama dan terakhir - yang mengisi sampai tepi hanyalah latarnya. */
+.admin-dashboard #page-berkas thead th:first-child,
+.admin-dashboard #page-berkas tbody td:first-child,
+.admin-dashboard #page-dashboard thead th:first-child,
+.admin-dashboard #page-dashboard tbody td:first-child {
+    padding-left: 22px;
+}
+
+.admin-dashboard #page-berkas thead th:last-child,
+.admin-dashboard #page-berkas tbody td:last-child,
+.admin-dashboard #page-dashboard thead th:last-child,
+.admin-dashboard #page-dashboard tbody td:last-child {
+    padding-right: 22px;
+}
+
 .admin-dashboard .btn-primary {
     background: linear-gradient(135deg, #082c66, #06255a);
     border-radius: 9px;
