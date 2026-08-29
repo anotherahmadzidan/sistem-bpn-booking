@@ -1070,7 +1070,11 @@
 
 .admin-dashboard #page-berkas thead th {
     white-space: normal;
-    overflow-wrap: normal;
+    /* Judul kolom seperti "Kelurahan/Desa" adalah satu kata tanpa spasi.
+       Dengan overflow-wrap: normal ia tidak bisa dipenggal sama sekali dan
+       meluber menimpa kolom di sebelahnya. Titik penggal yang rapi disediakan
+       <wbr> di markup; break-word hanya jaring pengaman bila tetap tidak muat. */
+    overflow-wrap: break-word;
     word-break: normal;
     text-align: left;
 }
@@ -1095,19 +1099,19 @@
 }
 
 .admin-dashboard #page-berkas .col-petugas {
-    width: 8%;
+    width: 10%;
 }
 
 .admin-dashboard #page-berkas .col-date {
-    width: 9%;
-}
-
-.admin-dashboard #page-berkas .col-reschedule {
     width: 8%;
 }
 
+.admin-dashboard #page-berkas .col-reschedule {
+    width: 7%;
+}
+
 .admin-dashboard #page-berkas .col-status {
-    width: 14%;
+    width: 13%;
 }
 
 .admin-dashboard #page-berkas .col-aksi {
