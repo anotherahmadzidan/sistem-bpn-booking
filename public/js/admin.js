@@ -511,6 +511,12 @@
         return { valid: true, value, message };
     }
 
+    // Nama diukur dari jumlah HURUF, bukan panjang string, supaya "123" atau
+    // "..." tidak lolos sebagai nama lengkap. Karakter selain huruf tetap
+    // diizinkan (gelar, tanda hubung, apostrof), hanya tidak ikut dihitung.
+    const HURUF_MINIMAL_NAMA = 3;
+    const hitungHurufNama = (value) => (String(value || '').match(/\p{L}/gu) || []).length;
+
     function validatePetugasName(inputId, feedbackId, showEmpty = false) {
         const input = document.getElementById(inputId);
         const feedback = document.getElementById(feedbackId);
@@ -519,13 +525,13 @@
         if (!value) {
             const message = showEmpty
                 ? 'Nama lengkap wajib diisi.'
-                : 'Nama lengkap minimal 3 karakter.';
+                : `Nama lengkap minimal ${HURUF_MINIMAL_NAMA} huruf.`;
             setPetugasValidationState(input, feedback, showEmpty ? 'error' : 'neutral', message);
             return { valid: false, value, message };
         }
 
-        if (value.length < 3) {
-            const message = 'Nama lengkap minimal 3 karakter.';
+        if (hitungHurufNama(value) < HURUF_MINIMAL_NAMA) {
+            const message = `Nama lengkap minimal ${HURUF_MINIMAL_NAMA} huruf. Angka dan simbol tidak dihitung.`;
             setPetugasValidationState(input, feedback, 'error', message);
             return { valid: false, value, message };
         }
@@ -559,7 +565,51 @@
         return { valid: true, value, message };
     }
 
+    // Petunjuk awal tiap kolom disalin dari HTML sekali saat pengikatan, agar
+    // pengembalian keadaan setelah penyimpanan berhasil selalu persis sama
+    // dengan tampilan pertama - tanpa menduplikasi teksnya di berkas ini.
+    const KOLOM_TAMBAH_PETUGAS = [
+        ['new-nip', 'new-nip-feedback'],
+        ['new-nama', 'new-nama-feedback'],
+        ['new-email', 'new-email-feedback'],
+        ['new-password', 'new-password-feedback']
+    ];
+    const petunjukAwalPetugas = new Map();
+
+    /**
+     * Mengosongkan form tambah petugas BESERTA pesan validasi di bawah tiap
+     * kolom. Sebelumnya hanya nilainya yang dikosongkan, sehingga setelah
+     * petugas berhasil ditambahkan form yang sudah kosong masih menampilkan
+     * "Format NIP valid.", "Nama lengkap valid.", dan seterusnya lengkap
+     * dengan pewarnaan hijaunya - seolah isian kosong itu sudah tervalidasi.
+     */
+    function resetFormTambahPetugas() {
+        KOLOM_TAMBAH_PETUGAS.forEach(([inputId, feedbackId]) => {
+            const input = document.getElementById(inputId);
+            if (input) input.value = '';
+            // 'neutral' menghapus kelas error maupun valid, jadi kolom kembali
+            // ke petunjuk abu-abu, bukan langsung merah "wajib diisi".
+            setPetugasValidationState(
+                input,
+                document.getElementById(feedbackId),
+                'neutral',
+                petunjukAwalPetugas.get(feedbackId) || ''
+            );
+        });
+
+        const inputHp = document.getElementById('new-hp');
+        if (inputHp) inputHp.value = '';
+        // Nomor HP memakai modul validasinya sendiri; dipanggil tanpa
+        // showEmpty pada kolom kosong, ia mengembalikan petunjuk netralnya.
+        PhoneValidation.validateInput('new-hp', 'new-hp-feedback');
+    }
+
     function bindPetugasIdentityValidation() {
+        KOLOM_TAMBAH_PETUGAS.forEach(([, feedbackId]) => {
+            const feedback = document.getElementById(feedbackId);
+            if (feedback) petunjukAwalPetugas.set(feedbackId, feedback.textContent.trim());
+        });
+
         [
             ['new-nip', 'new-nip-feedback'],
             ['edit-nip', 'edit-nip-feedback']
@@ -726,8 +776,7 @@
             }
             sucEl.textContent = 'Petugas berhasil ditambahkan';
             sucEl.style.display = 'block';
-            ['new-nip', 'new-nama', 'new-email', 'new-hp', 'new-password']
-                .forEach(id => document.getElementById(id).value = '');
+            resetFormTambahPetugas();
             if (data.petugas) {
                 allPetugas.unshift(data.petugas);
                 await renderPetugas();

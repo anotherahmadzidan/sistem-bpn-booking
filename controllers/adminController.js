@@ -16,6 +16,7 @@ const {
     releasePhoneLock,
     ensurePhoneSchema
 } = require('../utils/phone');
+const { assertEmailAvailable } = require('../utils/emailAkun');
 const {
     ensureQuotaSchema,
     setKuotaHarian,
@@ -28,6 +29,11 @@ const {
 const NIP_REGEX = /^\d{18}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const MIN_PASSWORD_LENGTH = 8;
+const MIN_NAMA_HURUF = 3;
+
+// Nama diukur dari jumlah HURUF, bukan panjang string. Aturan "minimal 3
+// karakter" meloloskan "123", "..." , dan "a1" sebagai nama lengkap petugas.
+const hitungHuruf = (value) => (String(value || '').match(/\p{L}/gu) || []).length;
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizeNip = (value) => String(value || '').replace(/\s/g, '');
@@ -59,8 +65,8 @@ function normalizePetugasIdentity(req, res) {
 }
 
 function validatePetugasInput({ nama_lengkap, password, requirePassword }) {
-    if (String(nama_lengkap || '').trim().length < 3)
-        return 'Nama lengkap minimal 3 karakter';
+    if (hitungHuruf(nama_lengkap) < MIN_NAMA_HURUF)
+        return `Nama lengkap minimal ${MIN_NAMA_HURUF} huruf.`;
     if (requirePassword && String(password || '').length < MIN_PASSWORD_LENGTH)
         return `Password minimal ${MIN_PASSWORD_LENGTH} karakter`;
     if (!requirePassword && password && String(password).length < MIN_PASSWORD_LENGTH)
@@ -130,12 +136,15 @@ const tambahPetugas = async (req, res) => {
         await connection.beginTransaction();
 
         const [exist] = await connection.query(
-            'SELECT id FROM petugas WHERE nip = ? OR email = ?', [nip, email]
+            'SELECT id FROM petugas WHERE nip = ? LIMIT 1', [nip]
         );
         if (exist.length > 0) {
             await connection.rollback();
-            return res.status(409).json({ message: 'NIP atau email sudah terdaftar' });
+            return res.status(409).json({ message: 'NIP sudah terdaftar.' });
         }
+        // Email diperiksa ke SEMUA tabel akun. Memeriksa tabel petugas saja
+        // membuat email milik pemohon tetap bisa dipasang ke akun petugas.
+        await assertEmailAvailable(connection, email);
         await assertPhoneAvailable(connection, no_hp);
 
         const hash = await bcrypt.hash(password, 10);
@@ -220,23 +229,19 @@ const editPetugas = async (req, res) => {
             return res.status(404).json({ message: 'Petugas tidak ditemukan.' });
         }
 
-        // LOWER(email) agar bentrokan tetap terdeteksi walau data lama tersimpan
-        // dengan huruf kapital yang berbeda.
         const [conflict] = await connection.query(
-            `SELECT id, nip, email
+            `SELECT id
              FROM petugas
-             WHERE (nip = ? OR LOWER(email) = ?)
+             WHERE nip = ?
                AND id <> ?
              LIMIT 1`,
-            [identity.nip, identity.email, id]
+            [identity.nip, id]
         );
         if (conflict.length > 0) {
             await connection.rollback();
-            const message = String(conflict[0].nip) === identity.nip
-                ? 'NIP sudah digunakan petugas lain.'
-                : 'Email sudah digunakan petugas lain.';
-            return res.status(409).json({ message });
+            return res.status(409).json({ message: 'NIP sudah digunakan petugas lain.' });
         }
+        await assertEmailAvailable(connection, identity.email, { excludePetugasId: id });
         await assertPhoneAvailable(connection, no_hp, { excludePetugasId: id });
 
         if (password) {
