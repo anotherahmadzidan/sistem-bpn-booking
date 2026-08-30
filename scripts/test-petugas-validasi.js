@@ -18,7 +18,8 @@
  *
  *  4. Pesan "Petugas berhasil ditambahkan" tidak punya masa berlaku. Ia tetap
  *     terpampang saat admin sudah mulai mengetik petugas BERIKUTNYA, seolah
- *     isian yang sedang diketik itulah yang barusan tersimpan.
+ *     isian yang sedang diketik itulah yang barusan tersimpan. Ketiga
+ *     formulir kuota memakai pola yang sama dan tunduk pada aturan yang sama.
  *
  * Berjalan tanpa database maupun browser: pool distub lewat require.cache
  * (pola scripts/test-ganti-sandi.js) dan DOM distub di dalam vm (pola
@@ -326,11 +327,12 @@ function muatAdminJs() {
         ctx,
         { filename: 'public/js/admin.js' }
     );
-    return { ctx, ambil, jam };
+    const baca = (nama) => vm.runInContext(nama, ctx);
+    return { ctx, ambil, jam, baca };
 }
 
 async function ujiKlien() {
-    const { ctx, ambil, jam } = muatAdminJs();
+    const { ctx, ambil, jam, baca } = muatAdminJs();
 
     // --- 2a. nama lengkap dihitung per HURUF ------------------------
     for (const nama of NAMA_DITOLAK.concat(['-- 99 --'])) {
@@ -419,11 +421,60 @@ async function ujiKlien() {
     assert.strictEqual(jam.jumlahTertunda(), 0, 'penghitung waktu harus ikut dimatikan saat pesan dicabut');
 
     lolos.push('pesan sukses hilang saat admin mengetik dan setelah masa berlakunya habis');
+
+    // --- 2d. ketiga formulir kuota memakai aturan yang sama --------
+    // Daftar kolomnya diambil dari KUOTA_FORM di admin.js, bukan disalin ke
+    // sini, supaya penambahan kolom baru ikut terjaga dengan sendirinya.
+    const kuotaForm = baca('KUOTA_FORM');
+    assert.ok(kuotaForm, 'KUOTA_FORM tidak terjangkau dari admin.js');
+    assert.deepStrictEqual(
+        Object.keys(kuotaForm).sort(),
+        ['kecamatan', 'kelurahan', 'petugas'],
+        'ketiga formulir kuota harus ikut terjaga'
+    );
+
+    for (const [tipe, m] of Object.entries(kuotaForm)) {
+        const kotak = ambil(m.suc);
+        const kolomKuota = [m.id, m.mode, m.tgl, m.tglEnd, m.max, m.unl].filter(Boolean);
+
+        for (const inputId of kolomKuota) {
+            // 'change' untuk dropdown, tanggal, dan kotak centang.
+            tampilkanUlangSukses(ctx, kotak, jam, m.suc);
+            ambil(inputId)._picu('change');
+            assert.strictEqual(
+                kotak.style.display, 'none',
+                'mengubah ' + inputId + ' seharusnya mencabut pesan sukses ' + tipe
+            );
+
+            tampilkanUlangSukses(ctx, kotak, jam, m.suc);
+            ambil(inputId)._picu('input');
+            assert.strictEqual(
+                kotak.style.display, 'none',
+                'mengetik di ' + inputId + ' seharusnya mencabut pesan sukses ' + tipe
+            );
+        }
+
+        tampilkanUlangSukses(ctx, kotak, jam, m.suc);
+        jam.majukan(6000);
+        assert.strictEqual(
+            kotak.style.display, 'none',
+            'pesan sukses ' + tipe + ' seharusnya hilang sendiri setelah masa berlakunya'
+        );
+    }
+
+    // Penghitung waktu tiap kotak berdiri sendiri: memunculkan pesan di satu
+    // formulir tidak boleh mematikan hitungan formulir lain.
+    tampilkanUlangSukses(ctx, ambil('kec-success'), jam, 'kec-success');
+    tampilkanUlangSukses(ctx, ambil('kel-success'), jam, 'kel-success');
+    assert.strictEqual(jam.jumlahTertunda(), 2, 'tiap kotak pesan harus punya penghitung sendiri');
+    assert.strictEqual(ambil('kec-success').style.display, 'block', 'pesan kecamatan tidak boleh ikut tercabut');
+
+    lolos.push('ketiga formulir kuota memakai aturan masa berlaku yang sama');
 }
 
 /** Memunculkan kembali pesan sukses untuk pemeriksaan berikutnya. */
-function tampilkanUlangSukses(ctx, sukses, jam) {
-    ctx.tampilkanSuksesPetugas('Petugas berhasil ditambahkan');
+function tampilkanUlangSukses(ctx, sukses, jam, sucId) {
+    ctx.tampilkanSukses(sucId || 'petugas-success', 'Berhasil disimpan');
     assert.strictEqual(sukses.style.display, 'block', 'pesan sukses gagal dimunculkan');
     assert.ok(jam.jumlahTertunda() >= 1, 'pesan sukses harus disertai penghitung waktu');
 }

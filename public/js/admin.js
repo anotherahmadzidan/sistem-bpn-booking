@@ -604,31 +604,61 @@
         PhoneValidation.validateInput('new-hp', 'new-hp-feedback');
     }
 
+    // ============================================================
+    // MASA BERLAKU PESAN SUKSES
+    // ============================================================
     // Sebuah pesan keberhasilan harus berhenti tampil begitu ia tidak lagi
     // menggambarkan keadaan sekarang. Tanpa aturan ini "Petugas berhasil
-    // ditambahkan" tetap terpampang saat admin sudah mulai mengetik petugas
-    // BERIKUTNYA - seolah isian yang sedang diketik itulah yang tersimpan.
-    const DURASI_SUKSES_PETUGAS_MS = 6000;
-    let hitungMundurSuksesPetugas = null;
+    // ditambahkan" dan "Kuota berhasil disimpan" tetap terpampang saat admin
+    // sudah mulai mengisi entri BERIKUTNYA - seolah isian yang sedang diketik
+    // itulah yang barusan tersimpan.
+    //
+    // Aturannya sama untuk semua formulir yang bisa dipakai berulang kali di
+    // halaman ini, jadi ditulis satu kali dan dikunci per id kotak pesannya.
+    const DURASI_SUKSES_MS = 6000;
+    const hitungMundurSukses = new Map();
 
-    function sembunyikanSuksesPetugas() {
-        if (hitungMundurSuksesPetugas) {
-            clearTimeout(hitungMundurSuksesPetugas);
-            hitungMundurSuksesPetugas = null;
+    function sembunyikanSukses(sucId) {
+        const penghitung = hitungMundurSukses.get(sucId);
+        if (penghitung) {
+            clearTimeout(penghitung);
+            hitungMundurSukses.delete(sucId);
         }
-        const sucEl = document.getElementById('petugas-success');
+        const sucEl = document.getElementById(sucId);
         if (!sucEl) return;
         sucEl.style.display = 'none';
         sucEl.textContent = '';
     }
 
-    function tampilkanSuksesPetugas(pesan) {
-        const sucEl = document.getElementById('petugas-success');
+    function tampilkanSukses(sucId, pesan) {
+        const sucEl = document.getElementById(sucId);
         if (!sucEl) return;
-        if (hitungMundurSuksesPetugas) clearTimeout(hitungMundurSuksesPetugas);
+        const penghitung = hitungMundurSukses.get(sucId);
+        if (penghitung) clearTimeout(penghitung);
         sucEl.textContent = pesan;
         sucEl.style.display = 'block';
-        hitungMundurSuksesPetugas = setTimeout(sembunyikanSuksesPetugas, DURASI_SUKSES_PETUGAS_MS);
+        hitungMundurSukses.set(
+            sucId,
+            setTimeout(() => sembunyikanSukses(sucId), DURASI_SUKSES_MS)
+        );
+    }
+
+    /**
+     * Menyambungkan kolom-kolom sebuah formulir ke kotak pesan suksesnya:
+     * menyentuh salah satunya berarti admin sudah beralih ke entri berikutnya.
+     *
+     * 'input' menangkap pengetikan, 'change' menangkap dropdown, tanggal, dan
+     * kotak centang. Pengosongan nilai secara terprogram tidak memicu kedua
+     * event itu, jadi pembersihan formulir tidak mencabut pesannya sendiri.
+     */
+    function cabutSuksesSaatDiubah(sucId, idKolom) {
+        idKolom.filter(Boolean).forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            ['input', 'change'].forEach(jenis => {
+                el.addEventListener(jenis, () => sembunyikanSukses(sucId));
+            });
+        });
     }
 
     function bindPetugasIdentityValidation() {
@@ -637,14 +667,10 @@
             if (feedback) petunjukAwalPetugas.set(feedbackId, feedback.textContent.trim());
         });
 
-        // Mengetik di kolom mana pun berarti admin sudah beralih ke petugas
-        // berikutnya, jadi pesan keberhasilan yang lama langsung dicabut.
-        // resetFormTambahPetugas() mengosongkan nilai secara terprogram dan
-        // itu tidak memicu event 'input', jadi pesannya tidak ikut terhapus
-        // oleh pembersihan formnya sendiri.
-        ['new-nip', 'new-nama', 'new-email', 'new-hp', 'new-password'].forEach(id => {
-            document.getElementById(id)?.addEventListener('input', sembunyikanSuksesPetugas);
-        });
+        cabutSuksesSaatDiubah(
+            'petugas-success',
+            ['new-nip', 'new-nama', 'new-email', 'new-hp', 'new-password']
+        );
 
         [
             ['new-nip', 'new-nip-feedback'],
@@ -775,7 +801,7 @@
         const errEl = document.getElementById('petugas-error');
         const btn = document.getElementById('btn-add-petugas');
         errEl.style.display = 'none';
-        sembunyikanSuksesPetugas();
+        sembunyikanSukses('petugas-success');
 
         // Validasi per-field sudah menampilkan pesannya masing-masing di
         // bawah tiap input; kotak error utama hanya untuk error server.
@@ -810,7 +836,7 @@
                 return;
             }
             resetFormTambahPetugas();
-            tampilkanSuksesPetugas('Petugas berhasil ditambahkan');
+            tampilkanSukses('petugas-success', 'Petugas berhasil ditambahkan');
             if (data.petugas) {
                 allPetugas.unshift(data.petugas);
                 await renderPetugas();
@@ -1153,13 +1179,20 @@
         }
     }
 
+    const KUOTA_FORM = {
+        kecamatan: { id: 'kec-target', mode: 'kec-mode', tgl: 'kec-tanggal', tglEnd: 'kec-tanggal-selesai', max: 'kec-max', unl: 'kec-unlimited', err: 'kec-error', suc: 'kec-success' },
+        kelurahan: { id: 'kel-target', mode: 'kel-mode', tgl: 'kel-tanggal', tglEnd: 'kel-tanggal-selesai', max: 'kel-max', unl: 'kel-unlimited', err: 'kel-error', suc: 'kel-success' },
+        petugas: { id: 'pet-target', mode: 'pet-mode', tgl: 'pet-tanggal', tglEnd: 'pet-tanggal-selesai', max: 'pet-max', unl: null, err: 'pet-kq-error', suc: 'pet-kq-success' }
+    };
+
+    // Formulir kuota juga dipakai berulang kali, jadi pesan suksesnya tunduk
+    // pada aturan yang sama dengan formulir tambah petugas.
+    Object.values(KUOTA_FORM).forEach(m => {
+        cabutSuksesSaatDiubah(m.suc, [m.id, m.mode, m.tgl, m.tglEnd, m.max, m.unl]);
+    });
+
     async function simpanKuota(tipe, button) {
-        const map = {
-            kecamatan: { id: 'kec-target', mode: 'kec-mode', tgl: 'kec-tanggal', tglEnd: 'kec-tanggal-selesai', max: 'kec-max', unl: 'kec-unlimited', err: 'kec-error', suc: 'kec-success' },
-            kelurahan: { id: 'kel-target', mode: 'kel-mode', tgl: 'kel-tanggal', tglEnd: 'kel-tanggal-selesai', max: 'kel-max', unl: 'kel-unlimited', err: 'kel-error', suc: 'kel-success' },
-            petugas: { id: 'pet-target', mode: 'pet-mode', tgl: 'pet-tanggal', tglEnd: 'pet-tanggal-selesai', max: 'pet-max', unl: null, err: 'pet-kq-error', suc: 'pet-kq-success' },
-        };
-        const m = map[tipe];
+        const m = KUOTA_FORM[tipe];
         const id = document.getElementById(m.id).value;
         const mode = document.getElementById(m.mode).value;
         const tanggal_mulai = document.getElementById(m.tgl).value;
@@ -1167,9 +1200,8 @@
         const kuota_max = parseInt(document.getElementById(m.max).value);
         const is_unlimited = m.unl ? (document.getElementById(m.unl).checked ? 1 : 0) : 0;
         const errEl = document.getElementById(m.err);
-        const sucEl = document.getElementById(m.suc);
         errEl.style.display = 'none';
-        sucEl.style.display = 'none';
+        sembunyikanSukses(m.suc);
 
         if (!id || (mode !== 'daily' && (!tanggal_mulai || !tanggal_selesai))) {
             errEl.textContent = mode === 'daily'
@@ -1197,8 +1229,7 @@
                 errEl.style.display = 'block';
                 return;
             }
-            sucEl.textContent = data.message || 'Kuota berhasil disimpan';
-            sucEl.style.display = 'block';
+            tampilkanSukses(m.suc, data.message || 'Kuota berhasil disimpan');
             // Auto refresh tampilan kuota aktif
             invalidateKuotaCache(tipe);
             await lihatKuota(tipe, true);
