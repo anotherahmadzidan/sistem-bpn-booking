@@ -16,6 +16,10 @@
  *  3. Nama lengkap divalidasi sebagai "minimal 3 karakter", sehingga "123"
  *     dan "..." lolos sebagai nama petugas. Yang dimaksud adalah 3 HURUF.
  *
+ *  4. Pesan "Petugas berhasil ditambahkan" tidak punya masa berlaku. Ia tetap
+ *     terpampang saat admin sudah mulai mengetik petugas BERIKUTNYA, seolah
+ *     isian yang sedang diketik itulah yang barusan tersimpan.
+ *
  * Berjalan tanpa database maupun browser: pool distub lewat require.cache
  * (pola scripts/test-ganti-sandi.js) dan DOM distub di dalam vm (pola
  * scripts/test-login-petugas-ui.js).
@@ -228,7 +232,14 @@ function buatElemen(id, textContent) {
                 return aktif;
             }
         },
-        addEventListener() {},
+        _pendengar: {},
+        addEventListener(jenis, fn) {
+            (this._pendengar[jenis] = this._pendengar[jenis] || []).push(fn);
+        },
+        /** Meniru pengguna yang berinteraksi dengan kolom ini. */
+        _picu(jenis) {
+            for (const fn of this._pendengar[jenis] || []) fn({ target: this });
+        },
         setAttribute() {},
         removeAttribute() {},
         focus() {},
@@ -238,7 +249,27 @@ function buatElemen(id, textContent) {
     };
 }
 
+/**
+ * Jam palsu. Masa berlaku pesan sukses diukur dengan setTimeout; menunggunya
+ * sungguhan membuat pengujian menahan 6 detik tanpa alasan.
+ */
+function buatJam() {
+    let urut = 0;
+    const antrean = new Map();
+    return {
+        setTimeout(fn, ms) { antrean.set(++urut, { fn, ms }); return urut; },
+        clearTimeout(id) { antrean.delete(id); },
+        jumlahTertunda() { return antrean.size; },
+        majukan(ms) {
+            for (const [id, tugas] of [...antrean]) {
+                if (tugas.ms <= ms) { antrean.delete(id); tugas.fn(); }
+            }
+        }
+    };
+}
+
 function muatAdminJs() {
+    const jam = buatJam();
     const simpanan = new Map();
     const ambil = (id) => {
         if (!simpanan.has(id)) {
@@ -250,7 +281,9 @@ function muatAdminJs() {
 
     const ctx = {
         console,
-        setTimeout, clearTimeout, setInterval, clearInterval,
+        setTimeout: (fn, ms) => jam.setTimeout(fn, ms),
+        clearTimeout: (id) => jam.clearTimeout(id),
+        setInterval, clearInterval,
         localStorage: {
             getItem: (k) => (k === 'role' ? 'admin' : 'Admin Uji'),
             setItem() {}, removeItem() {}, clear() {}
@@ -293,11 +326,11 @@ function muatAdminJs() {
         ctx,
         { filename: 'public/js/admin.js' }
     );
-    return { ctx, ambil };
+    return { ctx, ambil, jam };
 }
 
 async function ujiKlien() {
-    const { ctx, ambil } = muatAdminJs();
+    const { ctx, ambil, jam } = muatAdminJs();
 
     // --- 2a. nama lengkap dihitung per HURUF ------------------------
     for (const nama of NAMA_DITOLAK.concat(['-- 99 --'])) {
@@ -356,6 +389,43 @@ async function ujiKlien() {
         'pesan sukses harus tetap tampil'
     );
     lolos.push('pesan validasi per kolom hilang setelah petugas berhasil ditambahkan');
+
+    // --- 2c. pesan sukses punya masa berlaku -----------------------
+    const sukses = ambil('petugas-success');
+
+    // (i) Mengetik di kolom mana pun = admin beralih ke petugas berikutnya.
+    for (const [inputId] of kolom) {
+        tampilkanUlangSukses(ctx, sukses, jam);
+        ambil(inputId)._picu('input');
+        assert.strictEqual(
+            sukses.style.display, 'none',
+            'mengetik di ' + inputId + ' seharusnya mencabut pesan sukses'
+        );
+        assert.strictEqual(sukses.textContent, '', 'teks pesan sukses seharusnya ikut dikosongkan');
+    }
+
+    // (ii) Tanpa diapa-apakan pun pesan hilang sendiri setelah masa berlakunya.
+    tampilkanUlangSukses(ctx, sukses, jam);
+    jam.majukan(5000);
+    assert.strictEqual(sukses.style.display, 'block', 'pesan tidak boleh hilang sebelum masa berlakunya habis');
+    jam.majukan(6000);
+    assert.strictEqual(sukses.style.display, 'none', 'pesan seharusnya hilang sendiri setelah masa berlakunya');
+
+    // (iii) Penghitung waktu tidak boleh menumpuk saat pesan tampil berulang.
+    tampilkanUlangSukses(ctx, sukses, jam);
+    tampilkanUlangSukses(ctx, sukses, jam);
+    assert.strictEqual(jam.jumlahTertunda(), 1, 'hanya boleh ada satu penghitung waktu yang aktif');
+    ambil('new-nip')._picu('input');
+    assert.strictEqual(jam.jumlahTertunda(), 0, 'penghitung waktu harus ikut dimatikan saat pesan dicabut');
+
+    lolos.push('pesan sukses hilang saat admin mengetik dan setelah masa berlakunya habis');
+}
+
+/** Memunculkan kembali pesan sukses untuk pemeriksaan berikutnya. */
+function tampilkanUlangSukses(ctx, sukses, jam) {
+    ctx.tampilkanSuksesPetugas('Petugas berhasil ditambahkan');
+    assert.strictEqual(sukses.style.display, 'block', 'pesan sukses gagal dimunculkan');
+    assert.ok(jam.jumlahTertunda() >= 1, 'pesan sukses harus disertai penghitung waktu');
 }
 
 (async () => {

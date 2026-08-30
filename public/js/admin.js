@@ -604,10 +604,46 @@
         PhoneValidation.validateInput('new-hp', 'new-hp-feedback');
     }
 
+    // Sebuah pesan keberhasilan harus berhenti tampil begitu ia tidak lagi
+    // menggambarkan keadaan sekarang. Tanpa aturan ini "Petugas berhasil
+    // ditambahkan" tetap terpampang saat admin sudah mulai mengetik petugas
+    // BERIKUTNYA - seolah isian yang sedang diketik itulah yang tersimpan.
+    const DURASI_SUKSES_PETUGAS_MS = 6000;
+    let hitungMundurSuksesPetugas = null;
+
+    function sembunyikanSuksesPetugas() {
+        if (hitungMundurSuksesPetugas) {
+            clearTimeout(hitungMundurSuksesPetugas);
+            hitungMundurSuksesPetugas = null;
+        }
+        const sucEl = document.getElementById('petugas-success');
+        if (!sucEl) return;
+        sucEl.style.display = 'none';
+        sucEl.textContent = '';
+    }
+
+    function tampilkanSuksesPetugas(pesan) {
+        const sucEl = document.getElementById('petugas-success');
+        if (!sucEl) return;
+        if (hitungMundurSuksesPetugas) clearTimeout(hitungMundurSuksesPetugas);
+        sucEl.textContent = pesan;
+        sucEl.style.display = 'block';
+        hitungMundurSuksesPetugas = setTimeout(sembunyikanSuksesPetugas, DURASI_SUKSES_PETUGAS_MS);
+    }
+
     function bindPetugasIdentityValidation() {
         KOLOM_TAMBAH_PETUGAS.forEach(([, feedbackId]) => {
             const feedback = document.getElementById(feedbackId);
             if (feedback) petunjukAwalPetugas.set(feedbackId, feedback.textContent.trim());
+        });
+
+        // Mengetik di kolom mana pun berarti admin sudah beralih ke petugas
+        // berikutnya, jadi pesan keberhasilan yang lama langsung dicabut.
+        // resetFormTambahPetugas() mengosongkan nilai secara terprogram dan
+        // itu tidak memicu event 'input', jadi pesannya tidak ikut terhapus
+        // oleh pembersihan formnya sendiri.
+        ['new-nip', 'new-nama', 'new-email', 'new-hp', 'new-password'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', sembunyikanSuksesPetugas);
         });
 
         [
@@ -737,10 +773,9 @@
         );
         const password = passwordResult.value;
         const errEl = document.getElementById('petugas-error');
-        const sucEl = document.getElementById('petugas-success');
         const btn = document.getElementById('btn-add-petugas');
         errEl.style.display = 'none';
-        sucEl.style.display = 'none';
+        sembunyikanSuksesPetugas();
 
         // Validasi per-field sudah menampilkan pesannya masing-masing di
         // bawah tiap input; kotak error utama hanya untuk error server.
@@ -774,9 +809,8 @@
                 errEl.style.display = 'block';
                 return;
             }
-            sucEl.textContent = 'Petugas berhasil ditambahkan';
-            sucEl.style.display = 'block';
             resetFormTambahPetugas();
+            tampilkanSuksesPetugas('Petugas berhasil ditambahkan');
             if (data.petugas) {
                 allPetugas.unshift(data.petugas);
                 await renderPetugas();
