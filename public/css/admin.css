@@ -266,6 +266,13 @@
     color: #ffd21a;
 }
 
+/* Kedua tombol di sini sebelumnya berjarak 0px - benar-benar bersentuhan.
+   Memakai margin, bukan gap, agar tetap berlaku saat aturan responsif
+   mengubah .sidebar-footer menjadi display: block. */
+.admin-dashboard .sidebar-footer > .btn + .btn {
+    margin-top: 12px;
+}
+
 .admin-dashboard .sidebar-footer {
     padding: 0 10px;
     border: 0;
@@ -1107,7 +1114,7 @@
        digeser ke samping - bukan kolomnya yang diperas.
        Tata letak `auto` sempat dicoba, tetapi justru memeras kolom Status
        hingga badge "Menunggu Konfirmasi" pecah jadi belasan baris. */
-    min-width: 1240px;
+    min-width: 1300px;
 }
 
 .admin-dashboard #page-berkas thead th,
@@ -1150,20 +1157,28 @@
     width: 11%;
 }
 
+/* "07 September 2026" butuh 113px pada 12,5px Inter, sedangkan 9% hanya
+   menyediakan 99px untuk teks. Selisih 14px itu memakan padding sel, sehingga
+   tanggal di dua kolom bersebelahan hanya berjarak 7px dan terbaca menyambung:
+   "07 September 202607 September 2026". Kelebihannya diambil dari kolom Aksi
+   dan Reschedule yang selama ini kelebihan ruang. */
 .admin-dashboard #page-berkas .col-date {
-    width: 9%;
+    width: 11%;
 }
 
+/* Isinya hanya "0x"; lebarnya ditentukan judulnya yang butuh 95px. */
 .admin-dashboard #page-berkas .col-reschedule {
-    width: 9%;
+    width: 8%;
 }
 
 .admin-dashboard #page-berkas .col-status {
     width: 12%;
 }
 
+/* Dua tombol ikon 36px dengan jarak 8px = 80px, ditambah padding sel 20px.
+   Sisanya selama ini ruang kosong yang lebih dibutuhkan kolom tanggal. */
 .admin-dashboard #page-berkas .col-aksi {
-    width: 11%;
+    width: 8%;
 }
 
 
