@@ -315,6 +315,10 @@ function renderTugas(data) {
                 <div><span>Tanggal Berkas</span><b>:</b><strong>${formatDate(b.tanggal_berkas || b.created_at)}</strong></div>
                 <div><span>Status Berkas</span><b>:</b><strong>${badgeLabel(b.status)}</strong></div>
                 <div><span>Jadwal Ditetapkan</span><b>:</b><strong>${b.tanggal_fix ? formatDate(b.tanggal_fix) : '-'}</strong></div>
+                ${bisaInputHasil ? '' : `
+                <div><span>Titik Lokasi</span><b>:</b><strong>${mapsUrl
+                    ? `<a href="${mapsUrl}" target="_blank" class="info-tautan-lokasi">Buka di Maps</a>`
+                    : 'Belum tersedia'}</strong></div>`}
             </section>
 
             <section class="tugas-action-panel">

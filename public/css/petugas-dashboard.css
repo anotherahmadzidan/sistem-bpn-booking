@@ -669,6 +669,33 @@
     font-size: 13px;
 }
 
+/* Tautan titik lokasi di dalam Info Berkas. Sengaja dibuat kentara -
+   bergaris bawah, berwarna, dan berpanah keluar - karena teks biru polos di
+   tengah daftar fakta tidak terbaca sebagai sesuatu yang bisa ditekan.
+   Warnanya mengikuti tombol "Cek Lokasi" agar keduanya dikenali sebagai
+   hal yang sama. */
+.petugas-dashboard .info-tautan-lokasi {
+    color: #00754f;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.petugas-dashboard .info-tautan-lokasi::after {
+    content: " ↗";
+    text-decoration: none;
+}
+
+.petugas-dashboard .info-tautan-lokasi:hover {
+    color: #005c3e;
+}
+
+.petugas-dashboard .info-tautan-lokasi:focus-visible {
+    outline: 2px solid var(--petugas-blue);
+    outline-offset: 2px;
+    border-radius: 3px;
+}
+
 .petugas-dashboard .tugas-detail-row span,
 .petugas-dashboard .tugas-info-box span {
     color: #516895;
