@@ -2,12 +2,12 @@ const rateLimit = require('express-rate-limit');
 
 // Batas ketat untuk endpoint autentikasi (login, register, OTP, reset sandi).
 const authLimiter = rateLimit({
-    windowMs: Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
-    max: Number(process.env.AUTH_RATE_LIMIT_MAX || 10),
+    windowMs: Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 1 * 60 * 1000), 
+    max: Number(process.env.AUTH_RATE_LIMIT_MAX || 50),                      
     standardHeaders: true,
     legacyHeaders: false,
     message: {
-        message: 'Terlalu banyak percobaan. Silakan coba lagi beberapa menit lagi.'
+        message: 'Terlalu banyak percobaan. Silakan coba lagi dalam 1 menit.'
     }
 });
 
@@ -15,7 +15,7 @@ const authLimiter = rateLimit({
 // pengelolaan admin). Lebih longgar dari authLimiter karena dipakai pengguna
 // yang sudah login, tetapi tetap mencegah pengiriman massal.
 const writeLimiter = rateLimit({
-    windowMs: Number(process.env.WRITE_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000),
+    windowMs: Number(process.env.WRITE_RATE_LIMIT_WINDOW_MS || 1 * 60 * 1000),
     max: Number(process.env.WRITE_RATE_LIMIT_MAX || 100),
     standardHeaders: true,
     legacyHeaders: false,
