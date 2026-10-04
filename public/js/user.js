@@ -177,7 +177,10 @@ function initMap(lat = MAP_DEFAULT_CENTER.lat, lng = MAP_DEFAULT_CENTER.lng, zoo
     }
     setTimeout(() => {
         map = L.map('map-picker', { attributionControl: false }).setView([lat, lng], zoom);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            subdomains: 'abcd'
+        }).addTo(mapModal);
 
         marker = L.marker([lat, lng], { draggable: true }).addTo(map);
 
@@ -391,7 +394,10 @@ function bukaMapModal() {
     setTimeout(() => {
         if (!mapModal) {
             mapModal = L.map('map-modal-inner', { attributionControl: false }).setView([lat, lng], map ? map.getZoom() : 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapModal);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                subdomains: 'abcd'
+            }).addTo(mapModal);
 
             markerModal = L.marker([lat, lng], { draggable: true }).addTo(mapModal);
 
@@ -489,16 +495,16 @@ async function apiFetch(url, options = {}) {
             ...(options.headers || {})
         }
     });
-        if (res.status === 403) {
-            const salinan = res.clone();
-            const data = await salinan.json().catch(() => ({}));
-            if (data.code === 'WAJIB_GANTI_SANDI') {
-                bukaGantiSandi(true);
-                throw new AppAsync.AppRequestError(data.message, {
-                    code: data.code, status: 403
-                });
-            }
+    if (res.status === 403) {
+        const salinan = res.clone();
+        const data = await salinan.json().catch(() => ({}));
+        if (data.code === 'WAJIB_GANTI_SANDI') {
+            bukaGantiSandi(true);
+            throw new AppAsync.AppRequestError(data.message, {
+                code: data.code, status: 403
+            });
         }
+    }
     if (res.status === 401) {
         localStorage.clear();
         window.location.href = '/';
