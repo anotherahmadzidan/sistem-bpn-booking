@@ -177,10 +177,10 @@ function initMap(lat = MAP_DEFAULT_CENTER.lat, lng = MAP_DEFAULT_CENTER.lng, zoo
     }
     setTimeout(() => {
         map = L.map('map-picker', { attributionControl: false }).setView([lat, lng], zoom);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            subdomains: 'abcd'
-        }).addTo(mapModal);
+        L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        }).addTo(map);
 
         marker = L.marker([lat, lng], { draggable: true }).addTo(map);
 
@@ -394,9 +394,9 @@ function bukaMapModal() {
     setTimeout(() => {
         if (!mapModal) {
             mapModal = L.map('map-modal-inner', { attributionControl: false }).setView([lat, lng], map ? map.getZoom() : 13);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                subdomains: 'abcd'
+            L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
             }).addTo(mapModal);
 
             markerModal = L.marker([lat, lng], { draggable: true }).addTo(mapModal);
